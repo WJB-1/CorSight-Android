@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">VoiceNavigation</string>
+    <string name="amap_api_key">c9da34e66d08cf5bac59a307276db812</string>
+    <string name="baidu_speech_app_id">7669507</string>
+    <string name="baidu_speech_api_key">eT9Q9hXnZt0nFYdAmAsC6d69</string>
+    <string name="baidu_speech_secret_key">jKemN6xBxVfMlscTeyLsovXG9PhWblSS</string>
+    <string name="speech_hint">点击麦克风开始语音输入</string>
+    <string name="listening">正在听...</string>
+    <string name="start_navigation">开始导航</string>
+    <string name="stop_navigation">停止导航</string>
+    <string name="destination_hint">目的地</string>
+    <string name="permission_audio_denied">需要麦克风权限</string>
+    <string name="permission_location_denied">需要定位权限</string>
+    <string name="navigating_to">正在导航至</string>
+    <string name="preview_route">行前预览</string>
+    <string name="preview_no_destination">请先选择目的地</string>
+    <string name="preview_no_location">正在获取当前位置，请稍后</string>
+    <string name="preview_requesting">正在请求行前预览信息...</string>
+    <string name="preview_success">行前预览请求成功，请留意推送</string>
+    <string name="preview_failed">行前预览请求失败</string>
+</resources>

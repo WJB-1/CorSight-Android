@@ -1,0 +1,8 @@
+{
+    "accept_audio_data": false,
+    "accept_audio_volume": false,
+    "nlu": "enable",
+    "vad_endpoint_timeout": 5000,
+    "sample_rate": 16000,
+    "audio_format": "pcm"
+}
