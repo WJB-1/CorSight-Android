@@ -215,6 +215,13 @@ public class MainActivity extends AppCompatActivity implements
     private void loadSettings() {
         TextView tvAmapKey = findViewById(R.id.tv_amap_key);
         tvAmapKey.setText(getString(R.string.amap_api_key));
+
+        Button btnVisionTest = pageSettingsView.findViewById(R.id.btn_vision_test);
+        if (btnVisionTest != null) {
+            btnVisionTest.setOnClickListener(v -> {
+                startActivity(new android.content.Intent(this, VisionTestActivity.class));
+            });
+        }
     }
 
     private void hideKeyboard() {

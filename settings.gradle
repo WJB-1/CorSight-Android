@@ -19,3 +19,5 @@ dependencyResolutionManagement {
 
 rootProject.name = 'VoiceNavigation'
 include ':app'
+include ':inference'
+include ':vision'
