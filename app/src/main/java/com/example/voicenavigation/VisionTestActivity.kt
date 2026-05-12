@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -17,6 +18,8 @@ import com.corsight.vision.ToolResult
 import com.corsight.vision.tools.GenericDetectionTool
 import com.example.voicenavigation.databinding.ActivityVisionTestBinding
 import kotlinx.coroutines.*
+import java.io.BufferedReader
+import java.io.FileReader
 import java.util.concurrent.Executors
 
 class VisionTestActivity : AppCompatActivity() {
@@ -36,6 +39,7 @@ class VisionTestActivity : AppCompatActivity() {
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
         private const val MODEL_INPUT_SIZE = 640
+        private const val DEFAULT_STREAM_PORT = 8080
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,25 +68,82 @@ class VisionTestActivity : AppCompatActivity() {
             }
         }
 
+        // 点击网络流按钮：先展开配置，如果已展开则直接扫描连接
         binding.btnSourceNetwork.setOnClickListener {
-            binding.layoutNetworkConfig.visibility = android.view.View.VISIBLE
+            if (binding.layoutNetworkConfig.visibility == View.VISIBLE) {
+                scanAndConnect()
+            } else {
+                binding.layoutNetworkConfig.visibility = View.VISIBLE
+            }
         }
 
         binding.btnConnectStream.setOnClickListener {
             val text = binding.etStreamIp.text.toString().trim()
             val parts = text.split(":")
             val ip = parts[0]
-            val port = if (parts.size > 1) parts[1].toIntOrNull() ?: 8080 else 8080
+            val port = if (parts.size > 1) parts[1].toIntOrNull() ?: DEFAULT_STREAM_PORT else DEFAULT_STREAM_PORT
 
             if (ip.isEmpty()) {
                 Toast.makeText(this, "请输入 IP 地址", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
-            val newSource = NetworkSource(ip, port)
-            switchToSource(newSource)
-            binding.layoutNetworkConfig.visibility = android.view.View.GONE
+            connectToNetworkSource(ip, port)
         }
+    }
+
+    /** 读取 /proc/net/arp 扫描热点连接的设备 IP */
+    private fun scanAndConnect() {
+        binding.progressConnecting.visibility = View.VISIBLE
+        binding.tvDetections.text = "正在扫描热点设备..."
+
+        scope.launch(Dispatchers.IO) {
+            val candidates = readArpTable()
+            withContext(Dispatchers.Main) {
+                binding.progressConnecting.visibility = View.GONE
+                if (candidates.isEmpty()) {
+                    binding.tvDetections.text = "未找到热点设备"
+                    Toast.makeText(this@VisionTestActivity, "未找到连接的设备，请手动输入 IP", Toast.LENGTH_LONG).show()
+                } else {
+                    val ip = candidates.first()
+                    binding.etStreamIp.setText(ip)
+                    binding.tvDetections.text = "发现设备: $ip，正在连接..."
+                    connectToNetworkSource(ip, DEFAULT_STREAM_PORT)
+                }
+            }
+        }
+    }
+
+    /** 解析 /proc/net/arp，返回除本机网关外的活跃设备 IP 列表 */
+    private fun readArpTable(): List<String> {
+        val result = mutableListOf<String>()
+        try {
+            BufferedReader(FileReader("/proc/net/arp")).use { reader ->
+                reader.readLine() // skip header
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    val parts = line!!.trim().split(Regex("\\s+"))
+                    if (parts.size >= 4) {
+                        val ip = parts[0]
+                        val hwType = parts[1]
+                        val flags = parts[2]
+                        val mac = parts[3]
+                        // flags 0x2 = complete entry; skip 00:00:00:00:00:00
+                        if (flags == "0x2" && mac != "00:00:00:00:00:00" && ip != "0.0.0.0" && ip != "192.168.43.1") {
+                            result.add(ip)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read ARP table", e)
+        }
+        return result
+    }
+
+    private fun connectToNetworkSource(ip: String, port: Int) {
+        val newSource = NetworkSource(ip, port)
+        switchToSource(newSource)
+        binding.layoutNetworkConfig.visibility = View.GONE
     }
 
     private fun switchToSource(source: ImageSource) {
@@ -90,9 +151,9 @@ class VisionTestActivity : AppCompatActivity() {
         currentSource = null
 
         binding.previewView.visibility =
-            if (source is CameraSource) android.view.View.VISIBLE else android.view.View.GONE
+            if (source is CameraSource) View.VISIBLE else View.GONE
         binding.ivNetwork.visibility =
-            if (source !is CameraSource) android.view.View.VISIBLE else android.view.View.GONE
+            if (source !is CameraSource) View.VISIBLE else View.GONE
 
         binding.btnSourceCamera.setBackgroundColor(
             ContextCompat.getColor(this,
@@ -117,12 +178,10 @@ class VisionTestActivity : AppCompatActivity() {
      */
     private fun processFrame(bitmap: Bitmap, rotationDegrees: Int, source: ImageSource) {
         if (source is CameraSource) {
-            // CameraX 已经在后台线程，直接推理
             val frame = Frame(bitmap, rotationDegrees)
             val result = ToolRegistry.activeTool.value?.process(frame)
             runOnUiThread { renderResult(result, bitmap, rotationDegrees) }
         } else {
-            // 网络流：先显示原图，再异步推理
             runOnUiThread { binding.ivNetwork.setImageBitmap(bitmap) }
 
             inferenceExecutor.execute {

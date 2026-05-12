@@ -38,6 +38,7 @@
 
         <!-- 源切换按钮 -->
         <LinearLayout
+            android:paddingTop="60dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -82,13 +83,14 @@
                 android:layout_height="40dp"
                 android:layout_weight="1"
                 android:hint="IP:端口 (如 192.168.1.100:8080)"
+
                 android:singleLine="true"
                 android:paddingHorizontal="10dp"
                 android:background="@drawable/edit_text_background"
-                android:textColor="@color/white"
+                android:textColor="#000000"
                 android:textColorHint="@color/gray"
                 android:textSize="13sp"
-                android:text="192.168.1.100" />
+                android:text="192.168.4.1" />
 
             <Button
                 android:id="@+id/btnConnectStream"
@@ -100,6 +102,13 @@
                 android:background="@color/teal_200"
                 android:paddingHorizontal="16dp"
                 android:layout_marginStart="6dp" />
+
+            <ProgressBar
+                android:id="@+id/progressConnecting"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 
