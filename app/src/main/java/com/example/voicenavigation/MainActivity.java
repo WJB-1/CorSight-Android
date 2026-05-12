@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -219,6 +220,27 @@ public class MainActivity extends AppCompatActivity implements
     private void loadSettings() {
         TextView tvAmapKey = findViewById(R.id.tv_amap_key);
         tvAmapKey.setText(getString(R.string.amap_api_key));
+
+        EditText etServerUrl = pageSettingsView.findViewById(R.id.et_server_url);
+        Button btnSaveUrl = pageSettingsView.findViewById(R.id.btn_save_url);
+
+        SharedPreferences prefs = getSharedPreferences("corsight_config", MODE_PRIVATE);
+        String savedUrl = prefs.getString("server_base_url", TripPreviewService.DEFAULT_BASE_URL);
+        etServerUrl.setText(savedUrl);
+
+        btnSaveUrl.setOnClickListener(v -> {
+            String url = etServerUrl.getText().toString().trim();
+            if (url.isEmpty()) {
+                Toast.makeText(this, "请输入有效地址", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            prefs.edit().putString("server_base_url", url).apply();
+
+            // 更新当前 service 实例的 baseUrl
+            tripPreviewService.setBaseUrl(url);
+
+            Toast.makeText(this, "服务器地址已保存", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void hideKeyboard() {
@@ -235,7 +257,11 @@ public class MainActivity extends AppCompatActivity implements
         navigationManager.setNavigationCallback(this);
         appDatabase = AppDatabase.getInstance(this);
         handler = new Handler(Looper.getMainLooper());
-        tripPreviewService = new TripPreviewService();
+
+        SharedPreferences prefs = getSharedPreferences("corsight_config", MODE_PRIVATE);
+        String savedUrl = prefs.getString("server_base_url", TripPreviewService.DEFAULT_BASE_URL);
+        tripPreviewService = new TripPreviewService(savedUrl);
+
         initTts();
     }
 
