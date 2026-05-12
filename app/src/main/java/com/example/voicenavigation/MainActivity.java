@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements
     private Button btnSearch;
     private Button btnStartNavigation;
     private Button btnPreviewRoute;
+    private Button btnVisionTest;
     private EditText etDestination;
     private TextView tvStatus;
 
@@ -121,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements
         btnSearch = findViewById(R.id.btn_search);
         btnStartNavigation = findViewById(R.id.btn_start_navigation);
         btnPreviewRoute = findViewById(R.id.btn_preview_route);
+        btnVisionTest = findViewById(R.id.btn_vision_test);
         etDestination = findViewById(R.id.et_destination);
         tvStatus = findViewById(R.id.tv_status);
 
@@ -161,6 +163,8 @@ public class MainActivity extends AppCompatActivity implements
         });
         btnStartNavigation.setOnClickListener(v -> toggleNavigation());
         btnPreviewRoute.setOnClickListener(v -> sendTripPreview());
+        btnVisionTest.setOnClickListener(v ->
+            startActivity(new android.content.Intent(this, VisionTestActivity.class)));
 
         etDestination.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -215,13 +219,6 @@ public class MainActivity extends AppCompatActivity implements
     private void loadSettings() {
         TextView tvAmapKey = findViewById(R.id.tv_amap_key);
         tvAmapKey.setText(getString(R.string.amap_api_key));
-
-        Button btnVisionTest = pageSettingsView.findViewById(R.id.btn_vision_test);
-        if (btnVisionTest != null) {
-            btnVisionTest.setOnClickListener(v -> {
-                startActivity(new android.content.Intent(this, VisionTestActivity.class));
-            });
-        }
     }
 
     private void hideKeyboard() {

@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">VoiceNavigation</string>
-    <string name="amap_api_key">c9da34e66d08cf5bac59a307276db812</string>
+    <string name="app_name">瞳心引航</string>
+    <string name="amap_api_key">a34821a2f7f1e4d74252d1819064b5a4</string>
     <string name="baidu_speech_app_id">7669507</string>
     <string name="baidu_speech_api_key">eT9Q9hXnZt0nFYdAmAsC6d69</string>
     <string name="baidu_speech_secret_key">jKemN6xBxVfMlscTeyLsovXG9PhWblSS</string>
