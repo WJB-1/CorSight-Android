@@ -30,6 +30,7 @@ class VisionTestActivity : AppCompatActivity() {
         private const val TAG = "VisionTest"
         private const val REQUEST_CODE_PERMISSIONS = 10
         private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private const val MODEL_INPUT_SIZE = 640
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,31 +75,42 @@ class VisionTestActivity : AppCompatActivity() {
     }
 
     private fun setupAnalyzer(imageAnalysis: ImageAnalysis) {
-        // 注册并激活通用检测工具
         ToolRegistry.register(GenericDetectionTool())
         ToolRegistry.activate(this, "generic_detection")
 
         imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
+            val rotation = imageProxy.imageInfo.rotationDegrees
             val bitmap = imageProxy.toBitmap()
-            val frame = Frame(bitmap, imageProxy.imageInfo.rotationDegrees)
+            val frame = Frame(bitmap, rotation)
 
             val result = ToolRegistry.activeTool.value?.process(frame)
 
             runOnUiThread {
                 when (result) {
                     is ToolResult.Detections -> {
-                        val top3 = result.items.take(3)
-                        val text = if (top3.isEmpty()) {
+                        val items = result.items
+                        val text = if (items.isEmpty()) {
                             "未检测到目标"
                         } else {
-                            top3.joinToString("\n") {
+                            items.take(3).joinToString("\n") {
                                 "${it.label}: ${(it.score * 100).toInt()}%"
                             }
                         }
                         binding.tvDetections.text = text
+
+                        // 更新检测框叠加层
+                        val previewW = binding.previewView.width
+                        val previewH = binding.previewView.height
+                        if (previewW > 0 && previewH > 0) {
+                            binding.overlayView.setTransformations(
+                                MODEL_INPUT_SIZE, previewW, previewH, rotation
+                            )
+                            binding.overlayView.updateDetections(items)
+                        }
                     }
                     else -> {
                         binding.tvDetections.text = "处理中..."
+                        binding.overlayView.updateDetections(emptyList())
                     }
                 }
             }
