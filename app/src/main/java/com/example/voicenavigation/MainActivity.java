@@ -69,7 +69,6 @@ public class MainActivity extends AppCompatActivity implements
     private Button btnSearch;
     private Button btnStartNavigation;
     private Button btnPreviewRoute;
-    private Button btnVisionTest;
     private EditText etDestination;
     private TextView tvStatus;
 
@@ -122,7 +121,6 @@ public class MainActivity extends AppCompatActivity implements
         btnSearch = findViewById(R.id.btn_search);
         btnStartNavigation = findViewById(R.id.btn_start_navigation);
         btnPreviewRoute = findViewById(R.id.btn_preview_route);
-        btnVisionTest = findViewById(R.id.btn_vision_test);
         etDestination = findViewById(R.id.et_destination);
         tvStatus = findViewById(R.id.tv_status);
 
@@ -163,8 +161,6 @@ public class MainActivity extends AppCompatActivity implements
         });
         btnStartNavigation.setOnClickListener(v -> toggleNavigation());
         btnPreviewRoute.setOnClickListener(v -> sendTripPreview());
-        btnVisionTest.setOnClickListener(v ->
-            startActivity(new android.content.Intent(this, VisionTestActivity.class)));
 
         etDestination.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -497,6 +493,7 @@ public class MainActivity extends AppCompatActivity implements
 
     /**
      * 发送行前预览请求：将用户当前定位和目的地发送至后端。
+     * 成功后展示弹窗并语音播报。
      */
     private void sendTripPreview() {
         if (selectedDestLatLng == null) {
@@ -520,8 +517,8 @@ public class MainActivity extends AppCompatActivity implements
                     @Override
                     public void onSuccess(String response) {
                         tvStatus.setText(R.string.preview_success);
-                        Toast.makeText(MainActivity.this, R.string.preview_success, Toast.LENGTH_LONG).show();
                         Log.d(TAG, "Trip preview response: " + response);
+                        parseAndShowPreviewResult(response);
                     }
 
                     @Override
@@ -532,6 +529,139 @@ public class MainActivity extends AppCompatActivity implements
                     }
                 }
         );
+    }
+
+    /**
+     * 解析预览响应并展示弹窗 + 语音播报
+     */
+    private void parseAndShowPreviewResult(String responseJson) {
+        try {
+            org.json.JSONObject root = new org.json.JSONObject(responseJson);
+            if (!root.optBoolean("success", false)) {
+                Toast.makeText(this, "预览数据异常", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            org.json.JSONObject data = root.optJSONObject("data");
+            if (data == null) {
+                Toast.makeText(this, "预览数据为空", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String broadcastText = data.optString("text", "");
+            org.json.JSONObject routeSummary = data.optJSONObject("route_summary");
+            org.json.JSONArray keyNodes = data.optJSONArray("key_nodes");
+
+            // 语音播报
+            if (!broadcastText.isEmpty()) {
+                speakForce("行前预览：" + broadcastText);
+            }
+
+            // 展示弹窗
+            showPreviewDialog(broadcastText, routeSummary, keyNodes);
+
+        } catch (org.json.JSONException e) {
+            Log.e(TAG, "Failed to parse preview response", e);
+            Toast.makeText(this, "解析预览数据失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 展示预览结果弹窗
+     */
+    private void showPreviewDialog(String broadcastText,
+                                    org.json.JSONObject routeSummary,
+                                    org.json.JSONArray keyNodes) {
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_preview_result, null);
+
+        TextView tvPreviewText = dialogView.findViewById(R.id.tv_preview_text);
+        TextView tvPreviewSummary = dialogView.findViewById(R.id.tv_preview_summary);
+        LinearLayout layoutKeyNodes = dialogView.findViewById(R.id.layout_key_nodes);
+        Button btnSpeak = dialogView.findViewById(R.id.btn_preview_speak);
+        Button btnClose = dialogView.findViewById(R.id.btn_preview_close);
+
+        // 播报文案
+        tvPreviewText.setText(broadcastText.isEmpty() ? "暂无播报文案" : broadcastText);
+
+        // 路线概要
+        String summaryText = "";
+        if (routeSummary != null) {
+            String totalDist = routeSummary.optString("total_distance", "未知");
+            String totalTime = routeSummary.optString("total_duration", "未知");
+            int nodeCount = routeSummary.optInt("key_node_count", 0);
+            summaryText = "总距离：" + totalDist + "\n预计时间：" + totalTime + "\n关键节点数：" + nodeCount;
+        }
+        tvPreviewSummary.setText(summaryText.isEmpty() ? "暂无概要信息" : summaryText);
+
+        // 关键节点
+        layoutKeyNodes.removeAllViews();
+        if (keyNodes != null && keyNodes.length() > 0) {
+            for (int i = 0; i < keyNodes.length(); i++) {
+                org.json.JSONObject node = keyNodes.optJSONObject(i);
+                if (node == null) continue;
+
+                String action = node.optString("action", "");
+                String assistantAction = node.optString("assistant_action", "");
+                String instruction = node.optString("instruction", "");
+                String direction = node.optString("relative_direction", "");
+
+                TextView tvNode = new TextView(this);
+                tvNode.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                tvNode.setTextSize(14);
+                tvNode.setTextColor(getResources().getColor(android.R.color.black));
+                tvNode.setPadding(0, 8, 0, 8);
+
+                StringBuilder nodeText = new StringBuilder();
+                nodeText.append("节点 ").append(i + 1).append("：");
+                if (!direction.isEmpty()) {
+                    nodeText.append(direction);
+                }
+                if (!action.isEmpty()) {
+                    nodeText.append(action);
+                }
+                if (!assistantAction.isEmpty()) {
+                    nodeText.append("（").append(assistantAction).append("）");
+                }
+                if (!instruction.isEmpty()) {
+                    nodeText.append("\n  ").append(instruction);
+                }
+
+                tvNode.setText(nodeText.toString());
+                layoutKeyNodes.addView(tvNode);
+
+                // 分隔线
+                if (i < keyNodes.length() - 1) {
+                    View divider = new View(this);
+                    divider.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                    divider.setBackgroundColor(0xFFE0E0E0);
+                    layoutKeyNodes.addView(divider);
+                }
+            }
+        } else {
+            TextView tvEmpty = new TextView(this);
+            tvEmpty.setText("暂无关键节点信息");
+            tvEmpty.setTextSize(14);
+            tvEmpty.setTextColor(getResources().getColor(android.R.color.darker_gray));
+            layoutKeyNodes.addView(tvEmpty);
+        }
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setCancelable(true)
+                .create();
+
+        btnSpeak.setOnClickListener(v -> {
+            if (!broadcastText.isEmpty()) {
+                speakForce("行前预览：" + broadcastText);
+            }
+        });
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     private void drawRoute(List<LatLng> points) {

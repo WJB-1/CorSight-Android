@@ -29,28 +29,21 @@ import okhttp3.Response;
  * service.sendPreviewRequest(currentLat, currentLng, destLat, destLng, new Callback() { ... });
  * </pre>
  *
- * <p><b>后端接口约定（请根据实际后端地址修改 {@link #BASE_URL}）：</b>
+ * <p><b>后端接口约定（请根据实际后端地址修改 {@link #DEFAULT_BASE_URL}）：</b>
  * <ul>
- *   <li>URL: POST /api/trip/preview</li>
+ *   <li>URL: POST /api/navigation/preview</li>
  *   <li>请求体 JSON:
  *     <pre>
  *     {
- *       "origin": {
- *         "latitude": 39.9042,
- *         "longitude": 116.4074
- *       },
- *       "destination": {
- *         "latitude": 39.9156,
- *         "longitude": 116.4112
- *       }
+ *       "origin": "116.4074,39.9042",
+ *       "destination": "116.4112,39.9156"
  *     }
  *     </pre>
  *   </li>
  *   <li>响应示例:
  *     <pre>
  *     {
- *       "code": 0,
- *       "message": "success",
+ *       "success": true,
  *       "data": { ... }
  *     }
  *     </pre>
@@ -62,7 +55,7 @@ public class TripPreviewService {
     private static final String TAG = "TripPreviewService";
 
     /** 后端服务基础地址，请根据实际部署环境修改 */
-    public static final String DEFAULT_BASE_URL = "https://your-backend-domain.com";
+    public static final String DEFAULT_BASE_URL = "https://unbuckled-scorpion-quarry.ngrok-free.dev";
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final long CONNECT_TIMEOUT_SECONDS = 15;
@@ -106,20 +99,13 @@ public class TripPreviewService {
     public void sendPreviewRequest(double originLat, double originLng,
                                     double destLat, double destLng,
                                     @NonNull PreviewCallback previewCallback) {
-        String url = baseUrl + "/api/trip/preview";
+        String url = baseUrl + "/api/navigation/preview";
 
         JSONObject requestBody = new JSONObject();
         try {
-            JSONObject origin = new JSONObject();
-            origin.put("latitude", originLat);
-            origin.put("longitude", originLng);
-
-            JSONObject destination = new JSONObject();
-            destination.put("latitude", destLat);
-            destination.put("longitude", destLng);
-
-            requestBody.put("origin", origin);
-            requestBody.put("destination", destination);
+            // 后端使用逗号分隔字符串格式："longitude,latitude"
+            requestBody.put("origin", originLng + "," + originLat);
+            requestBody.put("destination", destLng + "," + destLat);
         } catch (JSONException e) {
             Log.e(TAG, "Failed to build request JSON", e);
             mainHandler.post(() -> previewCallback.onError("请求参数构建失败: " + e.getMessage()));
