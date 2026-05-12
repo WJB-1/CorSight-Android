@@ -1,6 +1,7 @@
 package com.corsight.vision
 
 import android.content.Context
+import android.graphics.Bitmap
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,5 +36,16 @@ object ToolRegistry {
     fun releaseAll() {
         deactivate()
         tools.clear()
+    }
+
+    /** 从外部传入 Bitmap 进行检测，不依赖 CameraX */
+    fun processBitmap(
+        bitmap: Bitmap,
+        rotationDegrees: Int = 0,
+        source: String = "external"
+    ): ToolResult {
+        return activeTool.value?.process(
+            Frame(bitmap, rotationDegrees, source = source)
+        ) ?: ToolResult.Nothing
     }
 }
