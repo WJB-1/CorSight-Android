@@ -24,11 +24,9 @@ class VisionTestActivity : AppCompatActivity() {
     private lateinit var binding: ActivityVisionTestBinding
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private val cameraExecutor = Executors.newSingleThreadExecutor()
+    private val inferenceExecutor = Executors.newSingleThreadExecutor()
 
     private var currentSource: ImageSource? = null
-    private val networkSource by lazy {
-        NetworkSource("192.168.1.100", 8080)
-    }
     private val cameraSource by lazy {
         CameraSource(this, this, binding.previewView, cameraExecutor)
     }
@@ -50,7 +48,6 @@ class VisionTestActivity : AppCompatActivity() {
 
         setupUI()
 
-        // 默认启动相机
         if (cameraSource.allPermissionsGranted()) {
             switchToSource(cameraSource)
         } else {
@@ -89,17 +86,14 @@ class VisionTestActivity : AppCompatActivity() {
     }
 
     private fun switchToSource(source: ImageSource) {
-        // 停止当前源
         currentSource?.stop()
         currentSource = null
 
-        // 切换预览控件可见性
         binding.previewView.visibility =
             if (source is CameraSource) android.view.View.VISIBLE else android.view.View.GONE
         binding.ivNetwork.visibility =
             if (source !is CameraSource) android.view.View.VISIBLE else android.view.View.GONE
 
-        // 切换按钮高亮
         binding.btnSourceCamera.setBackgroundColor(
             ContextCompat.getColor(this,
                 if (source is CameraSource) R.color.purple_700 else R.color.gray))
@@ -107,8 +101,7 @@ class VisionTestActivity : AppCompatActivity() {
             ContextCompat.getColor(this,
                 if (source !is CameraSource) R.color.purple_700 else R.color.gray))
 
-        // 启动新源
-        val ok = source.start { bitmap, rotation -> processFrame(bitmap, rotation) }
+        val ok = source.start { bitmap, rotation -> processFrame(bitmap, rotation, source) }
         if (ok) {
             currentSource = source
             binding.tvDetections.text = "源已切换: ${source.displayName}"
@@ -117,40 +110,54 @@ class VisionTestActivity : AppCompatActivity() {
         }
     }
 
-    private fun processFrame(bitmap: Bitmap, rotationDegrees: Int) {
-        val frame = Frame(bitmap, rotationDegrees)
-        val result = ToolRegistry.activeTool.value?.process(frame)
+    /**
+     * 统一帧处理入口。
+     * 相机：直接走检测管线（CameraX 的 analyzer 已在后台线程）。
+     * 网络流：先显示原图，再在后台线程跑推理，结果回来叠加。
+     */
+    private fun processFrame(bitmap: Bitmap, rotationDegrees: Int, source: ImageSource) {
+        if (source is CameraSource) {
+            // CameraX 已经在后台线程，直接推理
+            val frame = Frame(bitmap, rotationDegrees)
+            val result = ToolRegistry.activeTool.value?.process(frame)
+            runOnUiThread { renderResult(result, bitmap, rotationDegrees) }
+        } else {
+            // 网络流：先显示原图，再异步推理
+            runOnUiThread { binding.ivNetwork.setImageBitmap(bitmap) }
 
-        runOnUiThread {
-            when (result) {
-                is ToolResult.Detections -> {
-                    val items = result.items
-                    binding.tvDetections.text = if (items.isEmpty()) {
-                        "未检测到目标"
-                    } else {
-                        items.take(3).joinToString("\n") {
-                            "${it.label}: ${(it.score * 100).toInt()}%"
-                        }
-                    }
+            inferenceExecutor.execute {
+                val frame = Frame(bitmap, rotationDegrees)
+                val result = ToolRegistry.activeTool.value?.process(frame)
+                runOnUiThread { renderResult(result, bitmap, rotationDegrees) }
+            }
+        }
+    }
 
-                    // 网络流预览显示原图（非 CameraSource 时）
-                    if (currentSource !is CameraSource) {
-                        binding.ivNetwork.setImageBitmap(bitmap)
-                    }
-
-                    val previewW = binding.overlayView.width
-                    val previewH = binding.overlayView.height
-                    if (previewW > 0 && previewH > 0) {
-                        binding.overlayView.setTransformations(
-                            MODEL_INPUT_SIZE, previewW, previewH, rotationDegrees
-                        )
-                        binding.overlayView.updateDetections(items)
+    /** 渲染检测结果到 UI（必须在主线程调用） */
+    private fun renderResult(result: ToolResult?, bitmap: Bitmap, rotationDegrees: Int) {
+        when (result) {
+            is ToolResult.Detections -> {
+                val items = result.items
+                binding.tvDetections.text = if (items.isEmpty()) {
+                    "未检测到目标"
+                } else {
+                    items.take(3).joinToString("\n") {
+                        "${it.label}: ${(it.score * 100).toInt()}%"
                     }
                 }
-                else -> {
-                    binding.tvDetections.text = "处理中..."
-                    binding.overlayView.updateDetections(emptyList())
+
+                val previewW = binding.overlayView.width
+                val previewH = binding.overlayView.height
+                if (previewW > 0 && previewH > 0) {
+                    binding.overlayView.setTransformations(
+                        MODEL_INPUT_SIZE, previewW, previewH, rotationDegrees
+                    )
+                    binding.overlayView.updateDetections(items)
                 }
+            }
+            else -> {
+                binding.tvDetections.text = "处理中..."
+                binding.overlayView.updateDetections(emptyList())
             }
         }
     }
@@ -175,6 +182,7 @@ class VisionTestActivity : AppCompatActivity() {
         super.onDestroy()
         currentSource?.stop()
         cameraExecutor.shutdown()
+        inferenceExecutor.shutdown()
         ToolRegistry.releaseAll()
         ModelRegistry.releaseAll()
         scope.cancel()

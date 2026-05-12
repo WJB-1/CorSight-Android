@@ -2,6 +2,8 @@ package com.example.voicenavigation
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.corsight.vision.ImageSource
 import java.io.DataInputStream
@@ -18,6 +20,8 @@ class NetworkSource(
     private var socket: Socket? = null
     private var receiveThread: Thread? = null
     @Volatile private var running = false
+
+    /** 收到帧后回调：先显示原图，不阻塞 */
     private var onFrame: ((Bitmap, Int) -> Unit)? = null
 
     override fun start(onFrame: (Bitmap, Int) -> Unit): Boolean {
