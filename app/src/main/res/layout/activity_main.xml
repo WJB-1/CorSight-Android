@@ -19,101 +19,87 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <!-- 顶部：状态 + 语音按钮 -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:padding="16dp"
-                android:orientation="vertical"
-                android:background="?attr/colorPrimary">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="?attr/colorPrimary"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="8dp">
 
                 <TextView
                     android:id="@+id/tv_status"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/speech_hint"
                     android:textColor="@color/white"
-                    android:textSize="16sp"
-                    android:gravity="center"
-                    android:layout_marginBottom="8dp"/>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
-
-                    <EditText
-                        android:id="@+id/et_destination"
-                        android:layout_width="0dp"
-                        android:layout_height="56dp"
-                        android:layout_weight="1"
-                        android:hint="@string/destination_hint"
-                        android:imeOptions="actionSearch"
-                        android:singleLine="true"
-                        android:paddingHorizontal="16dp"
-                        android:background="@drawable/edit_text_background"
-                        android:textColor="@color/black"
-                        android:textColorHint="@color/gray"
-                        android:textSize="16sp"/>
-
-                    <Button
-                        android:id="@+id/btn_search"
-                        android:layout_width="wrap_content"
-                        android:layout_height="56dp"
-                        android:text="搜索"
-                        android:textColor="@color/white"
-                        android:textSize="14sp"
-                        android:paddingHorizontal="20dp"
-                        android:background="@color/orange"
-                        android:layout_marginStart="8dp"/>
-
-                    <Button
-                        android:id="@+id/btn_voice_input"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:background="@color/purple_500"
-                        android:drawableTop="@drawable/ic_microphone"
-                        android:contentDescription="@string/speech_hint"
-                        android:layout_marginStart="8dp"/>
-
-                    <Button
-                        android:id="@+id/btn_start_navigation"
-                        android:layout_width="wrap_content"
-                        android:layout_height="56dp"
-                        android:text="@string/start_navigation"
-                        android:textColor="@color/white"
-                        android:background="@color/teal_200"
-                        android:textSize="14sp"
-                        android:paddingHorizontal="24dp"
-                        android:layout_marginStart="8dp"/>
-                </LinearLayout>
+                    android:textSize="15sp"
+                    android:singleLine="true"
+                    android:ellipsize="end" />
 
                 <Button
-                    android:id="@+id/btn_preview_route"
-                    android:layout_width="match_parent"
+                    android:id="@+id/btn_voice_input"
+                    android:layout_width="48dp"
                     android:layout_height="48dp"
-                    android:text="@string/preview_route"
-                    android:textColor="@color/white"
                     android:background="@color/purple_500"
-                    android:textSize="14sp"
-                    android:layout_marginTop="8dp"
-                    android:paddingHorizontal="16dp"/>
+                    android:drawableTop="@drawable/ic_microphone"
+                    android:contentDescription="@string/speech_hint"
+                    android:layout_marginStart="8dp" />
             </LinearLayout>
 
+            <!-- 搜索行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:paddingHorizontal="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="4dp">
+
+                <EditText
+                    android:id="@+id/et_destination"
+                    android:layout_width="0dp"
+                    android:layout_height="42dp"
+                    android:layout_weight="1"
+                    android:hint="@string/destination_hint"
+                    android:imeOptions="actionSearch"
+                    android:singleLine="true"
+                    android:paddingHorizontal="12dp"
+                    android:background="@drawable/edit_text_background"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/gray"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/btn_search"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:text="搜索"
+                    android:textColor="@color/white"
+                    android:textSize="13sp"
+                    android:paddingHorizontal="16dp"
+                    android:background="@color/orange"
+                    android:layout_marginStart="6dp" />
+            </LinearLayout>
+
+            <!-- 地图面板（压缩高度） -->
             <com.amap.api.maps.MapView
                 android:id="@+id/map"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1"/>
+                android:layout_weight="0.35" />
 
+            <!-- 导航信息（导航时显示） -->
             <LinearLayout
                 android:id="@+id/layout_nav_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="12dp"
+                android:padding="10dp"
                 android:background="#CCFFFFFF"
                 android:visibility="gone">
 
@@ -127,21 +113,21 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="20sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
-                        android:text="0m"/>
+                        android:text="0m" />
 
                     <TextView
                         android:id="@+id/tv_nav_duration"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:textSize="20sp"
+                        android:textSize="18sp"
                         android:textStyle="bold"
                         android:textColor="@color/black"
                         android:text="0分钟"
-                        android:gravity="end"/>
+                        android:gravity="end" />
                 </LinearLayout>
 
                 <TextView
@@ -151,8 +137,61 @@
                     android:textSize="14sp"
                     android:textColor="@color/gray"
                     android:text=""
-                    android:layout_marginTop="4dp"/>
+                    android:layout_marginTop="4dp" />
             </LinearLayout>
+
+            <!-- 底部快速操作区 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <Button
+                        android:id="@+id/btn_start_navigation"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="@string/start_navigation"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:background="@color/teal_200"
+                        android:paddingHorizontal="8dp" />
+
+                    <Button
+                        android:id="@+id/btn_preview_route"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:text="@string/preview_route"
+                        android:textColor="@color/white"
+                        android:textSize="14sp"
+                        android:background="@color/purple_500"
+                        android:paddingHorizontal="8dp"
+                        android:layout_marginStart="8dp" />
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_vision_test"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="  🛡️  视觉避障检测"
+                    android:textColor="@color/white"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:background="@color/vision_green"
+                    android:drawableStart="@drawable/ic_vision"
+                    android:drawablePadding="8dp"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <include
@@ -160,14 +199,14 @@
             layout="@layout/page_history"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
         <include
             android:id="@+id/page_settings"
             layout="@layout/page_settings"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
     </FrameLayout>
 
@@ -179,6 +218,6 @@
         app:menu="@menu/menu_main_bottom"
         app:itemIconTint="@color/bottom_nav_color"
         app:itemTextColor="@color/bottom_nav_color"
-        app:labelVisibilityMode="labeled"/>
+        app:labelVisibilityMode="labeled" />
 
 </LinearLayout>

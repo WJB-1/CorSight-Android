@@ -7,4 +7,6 @@
     <color name="gray">#FF9E9E9E</color>
     <color name="light_gray">#FFF5F5F5</color>
     <color name="orange">#FF9800</color>
+    <color name="vision_green">#4CAF50</color>
+    <color name="semi_transparent">#80000000</color>
 </resources>
