@@ -2,8 +2,6 @@ package com.example.voicenavigation
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.corsight.vision.ImageSource
 import java.io.DataInputStream
@@ -19,7 +17,6 @@ class NetworkSource(
 
     private var socket: Socket? = null
     private var receiveThread: Thread? = null
-    private val uiHandler = Handler(Looper.getMainLooper())
     @Volatile private var running = false
     private var onFrame: ((Bitmap, Int) -> Unit)? = null
 
@@ -80,9 +77,7 @@ class NetworkSource(
                 }
                 if (read == len) {
                     val bitmap = BitmapFactory.decodeByteArray(data, 0, len)
-                    bitmap?.let {
-                        uiHandler.post { onFrame?.invoke(it, 0) }
-                    }
+                    bitmap?.let { onFrame?.invoke(it, 0) }
                 }
             } catch (e: Exception) {
                 Log.e("NetworkSource", "Receive error", e)
