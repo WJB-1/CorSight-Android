@@ -5,6 +5,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -240,6 +241,15 @@ public class MainActivity extends AppCompatActivity implements
             tripPreviewService.setBaseUrl(url);
 
             Toast.makeText(this, "服务器地址已保存", Toast.LENGTH_SHORT).show();
+        });
+
+        // 外设开关
+        SwitchCompat switchExternal = pageSettingsView.findViewById(R.id.switch_use_external_device);
+        boolean useExternal = prefs.getBoolean("use_external_device", false);
+        switchExternal.setChecked(useExternal);
+        switchExternal.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("use_external_device", isChecked).apply();
+            Toast.makeText(this, isChecked ? "已开启外设优先" : "已关闭外设优先", Toast.LENGTH_SHORT).show();
         });
     }
 

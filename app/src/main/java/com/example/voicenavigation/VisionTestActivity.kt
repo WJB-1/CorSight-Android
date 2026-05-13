@@ -1,8 +1,10 @@
 package com.example.voicenavigation
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -18,8 +20,11 @@ import com.corsight.vision.ToolResult
 import com.corsight.vision.tools.GenericDetectionTool
 import com.example.voicenavigation.databinding.ActivityVisionTestBinding
 import kotlinx.coroutines.*
-import java.io.BufferedReader
-import java.io.FileReader
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetSocketAddress
+import java.net.Socket
+import java.net.SocketTimeoutException
 import java.util.concurrent.Executors
 
 class VisionTestActivity : AppCompatActivity() {
@@ -33,6 +38,12 @@ class VisionTestActivity : AppCompatActivity() {
     private val cameraSource by lazy {
         CameraSource(this, this, binding.previewView, cameraExecutor)
     }
+
+    // UDP 自动发现相关
+    private var udpSocket: DatagramSocket? = null
+    private var udpReceiveThread: Thread? = null
+    private val UDP_DISCOVERY_PORT = 8888          // 与 ESP32 广播端口一致
+    private val AUTO_DISCOVERY_TIMEOUT_MS = 5000L  // 等待广播超时时间
 
     companion object {
         private const val TAG = "VisionTest"
@@ -52,6 +63,24 @@ class VisionTestActivity : AppCompatActivity() {
 
         setupUI()
 
+        val useExternal = getSharedPreferences("corsight_config", MODE_PRIVATE)
+            .getBoolean("use_external_device", false)
+
+        if (useExternal) {
+            // 优先尝试外设：启动 UDP 发现，超时后退回相机
+            binding.tvDetections.text = "正在寻找外设..."
+            startUdpAutoDiscovery(onFound = { ip ->
+                connectToNetworkSource(ip, DEFAULT_STREAM_PORT)
+            }, onTimeout = {
+                Toast.makeText(this, "未找到外设，退回本机相机", Toast.LENGTH_SHORT).show()
+                startCameraOrRequestPermission()
+            })
+        } else {
+            startCameraOrRequestPermission()
+        }
+    }
+
+    private fun startCameraOrRequestPermission() {
         if (cameraSource.allPermissionsGranted()) {
             switchToSource(cameraSource)
         } else {
@@ -68,13 +97,17 @@ class VisionTestActivity : AppCompatActivity() {
             }
         }
 
-        // 点击网络流按钮：先展开配置，如果已展开则直接扫描连接
+        // 网络流按钮：点击时展开配置面板，并同时启动自动发现（不阻塞UI）
         binding.btnSourceNetwork.setOnClickListener {
-            if (binding.layoutNetworkConfig.visibility == View.VISIBLE) {
-                scanAndConnect()
-            } else {
+            if (binding.layoutNetworkConfig.visibility != View.VISIBLE) {
                 binding.layoutNetworkConfig.visibility = View.VISIBLE
             }
+            startUdpAutoDiscovery(
+                onFound = { ip -> connectToNetworkSource(ip, DEFAULT_STREAM_PORT) },
+                onTimeout = {
+                    Toast.makeText(this, "未找到外设，请手动输入 IP", Toast.LENGTH_SHORT).show()
+                }
+            )
         }
 
         binding.btnConnectStream.setOnClickListener {
@@ -91,60 +124,118 @@ class VisionTestActivity : AppCompatActivity() {
         }
     }
 
-    /** 读取 /proc/net/arp 扫描热点连接的设备 IP */
-    private fun scanAndConnect() {
-        binding.progressConnecting.visibility = View.VISIBLE
-        binding.tvDetections.text = "正在扫描热点设备..."
+    // ==================== UDP 自动发现 ====================
 
-        scope.launch(Dispatchers.IO) {
-            val candidates = readArpTable()
-            withContext(Dispatchers.Main) {
-                binding.progressConnecting.visibility = View.GONE
-                if (candidates.isEmpty()) {
-                    binding.tvDetections.text = "未找到热点设备"
-                    Toast.makeText(this@VisionTestActivity, "未找到连接的设备，请手动输入 IP", Toast.LENGTH_LONG).show()
-                } else {
-                    val ip = candidates.first()
-                    binding.etStreamIp.setText(ip)
-                    binding.tvDetections.text = "发现设备: $ip，正在连接..."
-                    connectToNetworkSource(ip, DEFAULT_STREAM_PORT)
-                }
-            }
+    /**
+     * 启动 UDP 广播监听，等待 ESP32 发送身份消息。
+     * @param onFound 发现设备后的回调（在主线程执行）
+     * @param onTimeout 超时后的回调（在主线程执行）
+     */
+    private fun startUdpAutoDiscovery(
+        onFound: ((String) -> Unit)? = null,
+        onTimeout: (() -> Unit)? = null
+    ) {
+        if (udpReceiveThread != null && udpReceiveThread!!.isAlive) {
+            Toast.makeText(this, "正在自动发现中，请稍候...", Toast.LENGTH_SHORT).show()
+            return
         }
-    }
 
-    /** 解析 /proc/net/arp，返回除本机网关外的活跃设备 IP 列表 */
-    private fun readArpTable(): List<String> {
-        val result = mutableListOf<String>()
-        try {
-            BufferedReader(FileReader("/proc/net/arp")).use { reader ->
-                reader.readLine() // skip header
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    val parts = line!!.trim().split(Regex("\\s+"))
-                    if (parts.size >= 4) {
-                        val ip = parts[0]
-                        val hwType = parts[1]
-                        val flags = parts[2]
-                        val mac = parts[3]
-                        // flags 0x2 = complete entry; skip 00:00:00:00:00:00
-                        if (flags == "0x2" && mac != "00:00:00:00:00:00" && ip != "0.0.0.0" && ip != "192.168.43.1") {
-                            result.add(ip)
+        binding.progressConnecting.visibility = View.VISIBLE
+        binding.tvDetections.text = "等待设备广播..."
+
+        udpReceiveThread = Thread {
+            try {
+                udpSocket = DatagramSocket(UDP_DISCOVERY_PORT).apply {
+                    soTimeout = 1000
+                }
+                val buffer = ByteArray(512)
+                val packet = DatagramPacket(buffer, buffer.size)
+
+                val startTime = System.currentTimeMillis()
+                var found = false
+
+                while (!found && System.currentTimeMillis() - startTime < AUTO_DISCOVERY_TIMEOUT_MS) {
+                    try {
+                        udpSocket?.receive(packet)
+                        val msg = String(packet.data, 0, packet.length)
+                        Log.d(TAG, "UDP 收到广播: $msg")
+
+                        val ip = extractIpFromMessage(msg)
+                        if (ip != null) {
+                            runOnUiThread {
+                                binding.progressConnecting.visibility = View.GONE
+                                binding.tvDetections.text = "发现设备: $ip"
+                                binding.etStreamIp.setText(ip)
+                                if (onFound != null) {
+                                    onFound(ip)
+                                } else {
+                                    connectToNetworkSource(ip, DEFAULT_STREAM_PORT)
+                                }
+                            }
+                            found = true
+                        }
+                    } catch (e: SocketTimeoutException) {
+                        // 超时继续下一次循环
+                    }
+                }
+
+                if (!found) {
+                    runOnUiThread {
+                        binding.progressConnecting.visibility = View.GONE
+                        binding.tvDetections.text = "自动发现超时"
+                        if (onTimeout != null) {
+                            onTimeout()
+                        } else {
+                            Toast.makeText(this@VisionTestActivity,
+                                "未收到设备广播，请确保 ESP32 已连接热点并正在发送广播", Toast.LENGTH_LONG).show()
                         }
                     }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "UDP 接收错误", e)
+                runOnUiThread {
+                    binding.progressConnecting.visibility = View.GONE
+                    binding.tvDetections.text = "自动发现失败"
+                    if (onTimeout != null) {
+                        onTimeout()
+                    } else {
+                        Toast.makeText(this@VisionTestActivity, "UDP 监听失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } finally {
+                closeUdpSocket()
+                udpReceiveThread = null
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to read ARP table", e)
         }
-        return result
+        udpReceiveThread?.start()
     }
+
+    /**
+     * 解析广播消息中的 IP 地址
+     * 支持格式: "ESP32_CAM IP=192.168.43.10 TCP=8080"
+     */
+    private fun extractIpFromMessage(message: String): String? {
+        val ipPattern = Regex("""IP=(\d+\.\d+\.\d+\.\d+)""")
+        val match = ipPattern.find(message)
+        return match?.groupValues?.get(1)
+    }
+
+    private fun closeUdpSocket() {
+        try {
+            udpSocket?.close()
+            udpSocket = null
+        } catch (e: Exception) { }
+    }
+
+    // ==================== 网络流连接 ====================
 
     private fun connectToNetworkSource(ip: String, port: Int) {
         val newSource = NetworkSource(ip, port)
         switchToSource(newSource)
         binding.layoutNetworkConfig.visibility = View.GONE
     }
+
+    // ==================== 源切换 ====================
 
     private fun switchToSource(source: ImageSource) {
         currentSource?.stop()
@@ -170,6 +261,8 @@ class VisionTestActivity : AppCompatActivity() {
             Toast.makeText(this, "启动 ${source.displayName} 失败", Toast.LENGTH_SHORT).show()
         }
     }
+
+    // ==================== 帧处理 ====================
 
     /**
      * 统一帧处理入口。
@@ -221,6 +314,8 @@ class VisionTestActivity : AppCompatActivity() {
         }
     }
 
+    // ==================== 权限与生命周期 ====================
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -245,5 +340,7 @@ class VisionTestActivity : AppCompatActivity() {
         ToolRegistry.releaseAll()
         ModelRegistry.releaseAll()
         scope.cancel()
+        closeUdpSocket()
+        udpReceiveThread?.interrupt()
     }
 }
