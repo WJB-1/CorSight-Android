@@ -319,6 +319,7 @@ class DataCollectionActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             var successCount = 0
+            var lastErrorMsg = ""
             for (task in tasks) {
                 val ok = uploadService.uploadTask(task)
                 if (ok) {
@@ -326,11 +327,16 @@ class DataCollectionActivity : AppCompatActivity() {
                     successCount++
                 } else {
                     taskStorage.updateStatus(task.pointId, "failed")
+                    lastErrorMsg = uploadService.lastError
                 }
             }
             withContext(Dispatchers.Main) {
-                Toast.makeText(this@DataCollectionActivity,
-                    "上传 $successCount/${tasks.size}", Toast.LENGTH_LONG).show()
+                val msg = if (successCount == tasks.size) {
+                    "上传成功 $successCount/${tasks.size}"
+                } else {
+                    "上传 $successCount/${tasks.size}, 失败: $lastErrorMsg"
+                }
+                Toast.makeText(this@DataCollectionActivity, msg, Toast.LENGTH_LONG).show()
                 updateSyncButton()
             }
         }
