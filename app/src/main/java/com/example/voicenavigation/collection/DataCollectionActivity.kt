@@ -1,10 +1,10 @@
 package com.example.voicenavigation.collection
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.location.Location
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Button
@@ -137,6 +137,8 @@ class DataCollectionActivity : AppCompatActivity() {
         tvCoords.text = String.format(Locale.US, "%.6f, %.6f", currentLat, currentLon)
     }
 
+    private var lastAlignedState = false
+
     private fun initCompass() {
         compassService.start { heading, direction, isAligned ->
             tvHeading.text = "${heading.toInt()}°"
@@ -148,15 +150,32 @@ class DataCollectionActivity : AppCompatActivity() {
                 tvAligned.setTextColor(Color.parseColor("#4CAF50"))
                 btnCapture.isEnabled = true
                 btnCapture.setBackgroundColor(ContextCompat.getColor(this, R.color.vision_green))
+
+                // 首次进入对准状态时触发振动
+                if (!lastAlignedState) {
+                    vibrate()
+                    lastAlignedState = true
+                }
             } else {
                 tvAligned.text = ""
                 btnCapture.isEnabled = false
                 btnCapture.setBackgroundColor(ContextCompat.getColor(this, R.color.gray))
+                lastAlignedState = false
             }
 
             btnCapture.text = "拍摄 ${targetDirection} 方向"
         }
         compassService.setTargetDirection(targetDirection)
+    }
+
+    private fun vibrate() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(200, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(200)
+        }
     }
 
     private fun takePhoto() {

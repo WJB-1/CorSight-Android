@@ -24,8 +24,12 @@ class CompassService(context: Context) : SensorEventListener {
 
     private var lastHeading: Float? = null
     private var lastCallbackTime = 0L
-    private val callbackInterval = 100L
-    private val alignTolerance = 15f
+    private val callbackInterval = 200L          // 从 100ms 提高到 200ms，降低 UI 刷新频率
+    private val alignTolerance = 20f             // 从 15° 放宽到 20°，更容易对准
+    private val smoothingFactor = 0.3f           // 低通滤波系数，越小越平滑
+    private var smoothedHeading: Float? = null
+    private var alignedStableCount = 0
+    private val alignedStableThreshold = 3       // 连续 3 次对准才认为真正对准
 
     val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
     var isRunning = false
@@ -69,14 +73,34 @@ class CompassService(context: Context) : SensorEventListener {
         }
         lastHeading = heading
 
+        // 低通滤波：平滑角度变化
+        smoothedHeading = if (smoothedHeading == null) {
+            heading
+        } else {
+            var diff = heading - smoothedHeading!!
+            if (diff > 180) diff -= 360
+            if (diff < -180) diff += 360
+            (smoothedHeading!! + smoothingFactor * diff + 360) % 360
+        }
+        val smoothHeading = smoothedHeading!!
+
         // 节流
         val now = System.currentTimeMillis()
         if (now - lastCallbackTime < callbackInterval) return
         lastCallbackTime = now
 
-        val direction = getDirection(heading)
-        val aligned = isAligned(targetDirection, heading)
-        callback?.invoke(heading, direction, aligned)
+        val direction = getDirection(smoothHeading)
+        val rawAligned = isAligned(targetDirection, smoothHeading)
+
+        // 稳定计数：连续多次对准才算真正对准，避免抖动
+        if (rawAligned) {
+            alignedStableCount++
+        } else {
+            alignedStableCount = 0
+        }
+        val aligned = alignedStableCount >= alignedStableThreshold
+
+        callback?.invoke(smoothHeading, direction, aligned)
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
