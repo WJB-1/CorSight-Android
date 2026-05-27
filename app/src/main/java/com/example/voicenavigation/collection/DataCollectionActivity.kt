@@ -16,10 +16,11 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.amap.api.location.AMapLocationClient
+import com.amap.api.location.AMapLocationClientOption
+import com.amap.api.location.AMapLocationListener
 import com.example.voicenavigation.R
 import com.example.voicenavigation.network.TripPreviewService
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
@@ -34,7 +35,7 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private lateinit var compassService: CompassService
     private lateinit var taskStorage: TaskStorage
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private var locationClient: AMapLocationClient? = null
 
     private var currentLat = 0.0
     private var currentLon = 0.0
@@ -62,7 +63,6 @@ class DataCollectionActivity : AppCompatActivity() {
 
         compassService = CompassService(this)
         taskStorage = TaskStorage(this)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         initViews()
         initCaptureStatus()
@@ -106,11 +106,20 @@ class DataCollectionActivity : AppCompatActivity() {
     }
 
     private fun initLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) return
-
-        fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-            location?.let { updateLocation(it) }
+        try {
+            locationClient = AMapLocationClient(this)
+            val option = AMapLocationClientOption()
+            option.locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
+            option.isOnceLocation = true
+            locationClient?.setLocationOption(option)
+            locationClient?.setLocationListener(AMapLocationListener { location ->
+                if (location != null && location.errorCode == 0) {
+                    updateLocation(location.latitude, location.longitude)
+                }
+            })
+            locationClient?.startLocation()
+        } catch (e: Exception) {
+            Toast.makeText(this, "定位初始化失败", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -119,9 +128,9 @@ class DataCollectionActivity : AppCompatActivity() {
         initLocation()
     }
 
-    private fun updateLocation(location: Location) {
-        currentLat = location.latitude
-        currentLon = location.longitude
+    private fun updateLocation(lat: Double, lon: Double) {
+        currentLat = lat
+        currentLon = lon
         chunkId = GridUtils.getChunkId(currentLat, currentLon)
 
         tvChunkId.text = chunkId
@@ -169,7 +178,6 @@ class DataCollectionActivity : AppCompatActivity() {
         if (requestCode == CAMERA_REQUEST && resultCode == RESULT_OK) {
             val bitmap = data?.extras?.get("data") as? android.graphics.Bitmap ?: return
 
-            // Save to app files dir
             val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
             FileOutputStream(file).use { out ->
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, out)
@@ -180,7 +188,7 @@ class DataCollectionActivity : AppCompatActivity() {
             updateGridColors()
 
             if (imagePaths.size == 8) {
-                Toast.makeText(this, "🎉 一组采集完成", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "一组采集完成", Toast.LENGTH_LONG).show()
                 saveCaptureTask()
             } else {
                 switchTarget()
@@ -246,7 +254,6 @@ class DataCollectionActivity : AppCompatActivity() {
         taskStorage.saveTask(task)
         Toast.makeText(this, "任务已保存", Toast.LENGTH_SHORT).show()
 
-        // Reset
         imagePaths.clear()
         initCaptureStatus()
         targetDirection = "N"
@@ -354,5 +361,10 @@ class DataCollectionActivity : AppCompatActivity() {
         if (::compassService.isInitialized) {
             compassService.stop()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationClient?.onDestroy()
     }
 }
