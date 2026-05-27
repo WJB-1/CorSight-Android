@@ -25,7 +25,7 @@ class CompassService(context: Context) : SensorEventListener {
     private var lastHeading: Float? = null
     private var lastCallbackTime = 0L
     private val callbackInterval = 100L
-    private val alignTolerance = 5f
+    private val alignTolerance = 8f
     private val smoothingFactor = 0.1f
     private var smoothedHeading: Float? = null
 
