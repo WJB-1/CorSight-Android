@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements
     private Button btnStartNavigation;
     private Button btnPreviewRoute;
     private Button btnVisionTest;
+    private Button btnStopTts;
     private EditText etDestination;
     private TextView tvStatus;
 
@@ -125,6 +126,7 @@ public class MainActivity extends AppCompatActivity implements
         btnStartNavigation = findViewById(R.id.btn_start_navigation);
         btnPreviewRoute = findViewById(R.id.btn_preview_route);
         btnVisionTest = findViewById(R.id.btn_vision_test);
+        btnStopTts = findViewById(R.id.btn_stop_tts);
         etDestination = findViewById(R.id.et_destination);
         tvStatus = findViewById(R.id.tv_status);
 
@@ -167,6 +169,12 @@ public class MainActivity extends AppCompatActivity implements
         btnPreviewRoute.setOnClickListener(v -> sendTripPreview());
         btnVisionTest.setOnClickListener(v ->
             startActivity(new android.content.Intent(this, VisionTestActivity.class)));
+        btnStopTts.setOnClickListener(v -> {
+            if (baiduTts != null) {
+                baiduTts.stopPlayback();
+                btnStopTts.setVisibility(View.GONE);
+            }
+        });
 
         etDestination.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -308,6 +316,7 @@ public class MainActivity extends AppCompatActivity implements
         if (baiduTts != null) {
             Log.d(TAG, "TTS speak: " + text);
             baiduTts.speak(text);
+            showStopTtsButton();
         }
     }
 
@@ -316,7 +325,16 @@ public class MainActivity extends AppCompatActivity implements
         if (baiduTts != null) {
             Log.d(TAG, "TTS speakForce: " + text);
             baiduTts.speak(text);
+            showStopTtsButton();
         }
+    }
+
+    private void showStopTtsButton() {
+        runOnUiThread(() -> {
+            if (btnStopTts != null) {
+                btnStopTts.setVisibility(View.VISIBLE);
+            }
+        });
     }
 
     private void initMap() {
