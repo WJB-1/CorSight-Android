@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- 区块信息 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="当前区块"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/tvChunkId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="未计算"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvCoords"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0.000000, 0.000000"
+                android:textSize="12sp"
+                android:textColor="@color/gray"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <!-- 罗盘引导 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/edit_text_background"
+            android:padding="16dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="采集引导"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black" />
+
+            <TextView
+                android:id="@+id/tvHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0°"
+                android:textSize="48sp"
+                android:textStyle="bold"
+                android:textColor="@color/purple_700"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/tvCurrentDir"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="N"
+                android:textSize="24sp"
+                android:textColor="@color/black" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="请对准方向："
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvTargetDir"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="N"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/orange" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvAligned"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="@color/vision_green"
+                android:layout_marginTop="4dp" />
+
+            <Button
+                android:id="@+id/btnCapture"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="拍摄 N 方向"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:background="@color/gray"
+                android:layout_marginTop="12dp"
+                android:enabled="false" />
+        </LinearLayout>
+
+        <!-- 拍摄进度 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="拍摄进度"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black" />
+
+            <GridLayout
+                android:id="@+id/gridDirections"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="4"
+                android:layout_marginTop="8dp">
+
+                <TextView android:text="N"  android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="NE" android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="E"  android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="SE" android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="S"  android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="SW" android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="W"  android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+                <TextView android:text="NW" android:layout_width="0dp" android:layout_height="40dp" android:layout_columnWeight="1" android:gravity="center" android:background="#EEEEEE" android:layout_margin="2dp" />
+            </GridLayout>
+        </LinearLayout>
+
+        <!-- 场景描述 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="场景描述"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/black" />
+
+            <EditText
+                android:id="@+id/etSceneDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="例如：体育中心地铁站D1口盲道分叉"
+                android:textSize="14sp"
+                android:maxLength="50"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+
+        <!-- 同步 -->
+        <Button
+            android:id="@+id/btnSync"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="同步到云端 (0)"
+            android:textColor="@color/white"
+            android:background="@color/teal_200"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnViewTasks"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="查看本地任务"
+            android:textColor="@color/white"
+            android:background="@color/purple_500"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/btnRefreshLocation"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="刷新位置"
+            android:textColor="@color/black"
+            android:background="@color/light_gray"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+</ScrollView>
