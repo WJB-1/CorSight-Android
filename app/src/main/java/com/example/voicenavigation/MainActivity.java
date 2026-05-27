@@ -251,6 +251,12 @@ public class MainActivity extends AppCompatActivity implements
             prefs.edit().putBoolean("use_external_device", isChecked).apply();
             Toast.makeText(this, isChecked ? "已开启外设优先" : "已关闭外设优先", Toast.LENGTH_SHORT).show();
         });
+
+        // 数据采集入口
+        Button btnDataCollection = pageSettingsView.findViewById(R.id.btn_data_collection);
+        btnDataCollection.setOnClickListener(v -> {
+            startActivity(new android.content.Intent(this, com.example.voicenavigation.collection.DataCollectionActivity.class));
+        });
     }
 
     private void hideKeyboard() {
