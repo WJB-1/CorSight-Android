@@ -24,9 +24,9 @@ class CompassService(context: Context) : SensorEventListener {
 
     private var lastHeading: Float? = null
     private var lastCallbackTime = 0L
-    private val callbackInterval = 150L
-    private val alignTolerance = 25f
-    private val smoothingFactor = 0.25f
+    private val callbackInterval = 100L
+    private val alignTolerance = 5f
+    private val smoothingFactor = 0.1f
     private var smoothedHeading: Float? = null
 
     val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
@@ -63,7 +63,6 @@ class CompassService(context: Context) : SensorEventListener {
         var heading = Math.toDegrees(orientationValues[0].toDouble()).toFloat()
         if (heading < 0) heading += 360f
 
-        // 跳变过滤：单次跳变>120°直接丢弃
         lastHeading?.let { last ->
             var diff = abs(heading - last)
             if (diff > 180) diff = 360 - diff
@@ -71,7 +70,6 @@ class CompassService(context: Context) : SensorEventListener {
         }
         lastHeading = heading
 
-        // 低通滤波
         smoothedHeading = if (smoothedHeading == null) {
             heading
         } else {
@@ -82,7 +80,6 @@ class CompassService(context: Context) : SensorEventListener {
         }
         val smoothHeading = smoothedHeading!!
 
-        // 节流
         val now = System.currentTimeMillis()
         if (now - lastCallbackTime < callbackInterval) return
         lastCallbackTime = now
