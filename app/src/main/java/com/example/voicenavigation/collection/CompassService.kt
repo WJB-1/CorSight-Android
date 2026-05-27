@@ -5,7 +5,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.util.Log
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class CompassService(context: Context) : SensorEventListener {
 
@@ -20,7 +21,6 @@ class CompassService(context: Context) : SensorEventListener {
 
     private var callback: ((heading: Float, direction: String, isAligned: Boolean) -> Unit)? = null
     private var targetDirection = "N"
-    private var isRunning = false
 
     private var lastHeading: Float? = null
     private var lastCallbackTime = 0L
