@@ -24,12 +24,10 @@ class CompassService(context: Context) : SensorEventListener {
 
     private var lastHeading: Float? = null
     private var lastCallbackTime = 0L
-    private val callbackInterval = 200L          // 从 100ms 提高到 200ms，降低 UI 刷新频率
-    private val alignTolerance = 20f             // 从 15° 放宽到 20°，更容易对准
-    private val smoothingFactor = 0.3f           // 低通滤波系数，越小越平滑
+    private val callbackInterval = 150L
+    private val alignTolerance = 25f
+    private val smoothingFactor = 0.25f
     private var smoothedHeading: Float? = null
-    private var alignedStableCount = 0
-    private val alignedStableThreshold = 3       // 连续 3 次对准才认为真正对准
 
     val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
     var isRunning = false
@@ -65,7 +63,7 @@ class CompassService(context: Context) : SensorEventListener {
         var heading = Math.toDegrees(orientationValues[0].toDouble()).toFloat()
         if (heading < 0) heading += 360f
 
-        // 跳变过滤
+        // 跳变过滤：单次跳变>120°直接丢弃
         lastHeading?.let { last ->
             var diff = abs(heading - last)
             if (diff > 180) diff = 360 - diff
@@ -73,7 +71,7 @@ class CompassService(context: Context) : SensorEventListener {
         }
         lastHeading = heading
 
-        // 低通滤波：平滑角度变化
+        // 低通滤波
         smoothedHeading = if (smoothedHeading == null) {
             heading
         } else {
@@ -90,15 +88,7 @@ class CompassService(context: Context) : SensorEventListener {
         lastCallbackTime = now
 
         val direction = getDirection(smoothHeading)
-        val rawAligned = isAligned(targetDirection, smoothHeading)
-
-        // 稳定计数：连续多次对准才算真正对准，避免抖动
-        if (rawAligned) {
-            alignedStableCount++
-        } else {
-            alignedStableCount = 0
-        }
-        val aligned = alignedStableCount >= alignedStableThreshold
+        val aligned = isAligned(targetDirection, smoothHeading)
 
         callback?.invoke(smoothHeading, direction, aligned)
     }
