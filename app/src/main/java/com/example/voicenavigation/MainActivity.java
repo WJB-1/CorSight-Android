@@ -50,6 +50,7 @@ import com.amap.api.services.core.LatLonPoint;
 import com.amap.api.services.core.PoiItem;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
+import com.example.voicenavigation.BuildConfig;
 import com.example.voicenavigation.data.AppDatabase;
 import com.example.voicenavigation.data.SuggestionAdapter;
 import com.example.voicenavigation.data.VoiceRecord;
@@ -374,7 +375,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private void loadSettings() {
         TextView tvAmapKey = findViewById(R.id.tv_amap_key);
-        tvAmapKey.setText(getString(R.string.amap_api_key));
+        tvAmapKey.setText(BuildConfig.AMAP_API_KEY);
 
         EditText etServerUrl = pageSettingsView.findViewById(R.id.et_server_url);
         Button btnSaveUrl = pageSettingsView.findViewById(R.id.btn_save_url);

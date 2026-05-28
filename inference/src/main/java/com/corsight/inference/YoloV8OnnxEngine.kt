@@ -5,12 +5,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.RectF
-import android.os.SystemClock
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.nio.FloatBuffer
 import java.util.Collections
-import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 
@@ -27,6 +23,10 @@ class YoloV8OnnxEngine(
     private val inputSize = 640
     private val numClasses = 80
 
+    @Volatile
+    private var released = false
+    private val lock = Any()
+
     override val isReady: Boolean
         get() = ortSession != null
 
@@ -39,37 +39,41 @@ class YoloV8OnnxEngine(
     }
 
     override fun release() {
-        ortSession?.close()
-        ortSession = null
-        ortEnv?.close()
-        ortEnv = null
+        released = true
+        synchronized(lock) {
+            ortSession?.close()
+            ortSession = null
+            ortEnv?.close()
+            ortEnv = null
+        }
     }
 
     override fun detect(bitmap: Bitmap, rotationDegrees: Int): List<Detection> {
-        val session = ortSession ?: return emptyList()
-        val env = ortEnv ?: return emptyList()
+        if (released) return emptyList()
+        synchronized(lock) {
+            val session = ortSession ?: return emptyList()
+            val env = ortEnv ?: return emptyList()
 
-        val startTime = SystemClock.uptimeMillis()
-
-        val scaled = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, false)
-        val rotated = scaled.rotate(rotationDegrees.toFloat())
-        val imgData = preProcess(rotated)
-
-        val inputName = session.inputNames.iterator().next()
-        val shape = longArrayOf(1, 3, inputSize.toLong(), inputSize.toLong())
-        val tensor = OnnxTensor.createTensor(env, imgData, shape)
-
-        val result = tensor.use {
-            val output = session.run(Collections.singletonMap(inputName, tensor))
-            output.use {
-                @Suppress("UNCHECKED_CAST")
-                val rawOutput = output.get(0).value as Array<Array<FloatArray>>
-                parseYoloOutput(rawOutput)
+            val scaled = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, false)
+            val rotated = scaled.rotate(rotationDegrees.toFloat())
+            try {
+                val imgData = preProcess(rotated)
+                val inputName = session.inputNames.iterator().next()
+                val shape = longArrayOf(1, 3, inputSize.toLong(), inputSize.toLong())
+                val tensor = OnnxTensor.createTensor(env, imgData, shape)
+                return tensor.use {
+                    val output = session.run(Collections.singletonMap(inputName, tensor))
+                    output.use {
+                        @Suppress("UNCHECKED_CAST")
+                        val rawOutput = output.get(0).value as Array<Array<FloatArray>>
+                        parseYoloOutput(rawOutput)
+                    }
+                }
+            } finally {
+                if (!scaled.isRecycled) scaled.recycle()
+                if (!rotated.isRecycled) rotated.recycle()
             }
         }
-
-        val elapsed = SystemClock.uptimeMillis() - startTime
-        return result.map { it.copy(score = it.score) }
     }
 
     private fun Bitmap.rotate(degrees: Float): Bitmap {

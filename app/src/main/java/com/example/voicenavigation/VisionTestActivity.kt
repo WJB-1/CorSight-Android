@@ -34,6 +34,7 @@ class VisionTestActivity : AppCompatActivity() {
     private val cameraExecutor = Executors.newSingleThreadExecutor()
     private val inferenceExecutor = Executors.newSingleThreadExecutor()
 
+    @Volatile private var destroyed = false
     private var currentSource: ImageSource? = null
     private val cameraSource by lazy {
         CameraSource(this, this, binding.previewView, cameraExecutor)
@@ -270,6 +271,7 @@ class VisionTestActivity : AppCompatActivity() {
      * 网络流：先显示原图，再在后台线程跑推理，结果回来叠加。
      */
     private fun processFrame(bitmap: Bitmap, rotationDegrees: Int, source: ImageSource) {
+        if (destroyed) return
         if (source is CameraSource) {
             val frame = Frame(bitmap, rotationDegrees)
             val result = ToolRegistry.activeTool.value?.process(frame)
@@ -333,14 +335,25 @@ class VisionTestActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        destroyed = true
         currentSource?.stop()
-        cameraExecutor.shutdown()
-        inferenceExecutor.shutdown()
+        currentSource = null
+        scope.cancel()
+
+        // 强制停止正在排队的推理任务，再等待完成
+        cameraExecutor.shutdownNow()
+        inferenceExecutor.shutdownNow()
+        try {
+            cameraExecutor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)
+            inferenceExecutor.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {}
+
+        // 执行器全部停止后再释放 ORT 资源
         ToolRegistry.releaseAll()
         ModelRegistry.releaseAll()
-        scope.cancel()
+
         closeUdpSocket()
         udpReceiveThread?.interrupt()
+        super.onDestroy()
     }
 }

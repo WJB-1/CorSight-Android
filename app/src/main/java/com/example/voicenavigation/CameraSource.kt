@@ -42,6 +42,7 @@ class CameraSource(
 
     override fun stop() {
         running = false
+        onFrame = null
         cameraProvider?.unbindAll()
         cameraProvider = null
     }

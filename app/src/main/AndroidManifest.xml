@@ -29,7 +29,7 @@
 
         <meta-data
             android:name="com.amap.api.v2.apikey"
-            android:value="@string/amap_api_key" />
+            android:value="${AMAP_API_KEY}" />
 
         <meta-data
             android:name="com.baidu.speech.APP_ID"
