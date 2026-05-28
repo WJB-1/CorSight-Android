@@ -5,17 +5,21 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Button
 import android.widget.EditText
 import android.widget.GridLayout
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
 import com.amap.api.location.AMapLocationListener
@@ -54,6 +58,9 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private val LOCATION_PERMISSION = 200
     private val CAMERA_REQUEST = 201
+    private val RETAKE_REQUEST = 202
+    private var pendingPhotoFile: File? = null
+    private var retakeDirection: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -190,33 +197,69 @@ class DataCollectionActivity : AppCompatActivity() {
             return
         }
 
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
+        pendingPhotoFile = file
+
+        val uri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, uri)
+        }
+
         if (intent.resolveActivity(packageManager) != null) {
             startActivityForResult(intent, CAMERA_REQUEST)
         } else {
             Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
+            pendingPhotoFile = null
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CAMERA_REQUEST && resultCode == RESULT_OK) {
-            val bitmap = data?.extras?.get("data") as? android.graphics.Bitmap ?: return
+        if (resultCode != RESULT_OK) {
+            pendingPhotoFile = null
+            retakeDirection = null
+            return
+        }
 
-            val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
-            FileOutputStream(file).use { out ->
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, out)
+        val file = pendingPhotoFile
+        pendingPhotoFile = null
+
+        if (file == null || !file.exists() || file.length() == 0L) {
+            Toast.makeText(this, "拍照失败，请重试", Toast.LENGTH_SHORT).show()
+            retakeDirection = null
+            return
+        }
+
+        when (requestCode) {
+            CAMERA_REQUEST -> {
+                imagePaths.add(Pair(targetDirection, file.absolutePath))
+                capturedStatus[targetDirection] = true
+                updateGridColors()
+
+                if (imagePaths.size == 8) {
+                    showPreviewDialog()
+                } else {
+                    switchTarget()
+                }
             }
-
-            imagePaths.add(Pair(targetDirection, file.absolutePath))
-            capturedStatus[targetDirection] = true
-            updateGridColors()
-
-            if (imagePaths.size == 8) {
-                Toast.makeText(this, "一组采集完成", Toast.LENGTH_LONG).show()
-                saveCaptureTask()
-            } else {
-                switchTarget()
+            RETAKE_REQUEST -> {
+                val dir = retakeDirection ?: return
+                retakeDirection = null
+                // 替换该方向的图片
+                val index = imagePaths.indexOfFirst { it.first == dir }
+                if (index >= 0) {
+                    imagePaths[index] = Pair(dir, file.absolutePath)
+                }
+                // 刷新预览弹窗
+                previewDialog?.let { dialog ->
+                    val grid = dialog.findViewById<GridLayout>(R.id.previewGrid)
+                    grid?.let { refreshPreviewGrid(it) }
+                }
             }
         }
     }
@@ -397,5 +440,106 @@ class DataCollectionActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         locationClient?.onDestroy()
+    }
+
+    // ---------- 预览弹窗 ----------
+
+    private var previewDialog: AlertDialog? = null
+
+    private fun showPreviewDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_preview, null)
+        val grid = dialogView.findViewById<GridLayout>(R.id.previewGrid)
+        refreshPreviewGrid(grid)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+        previewDialog = dialog
+
+        dialogView.findViewById<Button>(R.id.btnPreviewCancel).setOnClickListener {
+            dialog.dismiss()
+            previewDialog = null
+            // 放弃：删除已拍照片，重置状态
+            imagePaths.forEach { File(it.second).delete() }
+            imagePaths.clear()
+            initCaptureStatus()
+            targetDirection = "N"
+            compassService.setTargetDirection("N")
+            Toast.makeText(this, "已放弃，请重新采集", Toast.LENGTH_SHORT).show()
+        }
+
+        dialogView.findViewById<Button>(R.id.btnPreviewSave).setOnClickListener {
+            dialog.dismiss()
+            previewDialog = null
+            saveCaptureTask()
+        }
+
+        dialog.show()
+    }
+
+    private fun refreshPreviewGrid(grid: GridLayout) {
+        grid.removeAllViews()
+        val dm = resources.displayMetrics
+        val margin = (8 * dm.density).toInt()
+        val size = (dm.widthPixels - 48 * dm.density).toInt() / 2
+
+        for ((dir, path) in imagePaths) {
+            val container = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                layoutParams = GridLayout.LayoutParams().apply {
+                    width = size
+                    height = GridLayout.LayoutParams.WRAP_CONTENT
+                    setMargins(margin, margin, margin, margin)
+                }
+            }
+
+            val iv = ImageView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(size, (size * 0.75).toInt())
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setImageBitmap(android.graphics.BitmapFactory.decodeFile(path))
+                setOnClickListener { retakePhoto(dir) }
+            }
+
+            val label = TextView(this).apply {
+                text = dir
+                textSize = 14f
+                setTextColor(Color.parseColor("#666666"))
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = margin / 2 }
+            }
+
+            container.addView(iv)
+            container.addView(label)
+            grid.addView(container)
+        }
+    }
+
+    private fun retakePhoto(dir: String) {
+        retakeDirection = dir
+        val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
+        pendingPhotoFile = file
+
+        val uri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, uri)
+        }
+
+        if (intent.resolveActivity(packageManager) != null) {
+            startActivityForResult(intent, RETAKE_REQUEST)
+        } else {
+            Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
+            pendingPhotoFile = null
+            retakeDirection = null
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.example.voicenavigation;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.widget.SwitchCompat;
@@ -10,18 +11,26 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,6 +51,7 @@ import com.amap.api.services.core.PoiItem;
 import com.amap.api.services.poisearch.PoiResult;
 import com.amap.api.services.poisearch.PoiSearch;
 import com.example.voicenavigation.data.AppDatabase;
+import com.example.voicenavigation.data.SuggestionAdapter;
 import com.example.voicenavigation.data.VoiceRecord;
 import com.example.voicenavigation.data.VoiceRecordAdapter;
 import com.example.voicenavigation.navigation.NavigationManager;
@@ -50,6 +60,7 @@ import com.example.voicenavigation.stt.BaiduSpeechManager;
 import com.example.voicenavigation.stt.BaiduTtsManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements
@@ -67,15 +78,22 @@ public class MainActivity extends AppCompatActivity implements
     private BaiduTtsManager baiduTts;
     private Handler handler;
 
-    private Button btnVoiceInput;
-    private Button btnSearch;
+    // 底部控制面板
+    private FrameLayout btnVoiceContainer;
+    private TextView tvVoiceHint;
+    private View voiceRipple;
     private Button btnStartNavigation;
     private Button btnPreviewRoute;
     private Button btnVisionTest;
     private Button btnStopTts;
     private EditText etDestination;
-    private TextView tvStatus;
+    private ImageButton btnClearSearch;
+    private CardView cardSuggestions;
+    private RecyclerView rvSuggestions;
+    private SuggestionAdapter suggestionAdapter;
+    private android.os.Vibrator vibrator;
 
+    // 导航信息浮层
     private LinearLayout layoutNavInfo;
     private TextView tvNavDistance;
     private TextView tvNavDuration;
@@ -93,11 +111,15 @@ public class MainActivity extends AppCompatActivity implements
     private String lastSpokenInstruction;
 
     private BottomNavigationView bottomNav;
-    private LinearLayout pageMap;
+    private FrameLayout containerPages;
     private View pageHistoryView;
     private View pageSettingsView;
+    private View bottomControls;
+    private View searchBarContainer;
     private RecyclerView rvHistory;
-    private TextView tvHistoryEmpty;
+    private View layoutHistoryEmpty;
+    private TextView tvHistoryCount;
+    private TextView tvHistoryDestCount;
     private VoiceRecordAdapter historyAdapter;
     private TripPreviewService tripPreviewService;
 
@@ -121,14 +143,17 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initViews() {
-        btnVoiceInput = findViewById(R.id.btn_voice_input);
-        btnSearch = findViewById(R.id.btn_search);
+        btnVoiceContainer = findViewById(R.id.btn_voice_container);
+        tvVoiceHint = findViewById(R.id.tv_voice_hint);
+        voiceRipple = findViewById(R.id.voice_ripple);
         btnStartNavigation = findViewById(R.id.btn_start_navigation);
         btnPreviewRoute = findViewById(R.id.btn_preview_route);
         btnVisionTest = findViewById(R.id.btn_vision_test);
         btnStopTts = findViewById(R.id.btn_stop_tts);
         etDestination = findViewById(R.id.et_destination);
-        tvStatus = findViewById(R.id.tv_status);
+        btnClearSearch = findViewById(R.id.btn_clear_search);
+        cardSuggestions = findViewById(R.id.card_suggestions);
+        rvSuggestions = findViewById(R.id.rv_suggestions);
 
         layoutNavInfo = findViewById(R.id.layout_nav_info);
         tvNavDistance = findViewById(R.id.tv_nav_distance);
@@ -136,13 +161,30 @@ public class MainActivity extends AppCompatActivity implements
         tvNavInstruction = findViewById(R.id.tv_nav_instruction);
 
         bottomNav = findViewById(R.id.bottom_nav);
-        pageMap = findViewById(R.id.page_map);
+        containerPages = findViewById(R.id.container_pages);
         pageHistoryView = findViewById(R.id.page_history);
         pageSettingsView = findViewById(R.id.page_settings);
+        bottomControls = findViewById(R.id.bottom_controls);
+        searchBarContainer = findViewById(R.id.search_bar_container);
         rvHistory = findViewById(R.id.rv_history);
         rvHistory.setLayoutManager(new LinearLayoutManager(this));
-        tvHistoryEmpty = findViewById(R.id.tv_history_empty);
+        layoutHistoryEmpty = pageHistoryView.findViewById(R.id.layout_history_empty);
+        tvHistoryCount = pageHistoryView.findViewById(R.id.tv_history_count);
+        tvHistoryDestCount = pageHistoryView.findViewById(R.id.tv_history_dest_count);
 
+        // 搜索建议列表
+        rvSuggestions.setLayoutManager(new LinearLayoutManager(this));
+        suggestionAdapter = new SuggestionAdapter(new ArrayList<>());
+        suggestionAdapter.setOnItemClickListener((item, position) -> {
+            LatLonPoint point = item.getLatLonPoint();
+            LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
+            setDestination(latLng, item.getTitle());
+            hideSuggestions();
+            hideKeyboard();
+        });
+        rvSuggestions.setAdapter(suggestionAdapter);
+
+        // 底部导航
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_tab_nav) {
@@ -155,27 +197,60 @@ public class MainActivity extends AppCompatActivity implements
             return true;
         });
 
-        btnVoiceInput.setOnClickListener(v -> toggleVoiceInput());
-        btnSearch.setOnClickListener(v -> {
-            hideKeyboard();
-            String keyword = etDestination.getText().toString().trim();
-            if (!keyword.isEmpty()) {
-                searchDestination(keyword);
-            } else {
-                Toast.makeText(this, "请输入目的地", Toast.LENGTH_SHORT).show();
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+        // 语音按钮：按住说话（FrameLayout + OnTouchListener 避免与 Button 点击冲突）
+        btnVoiceContainer.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (!checkAudioPermission()) {
+                        Toast.makeText(this, R.string.permission_audio_denied, Toast.LENGTH_SHORT).show();
+                        return true;
+                    }
+                    // 振动反馈
+                    if (vibrator != null && vibrator.hasVibrator()) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
+                        } else {
+                            vibrator.vibrate(50);
+                        }
+                    }
+                    tvVoiceHint.setText("松开结束");
+                    voiceRipple.setVisibility(View.VISIBLE);
+                    startListening();
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    tvVoiceHint.setText("按住说话");
+                    voiceRipple.setVisibility(View.GONE);
+                    stopListening();
+                    return true;
             }
+            return false;
         });
-        btnStartNavigation.setOnClickListener(v -> toggleNavigation());
-        btnPreviewRoute.setOnClickListener(v -> sendTripPreview());
-        btnVisionTest.setOnClickListener(v ->
-            startActivity(new android.content.Intent(this, VisionTestActivity.class)));
-        btnStopTts.setOnClickListener(v -> {
-            if (baiduTts != null) {
-                baiduTts.stopPlayback();
-                btnStopTts.setVisibility(View.GONE);
+
+        // 搜索框文字变化实时搜索
+        etDestination.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
+            @Override public void afterTextChanged(Editable s) {
+                String text = s.toString().trim();
+                btnClearSearch.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
+                if (text.length() >= 2) {
+                    searchDestination(text);
+                } else {
+                    hideSuggestions();
+                }
             }
         });
 
+        // 清除按钮
+        btnClearSearch.setOnClickListener(v -> {
+            etDestination.setText("");
+            hideSuggestions();
+        });
+
+        // 搜索框回车
         etDestination.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 hideKeyboard();
@@ -187,33 +262,77 @@ public class MainActivity extends AppCompatActivity implements
             }
             return false;
         });
+
+        btnStartNavigation.setOnClickListener(v -> toggleNavigation());
+        btnPreviewRoute.setOnClickListener(v -> sendTripPreview());
+        btnVisionTest.setOnClickListener(v ->
+            startActivity(new android.content.Intent(this, VisionTestActivity.class)));
+        btnStopTts.setOnClickListener(v -> {
+            if (baiduTts != null) {
+                baiduTts.stopPlayback();
+                btnStopTts.setVisibility(View.GONE);
+            }
+        });
     }
 
     private void switchTab(int index) {
-        pageMap.setVisibility(index == 0 ? View.VISIBLE : View.GONE);
-        pageHistoryView.setVisibility(index == 1 ? View.VISIBLE : View.GONE);
-        pageSettingsView.setVisibility(index == 2 ? View.VISIBLE : View.GONE);
-        if (index == 1) {
-            loadHistory();
-        } else if (index == 2) {
-            loadSettings();
+        if (index == 0) {
+            containerPages.setVisibility(View.GONE);
+            bottomControls.setVisibility(View.VISIBLE);
+            searchBarContainer.setVisibility(View.VISIBLE);
+        } else {
+            containerPages.setVisibility(View.VISIBLE);
+            bottomControls.setVisibility(View.GONE);
+            searchBarContainer.setVisibility(View.GONE);
+            hideSuggestions();
+            pageHistoryView.setVisibility(index == 1 ? View.VISIBLE : View.GONE);
+            pageSettingsView.setVisibility(index == 2 ? View.VISIBLE : View.GONE);
+            if (index == 1) loadHistory();
+            else if (index == 2) loadSettings();
         }
     }
+
+    private void hideSuggestions() {
+        cardSuggestions.setVisibility(View.GONE);
+    }
+
+    private void showSuggestions(List<PoiItem> items) {
+        if (items == null || items.isEmpty()) {
+            hideSuggestions();
+            return;
+        }
+        suggestionAdapter.updateData(items);
+        cardSuggestions.setVisibility(View.VISIBLE);
+    }
+
+    // ========== 历史记录 ==========
 
     private void loadHistory() {
         new Thread(() -> {
             try {
                 List<VoiceRecord> records = appDatabase.voiceRecordDao().getAllRecords();
-                Log.d(TAG, "loadHistory: found " + (records == null ? 0 : records.size()) + " records");
+                int totalCount = appDatabase.voiceRecordDao().getCount();
+                int destCount = 0;
+                if (records != null) {
+                    for (VoiceRecord r : records) {
+                        if (r.getDestination() != null && !r.getDestination().isEmpty()) {
+                            destCount++;
+                        }
+                    }
+                }
+                final int finalDestCount = destCount;
                 runOnUiThread(() -> {
+                    tvHistoryCount.setText(String.valueOf(totalCount));
+                    tvHistoryDestCount.setText(String.valueOf(finalDestCount));
                     if (records == null || records.isEmpty()) {
-                        tvHistoryEmpty.setVisibility(View.VISIBLE);
+                        layoutHistoryEmpty.setVisibility(View.VISIBLE);
                         rvHistory.setVisibility(View.GONE);
                     } else {
-                        tvHistoryEmpty.setVisibility(View.GONE);
+                        layoutHistoryEmpty.setVisibility(View.GONE);
                         rvHistory.setVisibility(View.VISIBLE);
                         if (historyAdapter == null) {
                             historyAdapter = new VoiceRecordAdapter(records);
+                            setupHistoryAdapterListener();
                             rvHistory.setAdapter(historyAdapter);
                         } else {
                             historyAdapter.updateData(records);
@@ -224,6 +343,33 @@ public class MainActivity extends AppCompatActivity implements
                 Log.e(TAG, "Failed to load history", e);
             }
         }).start();
+    }
+
+    private void setupHistoryAdapterListener() {
+        historyAdapter.setOnItemActionListener(new VoiceRecordAdapter.OnItemActionListener() {
+            @Override
+            public void onPlay(VoiceRecord record, int position) {
+                if (baiduTts != null) baiduTts.speak(record.getContent());
+            }
+            @Override
+            public void onDelete(VoiceRecord record, int position) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("删除记录")
+                    .setMessage("确定删除这条语音记录吗？")
+                    .setPositiveButton("删除", (dialog, which) -> {
+                        new Thread(() -> {
+                            appDatabase.voiceRecordDao().deleteById(record.getId());
+                            runOnUiThread(() -> {
+                                historyAdapter.removeItem(position);
+                                loadHistory();
+                                Toast.makeText(MainActivity.this, "已删除", Toast.LENGTH_SHORT).show();
+                            });
+                        }).start();
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+            }
+        });
     }
 
     private void loadSettings() {
@@ -244,14 +390,10 @@ public class MainActivity extends AppCompatActivity implements
                 return;
             }
             prefs.edit().putString("server_base_url", url).apply();
-
-            // 更新当前 service 实例的 baseUrl
             tripPreviewService.setBaseUrl(url);
-
             Toast.makeText(this, "服务器地址已保存", Toast.LENGTH_SHORT).show();
         });
 
-        // 外设开关
         SwitchCompat switchExternal = pageSettingsView.findViewById(R.id.switch_use_external_device);
         boolean useExternal = prefs.getBoolean("use_external_device", false);
         switchExternal.setChecked(useExternal);
@@ -260,7 +402,6 @@ public class MainActivity extends AppCompatActivity implements
             Toast.makeText(this, isChecked ? "已开启外设优先" : "已关闭外设优先", Toast.LENGTH_SHORT).show();
         });
 
-        // 数据采集入口
         Button btnDataCollection = pageSettingsView.findViewById(R.id.btn_data_collection);
         btnDataCollection.setOnClickListener(v -> {
             startActivity(new android.content.Intent(this, com.example.voicenavigation.collection.DataCollectionActivity.class));
@@ -290,31 +431,20 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initTts() {
-        Log.d(TAG, "Initializing BaiduTtsManager...");
         baiduTts = new BaiduTtsManager(this,
                 getString(R.string.baidu_speech_api_key),
                 getString(R.string.baidu_speech_secret_key));
         baiduTts.setCallback(new BaiduTtsManager.TtsCallback() {
-            @Override
-            public void onTtsReady() {
-                Log.d(TAG, "Baidu TTS ready");
-            }
-
-            @Override
-            public void onTtsError(String error) {
-                Log.e(TAG, "Baidu TTS error: " + error);
-            }
+            @Override public void onTtsReady() { Log.d(TAG, "TTS ready"); }
+            @Override public void onTtsError(String error) { Log.e(TAG, "TTS error: " + error); }
         });
         baiduTts.init();
     }
 
     private void speak(String text) {
-        if (text == null || text.isEmpty() || text.equals(lastSpokenInstruction)) {
-            return;
-        }
+        if (text == null || text.isEmpty() || text.equals(lastSpokenInstruction)) return;
         lastSpokenInstruction = text;
         if (baiduTts != null) {
-            Log.d(TAG, "TTS speak: " + text);
             baiduTts.speak(text);
             showStopTtsButton();
         }
@@ -323,7 +453,6 @@ public class MainActivity extends AppCompatActivity implements
     private void speakForce(String text) {
         if (text == null || text.isEmpty()) return;
         if (baiduTts != null) {
-            Log.d(TAG, "TTS speakForce: " + text);
             baiduTts.speak(text);
             showStopTtsButton();
         }
@@ -331,11 +460,11 @@ public class MainActivity extends AppCompatActivity implements
 
     private void showStopTtsButton() {
         runOnUiThread(() -> {
-            if (btnStopTts != null) {
-                btnStopTts.setVisibility(View.VISIBLE);
-            }
+            if (btnStopTts != null) btnStopTts.setVisibility(View.VISIBLE);
         });
     }
+
+    // ========== 地图 ==========
 
     private void initMap() {
         if (mMap == null) return;
@@ -372,20 +501,16 @@ public class MainActivity extends AppCompatActivity implements
                 Manifest.permission.INTERNET,
                 Manifest.permission.POST_NOTIFICATIONS
         };
-
         boolean allGranted = true;
         for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(this, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 allGranted = false;
                 break;
             }
         }
-
         if (!allGranted) {
             ActivityCompat.requestPermissions(this, permissions, REQUEST_PERMISSIONS_CODE);
         }
-
         return allGranted;
     }
 
@@ -396,34 +521,18 @@ public class MainActivity extends AppCompatActivity implements
         if (requestCode == REQUEST_PERMISSIONS_CODE) {
             boolean allGranted = true;
             for (int result : grantResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
-                    allGranted = false;
-                    break;
-                }
+                if (result != PackageManager.PERMISSION_GRANTED) allGranted = false;
             }
             if (!allGranted) {
                 Toast.makeText(this, "需要授予必要权限才能使用应用", Toast.LENGTH_LONG).show();
             } else {
                 initServices();
-                if (mMap != null) {
-                    mMap.setMyLocationEnabled(true);
-                }
+                if (mMap != null) mMap.setMyLocationEnabled(true);
             }
         }
     }
 
-    private void toggleVoiceInput() {
-        if (!checkAudioPermission()) {
-            Toast.makeText(this, R.string.permission_audio_denied, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (isListening) {
-            stopListening();
-        } else {
-            startListening();
-        }
-    }
+    // ========== 语音识别 ==========
 
     private boolean checkAudioPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
@@ -432,34 +541,25 @@ public class MainActivity extends AppCompatActivity implements
 
     private void startListening() {
         if (speechManager == null) {
-            Log.e(TAG, "speechManager is null - services not initialized");
-            Toast.makeText(this, "服务尚未初始化，请先授予权限", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "服务尚未初始化", Toast.LENGTH_SHORT).show();
             return;
         }
-
-        Log.d(TAG, "语音识别状态: " + speechManager.getRecognitionStatus());
-
         isListening = true;
-        btnVoiceInput.setBackgroundColor(ContextCompat.getColor(this, R.color.purple_700));
-        tvStatus.setText(R.string.listening);
         speechManager.startListening();
     }
 
     private void stopListening() {
         isListening = false;
-        btnVoiceInput.setBackgroundColor(ContextCompat.getColor(this, R.color.purple_500));
-        tvStatus.setText(R.string.speech_hint);
-        if (speechManager != null) {
-            speechManager.stopListening();
-        }
+        if (speechManager != null) speechManager.stopListening();
     }
 
+    // ========== 搜索 ==========
+
     private void searchDestination(String keyword) {
-        Log.d(TAG, "Searching destination: " + keyword);
-        tvStatus.setText("正在搜索: " + keyword);
+        Log.d(TAG, "Searching: " + keyword);
 
         PoiSearch.Query query = new PoiSearch.Query(keyword, "", "");
-        query.setPageSize(20);
+        query.setPageSize(10);
         query.setPageNum(0);
 
         try {
@@ -471,133 +571,83 @@ public class MainActivity extends AppCompatActivity implements
             }
             poiSearch.searchPOIAsyn();
         } catch (Exception e) {
-            Log.e(TAG, "Failed to create PoiSearch: " + e.getMessage(), e);
-            Toast.makeText(this, "搜索服务异常: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-            tvStatus.setText(R.string.speech_hint);
+            Log.e(TAG, "Search failed: " + e.getMessage(), e);
         }
     }
 
-    private void showPoiResultsDialog(List<PoiItem> items) {
-        if (items == null || items.isEmpty()) {
-            Toast.makeText(this, "未找到相关地点", Toast.LENGTH_SHORT).show();
-            tvStatus.setText(R.string.speech_hint);
-            return;
+    @Override
+    public void onPoiSearched(PoiResult poiResult, int rCode) {
+        Log.d(TAG, "POI result, rCode: " + rCode);
+        if (rCode == 1000) {
+            poiResults = poiResult.getPois();
+            showSuggestions(poiResults);
         }
-
-        String[] displayItems = new String[items.size()];
-        for (int i = 0; i < items.size(); i++) {
-            PoiItem item = items.get(i);
-            displayItems[i] = item.getTitle() + "  " + item.getCityName() + item.getAdName();
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("选择目的地")
-                .setItems(displayItems, (dialog, which) -> {
-                    PoiItem selected = items.get(which);
-                    LatLonPoint point = selected.getLatLonPoint();
-                    LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
-                    setDestination(latLng, selected.getTitle());
-                    dialog.dismiss();
-                })
-                .setNegativeButton("取消", (dialog, which) -> {
-                    tvStatus.setText(R.string.speech_hint);
-                    dialog.dismiss();
-                })
-                .setOnCancelListener(dialog -> tvStatus.setText(R.string.speech_hint));
-
-        tvStatus.setText("已找到 " + items.size() + " 个结果");
-        builder.show();
     }
+
+    @Override
+    public void onPoiItemSearched(PoiItem poiItem, int rCode) {}
 
     private void setDestination(LatLng latLng, String name) {
         selectedDestLatLng = latLng;
         selectedDestName = name;
         addDestinationMarker(latLng);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
-        tvStatus.setText("已选择: " + name);
         etDestination.setText(name);
         etDestination.setSelection(name.length());
     }
+
+    // ========== 导航 ==========
 
     private void toggleNavigation() {
         if (!checkLocationPermission()) {
             Toast.makeText(this, R.string.permission_location_denied, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (navigationManager == null) {
-            Log.e(TAG, "navigationManager is null - services not initialized");
-            Toast.makeText(this, "服务尚未初始化，请先授予权限", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "服务尚未初始化", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (navigationManager.isNavigating()) {
             navigationManager.stopNavigation();
             btnStartNavigation.setText(R.string.start_navigation);
             clearRouteDisplay();
-            tvStatus.setText(R.string.speech_hint);
             return;
         }
-
         if (selectedDestLatLng == null) {
-            Toast.makeText(this, "请先搜索并选择目的地", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "请先选择目的地", Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (currentLocation == null) {
-            Toast.makeText(this, "正在获取当前位置，请稍后", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "正在获取当前位置", Toast.LENGTH_SHORT).show();
             return;
         }
-
         layoutNavInfo.setVisibility(View.VISIBLE);
-        tvStatus.setText("正在规划步行路线...");
         saveVoiceRecord(selectedDestName);
         navigationManager.planRoute(currentLocation, selectedDestLatLng, selectedDestName);
     }
 
-    /**
-     * 发送行前预览请求：将用户当前定位和目的地发送至后端。
-     * 成功后展示弹窗并语音播报。
-     */
     private void sendTripPreview() {
         if (selectedDestLatLng == null) {
             Toast.makeText(this, R.string.preview_no_destination, Toast.LENGTH_SHORT).show();
             return;
         }
-
         if (currentLocation == null) {
             Toast.makeText(this, R.string.preview_no_location, Toast.LENGTH_SHORT).show();
             return;
         }
-
-        tvStatus.setText(R.string.preview_requesting);
-
         tripPreviewService.sendPreviewRequest(
-                currentLocation.latitude,
-                currentLocation.longitude,
-                selectedDestLatLng.latitude,
-                selectedDestLatLng.longitude,
+                currentLocation.latitude, currentLocation.longitude,
+                selectedDestLatLng.latitude, selectedDestLatLng.longitude,
                 new TripPreviewService.PreviewCallback() {
-                    @Override
-                    public void onSuccess(String response) {
-                        tvStatus.setText(R.string.preview_success);
-                        Log.d(TAG, "Trip preview response: " + response);
+                    @Override public void onSuccess(String response) {
                         parseAndShowPreviewResult(response);
                     }
-
-                    @Override
-                    public void onError(String error) {
-                        tvStatus.setText(R.string.preview_failed);
-                        Toast.makeText(MainActivity.this, R.string.preview_failed + ": " + error, Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Trip preview error: " + error);
+                    @Override public void onError(String error) {
+                        Toast.makeText(MainActivity.this, "预览失败: " + error, Toast.LENGTH_LONG).show();
                     }
-                }
-        );
+                });
     }
 
-    /**
-     * 解析预览响应并展示弹窗 + 语音播报
-     */
     private void parseAndShowPreviewResult(String responseJson) {
         try {
             org.json.JSONObject root = new org.json.JSONObject(responseJson);
@@ -605,97 +655,53 @@ public class MainActivity extends AppCompatActivity implements
                 Toast.makeText(this, "预览数据异常", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             org.json.JSONObject data = root.optJSONObject("data");
-            if (data == null) {
-                Toast.makeText(this, "预览数据为空", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
+            if (data == null) return;
             String broadcastText = data.optString("text", "");
             org.json.JSONObject routeSummary = data.optJSONObject("route_summary");
             org.json.JSONArray keyNodes = data.optJSONArray("key_nodes");
-
-            // 语音播报
-            if (!broadcastText.isEmpty()) {
-                speakForce("行前预览：" + broadcastText);
-            }
-
-            // 展示弹窗
+            if (!broadcastText.isEmpty()) speakForce("行前预览：" + broadcastText);
             showPreviewDialog(broadcastText, routeSummary, keyNodes);
-
         } catch (org.json.JSONException e) {
-            Log.e(TAG, "Failed to parse preview response", e);
-            Toast.makeText(this, "解析预览数据失败", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Parse preview failed", e);
         }
     }
 
-    /**
-     * 展示预览结果弹窗
-     */
     private void showPreviewDialog(String broadcastText,
                                     org.json.JSONObject routeSummary,
                                     org.json.JSONArray keyNodes) {
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_preview_result, null);
-
         TextView tvPreviewText = dialogView.findViewById(R.id.tv_preview_text);
         TextView tvPreviewSummary = dialogView.findViewById(R.id.tv_preview_summary);
         LinearLayout layoutKeyNodes = dialogView.findViewById(R.id.layout_key_nodes);
         Button btnSpeak = dialogView.findViewById(R.id.btn_preview_speak);
         Button btnClose = dialogView.findViewById(R.id.btn_preview_close);
 
-        // 播报文案
         tvPreviewText.setText(broadcastText.isEmpty() ? "暂无播报文案" : broadcastText);
-
-        // 路线概要
         String summaryText = "";
         if (routeSummary != null) {
-            String totalDist = routeSummary.optString("total_distance", "未知");
-            String totalTime = routeSummary.optString("total_duration", "未知");
-            int nodeCount = routeSummary.optInt("key_node_count", 0);
-            summaryText = "总距离：" + totalDist + "\n预计时间：" + totalTime + "\n关键节点数：" + nodeCount;
+            summaryText = "总距离：" + routeSummary.optString("total_distance", "未知")
+                    + "\n预计时间：" + routeSummary.optString("total_duration", "未知")
+                    + "\n关键节点数：" + routeSummary.optInt("key_node_count", 0);
         }
-        tvPreviewSummary.setText(summaryText.isEmpty() ? "暂无概要信息" : summaryText);
+        tvPreviewSummary.setText(summaryText.isEmpty() ? "暂无概要" : summaryText);
 
-        // 关键节点
         layoutKeyNodes.removeAllViews();
         if (keyNodes != null && keyNodes.length() > 0) {
             for (int i = 0; i < keyNodes.length(); i++) {
                 org.json.JSONObject node = keyNodes.optJSONObject(i);
                 if (node == null) continue;
-
-                String action = node.optString("action", "");
-                String assistantAction = node.optString("assistant_action", "");
-                String instruction = node.optString("instruction", "");
-                String direction = node.optString("relative_direction", "");
-
                 TextView tvNode = new TextView(this);
-                tvNode.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
                 tvNode.setTextSize(14);
                 tvNode.setTextColor(getResources().getColor(android.R.color.black));
                 tvNode.setPadding(0, 8, 0, 8);
-
-                StringBuilder nodeText = new StringBuilder();
-                nodeText.append("节点 ").append(i + 1).append("：");
-                if (!direction.isEmpty()) {
-                    nodeText.append(direction);
-                }
-                if (!action.isEmpty()) {
-                    nodeText.append(action);
-                }
-                if (!assistantAction.isEmpty()) {
-                    nodeText.append("（").append(assistantAction).append("）");
-                }
-                if (!instruction.isEmpty()) {
-                    nodeText.append("\n  ").append(instruction);
-                }
-
-                tvNode.setText(nodeText.toString());
+                StringBuilder sb = new StringBuilder();
+                sb.append("节点 ").append(i + 1).append("：");
+                sb.append(node.optString("relative_direction", ""));
+                sb.append(node.optString("action", ""));
+                if (node.has("assistant_action")) sb.append("（").append(node.optString("assistant_action")).append("）");
+                tvNode.setText(sb.toString());
                 layoutKeyNodes.addView(tvNode);
-
-                // 分隔线
                 if (i < keyNodes.length() - 1) {
                     View divider = new View(this);
                     divider.setLayoutParams(new LinearLayout.LayoutParams(
@@ -704,51 +710,26 @@ public class MainActivity extends AppCompatActivity implements
                     layoutKeyNodes.addView(divider);
                 }
             }
-        } else {
-            TextView tvEmpty = new TextView(this);
-            tvEmpty.setText("暂无关键节点信息");
-            tvEmpty.setTextSize(14);
-            tvEmpty.setTextColor(getResources().getColor(android.R.color.darker_gray));
-            layoutKeyNodes.addView(tvEmpty);
         }
 
         androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setView(dialogView)
-                .setCancelable(true)
-                .create();
-
-        btnSpeak.setOnClickListener(v -> {
-            if (!broadcastText.isEmpty()) {
-                speakForce("行前预览：" + broadcastText);
-            }
-        });
-
+                .setView(dialogView).setCancelable(true).create();
+        btnSpeak.setOnClickListener(v -> { if (!broadcastText.isEmpty()) speakForce("行前预览：" + broadcastText); });
         btnClose.setOnClickListener(v -> dialog.dismiss());
-
         dialog.show();
     }
 
+    // ========== 地图绘制 ==========
+
     private void drawRoute(List<LatLng> points) {
         if (mMap == null || points == null || points.isEmpty()) return;
-
-        if (routePolyline != null) {
-            routePolyline.remove();
-            routePolyline = null;
-        }
-
-        PolylineOptions options = new PolylineOptions()
-                .addAll(points)
-                .color(0xFF3B8EFF)
-                .width(12)
-                .setDottedLine(false);
+        if (routePolyline != null) { routePolyline.remove(); routePolyline = null; }
+        PolylineOptions options = new PolylineOptions().addAll(points).color(0xFF3B8EFF).width(12);
         routePolyline = mMap.addPolyline(options);
     }
 
     private void clearRouteDisplay() {
-        if (routePolyline != null) {
-            routePolyline.remove();
-            routePolyline = null;
-        }
+        if (routePolyline != null) { routePolyline.remove(); routePolyline = null; }
         layoutNavInfo.setVisibility(View.GONE);
         clearMarkers();
     }
@@ -760,24 +741,15 @@ public class MainActivity extends AppCompatActivity implements
 
     private void addDestinationMarker(LatLng latLng) {
         if (mMap == null) return;
-
-        if (destinationMarker != null) {
-            destinationMarker.remove();
-        }
-
+        if (destinationMarker != null) destinationMarker.remove();
         destinationMarker = mMap.addMarker(new MarkerOptions()
-                .position(latLng)
-                .title("目的地")
-                .snippet(selectedDestName)
+                .position(latLng).title("目的地").snippet(selectedDestName)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
         destinationMarker.showInfoWindow();
     }
 
     private void clearMarkers() {
-        if (destinationMarker != null) {
-            destinationMarker.remove();
-            destinationMarker = null;
-        }
+        if (destinationMarker != null) { destinationMarker.remove(); destinationMarker = null; }
     }
 
     private void saveVoiceRecord(String content) {
@@ -789,26 +761,24 @@ public class MainActivity extends AppCompatActivity implements
                 record.setDestination(etDestination.getText().toString());
                 record.setTimestamp(System.currentTimeMillis());
                 appDatabase.voiceRecordDao().insert(record);
-                Log.d(TAG, "Voice record saved: " + content + " at " + record.getTimestamp());
             } catch (Exception e) {
                 Log.e(TAG, "Failed to save voice record", e);
             }
         }).start();
     }
 
+    // ========== STT Callbacks ==========
+
     @Override
     public void onResult(String result) {
-        Log.d(TAG, "STT final result: " + result);
         String cleaned = result.replaceAll("[。，、！？；：,.!?;:]*$", "").trim();
         etDestination.setText(cleaned);
         etDestination.setSelection(cleaned.length());
-        stopListening();
         searchDestination(cleaned);
     }
 
     @Override
     public void onPartialResult(String result) {
-        Log.d(TAG, "STT partial result: " + result);
         String cleaned = result.replaceAll("[。，、！？；：,.!?;:]*$", "").trim();
         etDestination.setText(cleaned);
         etDestination.setSelection(cleaned.length());
@@ -816,63 +786,30 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onError(String error) {
-        Log.e(TAG, "STT error: " + error);
         Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
-        stopListening();
     }
 
-    @Override
-    public void onListening() {
-        Log.d(TAG, "STT listening");
-    }
+    @Override public void onListening() { Log.d(TAG, "STT listening"); }
+    @Override public void onStopped() { Log.d(TAG, "STT stopped"); }
 
-    @Override
-    public void onStopped() {
-        Log.d(TAG, "STT stopped");
-    }
-
-    @Override
-    public void onPoiSearched(PoiResult poiResult, int rCode) {
-        Log.d(TAG, "POI search result, rCode: " + rCode);
-        if (rCode == 1000) {
-            poiResults = poiResult.getPois();
-            showPoiResultsDialog(poiResults);
-        } else {
-            Log.e(TAG, "POI search failed, rCode: " + rCode);
-            Toast.makeText(this, "搜索失败，错误码: " + rCode, Toast.LENGTH_SHORT).show();
-            tvStatus.setText(R.string.speech_hint);
-        }
-    }
-
-    @Override
-    public void onPoiItemSearched(PoiItem poiItem, int rCode) {
-    }
+    // ========== Navigation Callbacks ==========
 
     @Override
     public void onLocationUpdated(Location location) {
         currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        Log.d(TAG, "Location updated: " + currentLocation.latitude + ", " + currentLocation.longitude);
     }
 
     @Override
     public void onRouteReady(List<LatLng> routePoints, float totalDistance, float totalDuration, List<String> instructions) {
-        Log.d(TAG, "Route ready: " + routePoints.size() + " points");
         drawRoute(routePoints);
-
-        String dist = formatDistance(totalDistance);
-        String dur = formatDuration(totalDuration);
-        tvNavDistance.setText(dist);
-        tvNavDuration.setText(dur);
-
+        tvNavDistance.setText(formatDistance(totalDistance));
+        tvNavDuration.setText(formatDuration(totalDuration));
         if (instructions != null && !instructions.isEmpty()) {
-            String firstInstruction = instructions.get(0);
-            tvNavInstruction.setText(firstInstruction);
-            speak(firstInstruction);
+            tvNavInstruction.setText(instructions.get(0));
+            speak(instructions.get(0));
         }
-
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14));
         btnStartNavigation.setText(R.string.stop_navigation);
-        tvStatus.setText(getString(R.string.navigating_to) + " " + selectedDestName);
     }
 
     @Override
@@ -887,14 +824,11 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onReRouting() {
-        Log.d(TAG, "Re-routing...");
-        tvStatus.setText("正在重新规划步行路线...");
         speakForce("正在重新规划步行路线");
     }
 
     @Override
     public void onArrived() {
-        tvStatus.setText("已到达目的地附近");
         Toast.makeText(this, "已到达目的地附近", Toast.LENGTH_LONG).show();
         speakForce("您已到达目的地附近");
         btnStartNavigation.setText(R.string.start_navigation);
@@ -903,14 +837,10 @@ public class MainActivity extends AppCompatActivity implements
         selectedDestName = null;
     }
 
-    @Override
-    public void onNavigationStarted() {
-        Log.d(TAG, "Navigation started");
-    }
+    @Override public void onNavigationStarted() { Log.d(TAG, "Nav started"); }
 
     @Override
     public void onNavigationStopped() {
-        Log.d(TAG, "Navigation stopped");
         lastSpokenInstruction = null;
         btnStartNavigation.setText(R.string.start_navigation);
         clearRouteDisplay();
@@ -920,10 +850,8 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onNavigationError(String error) {
-        Log.e(TAG, "Navigation error: " + error);
         Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
         layoutNavInfo.setVisibility(View.GONE);
-        tvStatus.setText(R.string.speech_hint);
     }
 
     private String formatDistance(float meters) {
@@ -936,54 +864,25 @@ public class MainActivity extends AppCompatActivity implements
         if (seconds < 60) return "1分钟";
         int minutes = (int) (seconds / 60);
         if (minutes < 60) return minutes + "分钟";
-        int hours = minutes / 60;
-        int mins = minutes % 60;
-        return hours + "小时" + mins + "分钟";
+        return (minutes / 60) + "小时" + (minutes % 60) + "分钟";
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (mapView != null) {
-            mapView.onResume();
-        }
-    }
+    // ========== Lifecycle ==========
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mapView != null) {
-            mapView.onPause();
-        }
+    @Override protected void onResume() { super.onResume(); if (mapView != null) mapView.onResume(); }
+    @Override protected void onPause() { super.onPause(); if (mapView != null) mapView.onPause(); }
+    @Override protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState); if (mapView != null) mapView.onSaveInstanceState(outState);
     }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (mapView != null) {
-            mapView.onSaveInstanceState(outState);
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
+    @Override protected void onDestroy() {
         super.onDestroy();
-        if (baiduTts != null) {
-            baiduTts.destroy();
-            baiduTts = null;
-        }
-        if (speechManager != null) {
-            speechManager.destroyRecognizer();
-        }
+        if (baiduTts != null) { baiduTts.destroy(); baiduTts = null; }
+        if (speechManager != null) speechManager.destroyRecognizer();
         if (navigationManager != null) {
             navigationManager.stopNavigation();
             navigationManager.destroyLocationClient();
         }
-        if (tripPreviewService != null) {
-            tripPreviewService.cancelAll();
-        }
-        if (mapView != null) {
-            mapView.onDestroy();
-        }
+        if (tripPreviewService != null) tripPreviewService.cancelAll();
+        if (mapView != null) mapView.onDestroy();
     }
 }
