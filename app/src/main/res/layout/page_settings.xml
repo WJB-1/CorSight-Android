@@ -2,12 +2,13 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:background="?android:attr/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="20dp">
 
         <TextView
             android:layout_width="match_parent"
@@ -15,7 +16,7 @@
             android:text="语音导航 v1.0"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:gravity="center"
             android:layout_marginTop="40dp"/>
 
@@ -24,14 +25,14 @@
             android:layout_height="wrap_content"
             android:text="基于高德地图 + 百度语音"
             android:textSize="14sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:gravity="center"
             android:layout_marginTop="8dp"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -40,7 +41,7 @@
             android:text="第三方服务"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="12dp"/>
 
         <TextView
@@ -48,7 +49,7 @@
             android:layout_height="wrap_content"
             android:text="高德地图 SDK 3D Map 9.7.0"
             android:textSize="14sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="6dp"/>
 
         <TextView
@@ -56,7 +57,7 @@
             android:layout_height="wrap_content"
             android:text="高德搜索 SDK 9.7.0"
             android:textSize="14sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="6dp"/>
 
         <TextView
@@ -64,7 +65,7 @@
             android:layout_height="wrap_content"
             android:text="百度语音识别 SDK"
             android:textSize="14sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="6dp"/>
 
         <TextView
@@ -72,13 +73,13 @@
             android:layout_height="wrap_content"
             android:text="百度语音合成 REST API"
             android:textSize="14sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginBottom="6dp"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -87,7 +88,7 @@
             android:text="后端服务"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="12dp"/>
 
         <TextView
@@ -95,7 +96,7 @@
             android:layout_height="wrap_content"
             android:text="服务地址"
             android:textSize="14sp"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="4dp"/>
 
         <EditText
@@ -106,8 +107,8 @@
             android:singleLine="true"
             android:paddingHorizontal="12dp"
             android:background="@drawable/edit_text_background"
-            android:textColor="@color/black"
-            android:textColorHint="@color/gray"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorSecondary"
             android:textSize="13sp" />
 
         <Button
@@ -116,14 +117,14 @@
             android:layout_height="44dp"
             android:text="保存地址"
             android:textColor="@color/white"
-            android:background="@color/purple_500"
+            android:background="?attr/colorPrimary"
             android:textSize="14sp"
             android:layout_marginTop="8dp" />
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -132,7 +133,7 @@
             android:text="视觉辅助"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="12dp"/>
 
         <LinearLayout
@@ -147,7 +148,7 @@
                 android:layout_weight="1"
                 android:text="使用外设获取环境数据"
                 android:textSize="14sp"
-                android:textColor="@color/black" />
+                android:textColor="?android:attr/textColorPrimary" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switch_use_external_device"
@@ -160,14 +161,14 @@
             android:layout_height="wrap_content"
             android:text="开启后，视觉避障优先连接外设相机，找不到则退回本机相机"
             android:textSize="12sp"
-            android:textColor="@color/gray"
+            android:textColor="?android:attr/textColorSecondary"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="6dp"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -176,7 +177,7 @@
             android:text="开发者工具"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="12dp"/>
 
         <Button
@@ -192,7 +193,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -200,7 +201,7 @@
             android:layout_height="wrap_content"
             android:text="高德 API Key"
             android:textSize="14sp"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="4dp"/>
 
         <TextView
@@ -208,14 +209,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="12sp"
-            android:textColor="@color/gray"/>
+            android:textColor="?android:attr/textColorSecondary"/>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="百度 App ID"
             android:textSize="14sp"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="4dp"/>
 
@@ -224,12 +225,12 @@
             android:layout_height="wrap_content"
             android:text="7669507"
             android:textSize="12sp"
-            android:textColor="@color/gray"/>
+            android:textColor="?android:attr/textColorSecondary"/>
 
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/light_gray"
+            android:background="?android:attr/colorControlHighlight"
             android:layout_marginVertical="24dp"/>
 
         <TextView
@@ -237,7 +238,7 @@
             android:layout_height="wrap_content"
             android:text="包名"
             android:textSize="14sp"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="4dp"/>
 
         <TextView
@@ -245,7 +246,7 @@
             android:layout_height="wrap_content"
             android:text="com.example.voicenavigation"
             android:textSize="12sp"
-            android:textColor="@color/gray"/>
+            android:textColor="?android:attr/textColorSecondary"/>
 
     </LinearLayout>
 
