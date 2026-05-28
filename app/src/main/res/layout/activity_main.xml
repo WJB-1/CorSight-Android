@@ -82,13 +82,13 @@
             android:layout_marginTop="4dp" />
     </LinearLayout>
 
-    <!-- 搜索建议列表（浮动在搜索栏上方，约束定位） -->
     <androidx.cardview.widget.CardView
         android:id="@+id/card_suggestions"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginHorizontal="8dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"
         android:visibility="gone"
         app:cardCornerRadius="12dp"
         app:cardElevation="6dp"
@@ -96,13 +96,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/search_bar_container"
-        app:layout_constrainedHeight="true">
-
+        app:layout_constraintBottom_toTopOf="@id/bottom_controls"
+        app:layout_constraintHeight_min="100dp">
+        <!-- RecyclerView 高度 match_parent -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_suggestions"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:maxHeight="220dp"
+            android:layout_height="match_parent"
             android:padding="4dp" />
     </androidx.cardview.widget.CardView>
 
