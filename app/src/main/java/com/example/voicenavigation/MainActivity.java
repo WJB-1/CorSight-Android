@@ -123,6 +123,8 @@ public class MainActivity extends AppCompatActivity implements
     private VoiceRecordAdapter historyAdapter;
     private TripPreviewService tripPreviewService;
 
+    //主动更新目的地文本时忽略 TextWatcher 的响应
+    private boolean isUpdatingDestination = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -234,6 +236,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override public void afterTextChanged(Editable s) {
+                if (isUpdatingDestination) return;
                 String text = s.toString().trim();
                 btnClearSearch.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
                 if (text.length() >= 2) {
@@ -588,12 +591,15 @@ public class MainActivity extends AppCompatActivity implements
     public void onPoiItemSearched(PoiItem poiItem, int rCode) {}
 
     private void setDestination(LatLng latLng, String name) {
+        isUpdatingDestination = true;
         selectedDestLatLng = latLng;
         selectedDestName = name;
         addDestinationMarker(latLng);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
         etDestination.setText(name);
         etDestination.setSelection(name.length());
+        // 延迟重置，确保 TextWatcher 的 afterTextChanged 已执行
+        etDestination.post(() -> isUpdatingDestination = false);
     }
 
     // ========== 导航 ==========
