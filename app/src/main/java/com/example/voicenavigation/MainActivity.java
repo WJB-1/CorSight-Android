@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_PERMISSIONS_CODE = 100;
-
+//随便加一行
     private AMap mMap;
     private MapView mapView;
     private BaiduSpeechManager speechManager;
