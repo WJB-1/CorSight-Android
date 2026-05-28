@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements
     private TextView tvHistoryDestCount;
     private VoiceRecordAdapter historyAdapter;
     private TripPreviewService tripPreviewService;
-
+    private boolean isSelectingDestination = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -177,11 +177,13 @@ public class MainActivity extends AppCompatActivity implements
         rvSuggestions.setLayoutManager(new LinearLayoutManager(this));
         suggestionAdapter = new SuggestionAdapter(new ArrayList<>());
         suggestionAdapter.setOnItemClickListener((item, position) -> {
+            isSelectingDestination = true;
             LatLonPoint point = item.getLatLonPoint();
             LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
             setDestination(latLng, item.getTitle());
             hideSuggestions();
             hideKeyboard();
+            isSelectingDestination = false;
         });
         rvSuggestions.setAdapter(suggestionAdapter);
 
@@ -235,6 +237,7 @@ public class MainActivity extends AppCompatActivity implements
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override public void afterTextChanged(Editable s) {
+                if (isSelectingDestination) return; // 跳过自动搜索
                 String text = s.toString().trim();
                 btnClearSearch.setVisibility(text.isEmpty() ? View.GONE : View.VISIBLE);
                 if (text.length() >= 2) {
