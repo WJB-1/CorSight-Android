@@ -132,6 +132,16 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
         });
     }
 
+    public void requestCurrentLocation() {
+        if (locationClient == null) {
+            if (navigationCallback != null) {
+                navigationCallback.onNavigationError("定位服务未初始化");
+            }
+            return;
+        }
+        locationClient.startLocation();
+    }
+
     private void updateNavigationProgress(Location currentLocation) {
         LatLng currentLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
         float minDist = Float.MAX_VALUE;

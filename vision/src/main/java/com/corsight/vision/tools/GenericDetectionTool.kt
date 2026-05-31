@@ -13,11 +13,20 @@ class GenericDetectionTool : VisionTool {
 
     companion object {
         const val MODEL_ID = "yolov8"
+        const val MODEL_ASSET_PATH = "models/best.onnx"
+        const val LABEL_ASSET_PATH = "models/coco80.txt"
+        const val CONFIDENCE_THRESHOLD = 0.6f
+        const val NMS_THRESHOLD = 0.45f
     }
 
     override fun onActivate(context: Context) {
         if (ModelRegistry.getDetector(MODEL_ID) == null) {
-            val engine = YoloV8OnnxEngine()
+            val engine = YoloV8OnnxEngine(
+                modelAssetPath = MODEL_ASSET_PATH,
+                labelAssetPath = LABEL_ASSET_PATH,
+                confidenceThreshold = CONFIDENCE_THRESHOLD,
+                nmsThreshold = NMS_THRESHOLD
+            )
             ModelRegistry.register(MODEL_ID, engine)
             engine.load(context)
         }

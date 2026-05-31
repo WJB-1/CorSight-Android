@@ -110,6 +110,21 @@
 
     </androidx.cardview.widget.CardView>
 
+    <!-- 定位按钮（地图右下角） -->
+    <ImageButton
+        android:id="@+id/btn_my_location"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/card_background"
+        android:src="@android:drawable/ic_menu_mylocation"
+        android:tint="?android:attr/textColorPrimary"
+        android:elevation="4dp"
+        android:contentDescription="定位"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottom_controls" />
+
     <!-- 搜索栏（浮在地图上方，居中偏上） -->
     <androidx.cardview.widget.CardView
         android:id="@+id/search_bar_container"
