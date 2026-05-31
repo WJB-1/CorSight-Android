@@ -37,7 +37,7 @@ class UploadService(private val baseUrl: String) {
         val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
 
         return try {
-            Log.d("UploadService", "Uploading task ${task.pointId} with ${task.images.size} images")
+            Log.d("UploadService", "Uploading to $baseUrl, task ${task.pointId} with ${task.images.size} images")
 
             // 步骤1：一次性上传 JSON + 所有图片
             val responseBody = uploadWithRetryBody("采样点数据") {

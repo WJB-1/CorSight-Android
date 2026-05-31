@@ -370,16 +370,16 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun doSync(tasks: List<CaptureTask>) {
         val prefs = AppConfig.prefs(this)
-        val baseUrl = AppConfig.normalizeBaseUrl(
-            prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
-        )
+        val rawUrl = prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
+        val baseUrl = AppConfig.normalizeBaseUrl(rawUrl)
+        Log.d("DataCollection", "Raw URL: $rawUrl, Normalized: $baseUrl")
         if (baseUrl.isEmpty()) {
             Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
             return
         }
         val uploadService = UploadService(baseUrl)
 
-        Toast.makeText(this, "开始同步...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "开始同步到 $baseUrl...", Toast.LENGTH_SHORT).show()
         CoroutineScope(Dispatchers.IO).launch {
             var successCount = 0
             var lastError = ""
