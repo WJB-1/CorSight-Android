@@ -1,107 +1,155 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/light_gray">
 
-    <!-- 相机预览 -->
-    <androidx.camera.view.PreviewView
-        android:id="@+id/previewView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:scaleType="fitStart" />
-
-    <!-- 网络流预览 -->
-    <ImageView
-        android:id="@+id/ivNetwork"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:visibility="gone" />
-
-    <!-- 检测框叠加层 -->
-    <com.example.voicenavigation.DetectionOverlayView
-        android:id="@+id/overlayView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- 顶部：源切换 + 网络配置 -->
     <LinearLayout
-        android:id="@+id/topControls"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:id="@+id/headerBar"
+        android:layout_width="0dp"
+        android:layout_height="118dp"
+        android:background="@color/purple_700"
+        android:gravity="bottom"
         android:orientation="vertical"
-        android:background="#CC000000"
-        android:padding="8dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="18dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <!-- 源切换按钮 -->
-        <LinearLayout
-            android:paddingTop="60dp"
+        <TextView
+            android:id="@+id/tvVisionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
+            android:text="视觉避障检测"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvVisionSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="清晰帧门控、本地模型与云端模型"
+            android:textColor="#D8FFFFFF"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/previewContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="14dp"
+        android:layout_marginTop="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="12dp"
+        android:background="@color/black"
+        app:layout_constraintBottom_toTopOf="@id/bottomPanel"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerBar">
+
+        <androidx.camera.view.PreviewView
+            android:id="@+id/previewView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:scaleType="fitCenter" />
+
+        <ImageView
+            android:id="@+id/ivNetwork"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
+        <com.example.voicenavigation.DetectionOverlayView
+            android:id="@+id/overlayView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/tvPreviewHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="选择下方检测模式"
+            android:textColor="#B3FFFFFF"
+            android:textSize="15sp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/colorBackground"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="14dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <LinearLayout
+            android:id="@+id/modeButtons"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btnSourceCamera"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
-                android:text="📷 相机"
-                android:textSize="13sp"
-                android:textColor="@color/white"
                 android:background="@color/purple_700"
-                android:layout_marginEnd="4dp" />
+                android:text="本地检测"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
 
             <Button
                 android:id="@+id/btnSourceNetwork"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="44dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="🌐 网络流"
-                android:textSize="13sp"
-                android:textColor="@color/white"
                 android:background="@color/gray"
-                android:layout_marginStart="4dp" />
+                android:text="云端检测"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- 网络配置区域（默认隐藏） -->
         <LinearLayout
             android:id="@+id/layoutNetworkConfig"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:visibility="gone"
-            android:layout_marginTop="6dp">
+            android:visibility="gone">
 
             <EditText
                 android:id="@+id/etStreamIp"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:hint="IP:端口 (如 192.168.1.100:8080)"
-
                 android:singleLine="true"
-                android:paddingHorizontal="10dp"
-                android:background="@drawable/edit_text_background"
-                android:textColor="#000000"
-                android:textColorHint="@color/gray"
-                android:textSize="13sp"
-                android:text="192.168.4.1" />
+                android:textSize="13sp" />
 
-            <Button
-                android:id="@+id/btnConnectStream"
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:text="连接"
-                android:textSize="13sp"
-                android:textColor="@color/white"
-                android:background="@color/teal_200"
-                android:paddingHorizontal="16dp"
-                android:layout_marginStart="6dp" />
+            <TextView
+                android:id="@+id/tvDetectionServer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxLines="2"
+                android:text="检测服务地址未配置"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textSize="12sp" />
 
             <ProgressBar
                 android:id="@+id/progressConnecting"
@@ -110,26 +158,16 @@
                 android:layout_marginStart="8dp"
                 android:visibility="gone" />
         </LinearLayout>
-    </LinearLayout>
-
-    <!-- 底部：检测结果 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#CC000000"
-        android:padding="12dp"
-        app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
             android:id="@+id/tvDetections"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="初始化中..."
-            android:textColor="@android:color/white"
-            android:textSize="15sp"
-            android:lineSpacingMultiplier="1.3" />
-
+            android:layout_marginTop="10dp"
+            android:lineSpacingMultiplier="1.2"
+            android:minHeight="46dp"
+            android:text="等待检测结果"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp" />
     </LinearLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

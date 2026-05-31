@@ -28,7 +28,7 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
     private static final float ARRIVAL_DISTANCE = 20;
     private static final float OFF_ROUTE_THRESHOLD = 50;
 
-    private Context context;
+    private final Context context;
     private AMapLocationClient locationClient;
     private AMapLocationClientOption locationOption;
     private RouteSearch routeSearch;
@@ -104,28 +104,28 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
         locationClient.setLocationListener(new AMapLocationListener() {
             @Override
             public void onLocationChanged(AMapLocation aMapLocation) {
-                if (aMapLocation != null) {
-                    if (aMapLocation.getErrorCode() == 0) {
-                        Location location = new Location("amap");
-                        location.setLatitude(aMapLocation.getLatitude());
-                        location.setLongitude(aMapLocation.getLongitude());
-                        location.setAccuracy(aMapLocation.getAccuracy());
-                        location.setAltitude(aMapLocation.getAltitude());
-                        location.setSpeed(aMapLocation.getSpeed());
-                        location.setTime(aMapLocation.getTime());
+                if (aMapLocation == null) return;
+                if (aMapLocation.getErrorCode() == 0) {
+                    Location location = new Location("amap");
+                    location.setLatitude(aMapLocation.getLatitude());
+                    location.setLongitude(aMapLocation.getLongitude());
+                    location.setAccuracy(aMapLocation.getAccuracy());
+                    location.setAltitude(aMapLocation.getAltitude());
+                    location.setSpeed(aMapLocation.getSpeed());
+                    location.setTime(aMapLocation.getTime());
 
-                        if (isNavigating && routePoints != null && !routePoints.isEmpty()) {
-                            updateNavigationProgress(location);
-                        }
+                    if (isNavigating && routePoints != null && !routePoints.isEmpty()) {
+                        updateNavigationProgress(location);
+                    }
 
-                        if (navigationCallback != null) {
-                            navigationCallback.onLocationUpdated(location);
-                        }
-                    } else {
-                        Log.e(TAG, "Location error: " + aMapLocation.getErrorCode() + " - " + aMapLocation.getErrorInfo());
-                        if (navigationCallback != null && !isNavigating) {
-                            navigationCallback.onNavigationError("定位失败: " + aMapLocation.getErrorInfo());
-                        }
+                    if (navigationCallback != null) {
+                        navigationCallback.onLocationUpdated(location);
+                    }
+                } else {
+                    String error = "定位失败：" + aMapLocation.getErrorInfo();
+                    Log.e(TAG, error + ", code=" + aMapLocation.getErrorCode());
+                    if (navigationCallback != null && !isNavigating) {
+                        navigationCallback.onNavigationError(error);
                     }
                 }
             }
@@ -160,10 +160,9 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
             remainingDistance += calculateDistance(routePoints.get(i), routePoints.get(i + 1));
         }
 
-        float remainingDuration = (remainingDistance / totalDistance) * totalDuration;
-
+        float remainingDuration = totalDistance > 0 ? (remainingDistance / totalDistance) * totalDuration : 0;
         String nextInstruction = "";
-        if (stepInstructions != null) {
+        if (stepInstructions != null && currentWalkPath != null) {
             int stepIdx = 0;
             float accumulated = 0;
             for (WalkStep step : currentWalkPath.getSteps()) {

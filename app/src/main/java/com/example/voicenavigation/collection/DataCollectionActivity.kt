@@ -22,28 +22,38 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
-import com.amap.api.location.AMapLocationListener
+import com.amap.api.maps.MapsInitializer
+import com.amap.api.services.core.ServiceSettings
+import com.example.voicenavigation.AppConfig
+import com.example.voicenavigation.BuildConfig
 import com.example.voicenavigation.R
 import com.example.voicenavigation.network.TripPreviewService
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
-import java.util.*
+import java.util.Locale
+import java.util.Random
 
 class DataCollectionActivity : AppCompatActivity() {
 
     private val directions = listOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
-    private var targetDirection = "N"
     private val capturedStatus = mutableMapOf<String, Boolean>()
     private val imagePaths = mutableListOf<Pair<String, String>>()
 
     private lateinit var compassService: CompassService
     private lateinit var taskStorage: TaskStorage
     private var locationClient: AMapLocationClient? = null
-
     private var currentLat = 0.0
     private var currentLon = 0.0
     private var chunkId = "未计算"
+    private var targetDirection = "N"
+    private var lastAlignedState = false
+    private var pendingPhotoFile: File? = null
+    private var retakeDirection: String? = null
+    private var previewDialog: AlertDialog? = null
+    private var pendingSceneDesc: String = ""
 
     private lateinit var tvHeading: TextView
     private lateinit var tvCurrentDir: TextView
@@ -51,22 +61,33 @@ class DataCollectionActivity : AppCompatActivity() {
     private lateinit var tvAligned: TextView
     private lateinit var btnCapture: Button
     private lateinit var gridDirections: GridLayout
-    private lateinit var etSceneDesc: EditText
     private lateinit var tvChunkId: TextView
     private lateinit var tvCoords: TextView
     private lateinit var btnSync: Button
 
-    private val LOCATION_PERMISSION = 200
-    private val CAMERA_REQUEST = 201
-    private val RETAKE_REQUEST = 202
-    private var pendingPhotoFile: File? = null
-    private var retakeDirection: String? = null
+    companion object {
+        private const val LOCATION_PERMISSION = 200
+        private const val CAMERA_REQUEST = 201
+        private const val RETAKE_REQUEST = 202
+        private const val CAMERA_PERMISSION = 203
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_data_collection)
-
         title = "数据采集"
+
+        AMapLocationClient.updatePrivacyShow(this, true, true)
+        AMapLocationClient.updatePrivacyAgree(this, true)
+        MapsInitializer.updatePrivacyShow(this, true, true)
+        MapsInitializer.updatePrivacyAgree(this, true)
+        ServiceSettings.updatePrivacyShow(this, true, true)
+        ServiceSettings.updatePrivacyAgree(this, true)
+        if (hasValidAmapKey()) {
+            MapsInitializer.setApiKey(BuildConfig.AMAP_API_KEY)
+            AMapLocationClient.setApiKey(BuildConfig.AMAP_API_KEY)
+            ServiceSettings.getInstance().setApiKey(BuildConfig.AMAP_API_KEY)
+        }
 
         compassService = CompassService(this)
         taskStorage = TaskStorage(this)
@@ -83,12 +104,11 @@ class DataCollectionActivity : AppCompatActivity() {
         tvAligned = findViewById(R.id.tvAligned)
         btnCapture = findViewById(R.id.btnCapture)
         gridDirections = findViewById(R.id.gridDirections)
-        etSceneDesc = findViewById(R.id.etSceneDesc)
         tvChunkId = findViewById(R.id.tvChunkId)
         tvCoords = findViewById(R.id.tvCoords)
         btnSync = findViewById(R.id.btnSync)
 
-        btnCapture.setOnClickListener { takePhoto() }
+        btnCapture.setOnClickListener { takePhoto(CAMERA_REQUEST, targetDirection) }
         btnSync.setOnClickListener { syncToCloud() }
         findViewById<Button>(R.id.btnViewTasks).setOnClickListener { viewTasks() }
         findViewById<Button>(R.id.btnRefreshLocation).setOnClickListener { refreshLocation() }
@@ -102,28 +122,45 @@ class DataCollectionActivity : AppCompatActivity() {
     }
 
     private fun checkLocationPermission() {
+        if (!hasValidAmapKey()) {
+            Toast.makeText(this, "高德Key未配置，无法定位采集点", Toast.LENGTH_LONG).show()
+            initCompass()
+            return
+        }
+        val permissions = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
+            != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.CAMERA)
+        }
+        if (permissions.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), LOCATION_PERMISSION)
+        } else {
             initLocation()
             initCompass()
-        } else {
-            ActivityCompat.requestPermissions(this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION)
         }
     }
 
     private fun initLocation() {
+        if (!hasValidAmapKey()) {
+            Toast.makeText(this, "高德Key未配置，无法刷新位置", Toast.LENGTH_SHORT).show()
+            return
+        }
         try {
             locationClient = AMapLocationClient(this)
-            val option = AMapLocationClientOption()
-            option.locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
-            option.isOnceLocation = true
+            val option = AMapLocationClientOption().apply {
+                locationMode = AMapLocationClientOption.AMapLocationMode.Hight_Accuracy
+                isOnceLocation = true
+            }
             locationClient?.setLocationOption(option)
-            locationClient?.setLocationListener(AMapLocationListener { location ->
+            locationClient?.setLocationListener { location ->
                 if (location != null && location.errorCode == 0) {
                     updateLocation(location.latitude, location.longitude)
                 }
-            })
+            }
             locationClient?.startLocation()
         } catch (e: Exception) {
             Toast.makeText(this, "定位初始化失败", Toast.LENGTH_SHORT).show()
@@ -139,12 +176,9 @@ class DataCollectionActivity : AppCompatActivity() {
         currentLat = lat
         currentLon = lon
         chunkId = GridUtils.getChunkId(currentLat, currentLon)
-
         tvChunkId.text = chunkId
         tvCoords.text = String.format(Locale.US, "%.6f, %.6f", currentLat, currentLon)
     }
-
-    private var lastAlignedState = false
 
     private fun initCompass() {
         compassService.start { heading, direction, isAligned ->
@@ -153,12 +187,10 @@ class DataCollectionActivity : AppCompatActivity() {
             tvTargetDir.text = targetDirection
 
             if (isAligned) {
-                tvAligned.text = "✓ 已对准"
+                tvAligned.text = "已对准"
                 tvAligned.setTextColor(Color.parseColor("#4CAF50"))
                 btnCapture.isEnabled = true
                 btnCapture.setBackgroundColor(ContextCompat.getColor(this, R.color.vision_green))
-
-                // 首次进入对准状态时触发振动
                 if (!lastAlignedState) {
                     vibrate()
                     lastAlignedState = true
@@ -170,55 +202,54 @@ class DataCollectionActivity : AppCompatActivity() {
                 lastAlignedState = false
             }
 
-            btnCapture.text = "拍摄 ${targetDirection} 方向"
+            btnCapture.text = "拍摄 $targetDirection 方向"
         }
         compassService.setTargetDirection(targetDirection)
     }
 
     private fun vibrate() {
-        try {
-            val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
-            vibrator?.let {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    it.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    it.vibrate(150)
-                }
-            }
-        } catch (e: Exception) {
-            // 振动失败不影响主流程
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator ?: return
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            vibrator.vibrate(android.os.VibrationEffect.createOneShot(150, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(150)
         }
     }
 
-    private fun takePhoto() {
-        if (!capturedStatus.containsKey(targetDirection) || capturedStatus[targetDirection] == true) {
+    private fun takePhoto(requestCode: Int, direction: String) {
+        if (requestCode == CAMERA_REQUEST && capturedStatus[direction] == true) {
             Toast.makeText(this, "该方向已拍摄", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION)
             return
         }
 
         val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
         pendingPhotoFile = file
+        retakeDirection = if (requestCode == RETAKE_REQUEST) direction else null
 
-        val uri = FileProvider.getUriForFile(
-            this,
-            "${packageName}.fileprovider",
-            file
-        )
-
+        val uri: Uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
             putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
         if (intent.resolveActivity(packageManager) != null) {
-            startActivityForResult(intent, CAMERA_REQUEST)
+            startActivityForResult(intent, requestCode)
         } else {
-            Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
             pendingPhotoFile = null
+            retakeDirection = null
+            Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode != RESULT_OK) {
             pendingPhotoFile = null
@@ -228,55 +259,44 @@ class DataCollectionActivity : AppCompatActivity() {
 
         val file = pendingPhotoFile
         pendingPhotoFile = null
-
         if (file == null || !file.exists() || file.length() == 0L) {
-            Toast.makeText(this, "拍照失败，请重试", Toast.LENGTH_SHORT).show()
             retakeDirection = null
+            Toast.makeText(this, "拍照失败，请重试", Toast.LENGTH_SHORT).show()
             return
         }
 
-        when (requestCode) {
-            CAMERA_REQUEST -> {
-                imagePaths.add(Pair(targetDirection, file.absolutePath))
-                capturedStatus[targetDirection] = true
-                updateGridColors()
+        if (requestCode == RETAKE_REQUEST) {
+            val direction = retakeDirection ?: return
+            retakeDirection = null
+            val index = imagePaths.indexOfFirst { it.first == direction }
+            if (index >= 0) {
+                imagePaths[index] = direction to file.absolutePath
+            }
+            previewDialog?.findViewById<GridLayout>(R.id.previewGrid)?.let { refreshPreviewGrid(it) }
+            return
+        }
 
-                if (imagePaths.size == 8) {
-                    showPreviewDialog()
-                } else {
-                    switchTarget()
-                }
-            }
-            RETAKE_REQUEST -> {
-                val dir = retakeDirection ?: return
-                retakeDirection = null
-                // 替换该方向的图片
-                val index = imagePaths.indexOfFirst { it.first == dir }
-                if (index >= 0) {
-                    imagePaths[index] = Pair(dir, file.absolutePath)
-                }
-                // 刷新预览弹窗
-                previewDialog?.let { dialog ->
-                    val grid = dialog.findViewById<GridLayout>(R.id.previewGrid)
-                    grid?.let { refreshPreviewGrid(it) }
-                }
-            }
+        imagePaths.add(targetDirection to file.absolutePath)
+        capturedStatus[targetDirection] = true
+        updateGridColors()
+
+        if (imagePaths.size == directions.size) {
+            showPreviewDialog()
+        } else {
+            switchTarget()
         }
     }
 
     private fun switchTarget() {
         val currentIndex = directions.indexOf(targetDirection)
-        val newStatus = capturedStatus.toMutableMap()
-        var nextIndex = (currentIndex + 1) % 8
-        while (newStatus[directions[nextIndex]] == true && nextIndex != currentIndex) {
-            nextIndex = (nextIndex + 1) % 8
+        var nextIndex = (currentIndex + 1) % directions.size
+        while (capturedStatus[directions[nextIndex]] == true && nextIndex != currentIndex) {
+            nextIndex = (nextIndex + 1) % directions.size
         }
-
         if (nextIndex == currentIndex) {
-            Toast.makeText(this, "8个方向已完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "8 个方向已完成", Toast.LENGTH_SHORT).show()
             return
         }
-
         targetDirection = directions[nextIndex]
         compassService.setTargetDirection(targetDirection)
         updateGridColors()
@@ -306,33 +326,30 @@ class DataCollectionActivity : AppCompatActivity() {
     private fun saveCaptureTask() {
         val pointId = "P_${System.currentTimeMillis()}_${Random().nextInt(99999).toString().padStart(5, '0')}"
         val imagesMap = mutableMapOf<String, String>()
-        imagePaths.forEach { (dir, path) ->
-            imagesMap[dir] = path
-        }
+        imagePaths.forEach { (dir, path) -> imagesMap[dir] = path }
 
         val task = CaptureTask(
             pointId = pointId,
             chunkId = chunkId,
             latitude = currentLat,
             longitude = currentLon,
-            sceneDescription = etSceneDesc.text.toString().ifEmpty { "未描述" },
+            sceneDescription = pendingSceneDesc.ifEmpty { "未描述" },
             images = imagesMap
         )
 
         taskStorage.saveTask(task)
         Toast.makeText(this, "任务已保存", Toast.LENGTH_SHORT).show()
-
         imagePaths.clear()
         initCaptureStatus()
         targetDirection = "N"
-        compassService.setTargetDirection("N")
-        etSceneDesc.setText("")
+        compassService.setTargetDirection(targetDirection)
+        pendingSceneDesc = ""
         updateSyncButton()
     }
 
     private fun updateSyncButton() {
         val pending = taskStorage.getPendingTasks().size
-        btnSync.text = "同步到云端 ($pending)"
+        btnSync.text = "同步到云端($pending)"
     }
 
     private fun syncToCloud() {
@@ -345,41 +362,42 @@ class DataCollectionActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("同步确认")
             .setMessage("确定要上传 ${pending.size} 个任务吗？")
-            .setPositiveButton("确定") { _, _ ->
-                doSync(pending)
-            }
+            .setPositiveButton("确定") { _, _ -> doSync(pending) }
             .setNegativeButton("取消", null)
             .show()
     }
 
     private fun doSync(tasks: List<CaptureTask>) {
-        val prefs = getSharedPreferences("corsight_config", MODE_PRIVATE)
-        val baseUrl = prefs.getString("server_base_url", TripPreviewService.DEFAULT_BASE_URL)
-
-        val uploadService = UploadService(baseUrl ?: TripPreviewService.DEFAULT_BASE_URL)
+        val prefs = AppConfig.prefs(this)
+        val baseUrl = AppConfig.normalizeBaseUrl(
+            prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
+        )
+        if (baseUrl.isEmpty()) {
+            Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val uploadService = UploadService(baseUrl)
 
         Toast.makeText(this, "开始同步...", Toast.LENGTH_SHORT).show()
-
         CoroutineScope(Dispatchers.IO).launch {
             var successCount = 0
-            var lastErrorMsg = ""
+            var lastError = ""
             for (task in tasks) {
-                val ok = uploadService.uploadTask(task)
-                if (ok) {
+                if (uploadService.uploadTask(task)) {
                     taskStorage.updateStatus(task.pointId, "success")
                     successCount++
                 } else {
                     taskStorage.updateStatus(task.pointId, "failed")
-                    lastErrorMsg = uploadService.lastError
+                    lastError = uploadService.lastError
                 }
             }
             withContext(Dispatchers.Main) {
-                val msg = if (successCount == tasks.size) {
+                val message = if (successCount == tasks.size) {
                     "上传成功 $successCount/${tasks.size}"
                 } else {
-                    "上传 $successCount/${tasks.size}, 失败: $lastErrorMsg"
+                    "上传 $successCount/${tasks.size}，失败：$lastError"
                 }
-                Toast.makeText(this@DataCollectionActivity, msg, Toast.LENGTH_LONG).show()
+                Toast.makeText(this@DataCollectionActivity, message, Toast.LENGTH_LONG).show()
                 updateSyncButton()
             }
         }
@@ -392,8 +410,8 @@ class DataCollectionActivity : AppCompatActivity() {
             return
         }
 
-        val items = tasks.map { t ->
-            "${t.pointId}\n${t.chunkId} | ${t.status} | ${t.images.size}/8张"
+        val items = tasks.map { task ->
+            "${task.pointId}\n${task.chunkId} | ${task.status} | ${task.images.size}/8张"
         }.toTypedArray()
 
         AlertDialog.Builder(this)
@@ -402,7 +420,7 @@ class DataCollectionActivity : AppCompatActivity() {
             .setPositiveButton("清空已完成") { _, _ ->
                 taskStorage.clearSuccessTasks()
                 updateSyncButton()
-                Toast.makeText(this, "已清空已完成任务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "已清空完成任务", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("关闭", null)
             .show()
@@ -412,14 +430,58 @@ class DataCollectionActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             LOCATION_PERMISSION -> {
-                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                var locationGranted = false
+                var cameraGranted = false
+                permissions.forEachIndexed { index, perm ->
+                    if (grantResults.getOrNull(index) == PackageManager.PERMISSION_GRANTED) {
+                        when (perm) {
+                            Manifest.permission.ACCESS_FINE_LOCATION -> locationGranted = true
+                            Manifest.permission.CAMERA -> cameraGranted = true
+                        }
+                    }
+                }
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) locationGranted = true
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    == PackageManager.PERMISSION_GRANTED) cameraGranted = true
+
+                if (locationGranted) {
                     initLocation()
                     initCompass()
                 } else {
-                    Toast.makeText(this, "需要位置权限", Toast.LENGTH_SHORT).show()
+                    showPermissionDeniedDialog("位置权限", "需要位置权限来获取当前坐标")
+                }
+                if (!cameraGranted) {
+                    showPermissionDeniedDialog("相机权限", "需要相机权限来拍摄街景照片")
+                }
+            }
+            CAMERA_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (retakeDirection != null) {
+                        takePhoto(RETAKE_REQUEST, retakeDirection!!)
+                    } else {
+                        takePhoto(CAMERA_REQUEST, targetDirection)
+                    }
+                } else {
+                    showPermissionDeniedDialog("相机权限", "需要相机权限来拍摄街景照片")
                 }
             }
         }
+    }
+
+    private fun showPermissionDeniedDialog(title: String, message: String) {
+        AlertDialog.Builder(this)
+            .setTitle("$title 未授予")
+            .setMessage("$message。请在系统设置中开启权限。")
+            .setPositiveButton("去设置") { _, _ ->
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
+            }
+            .setNegativeButton("取消", null)
+            .setCancelable(false)
+            .show()
     }
 
     override fun onResume() {
@@ -442,10 +504,6 @@ class DataCollectionActivity : AppCompatActivity() {
         locationClient?.onDestroy()
     }
 
-    // ---------- 预览弹窗 ----------
-
-    private var previewDialog: AlertDialog? = null
-
     private fun showPreviewDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_preview, null)
         val grid = dialogView.findViewById<GridLayout>(R.id.previewGrid)
@@ -460,16 +518,17 @@ class DataCollectionActivity : AppCompatActivity() {
         dialogView.findViewById<Button>(R.id.btnPreviewCancel).setOnClickListener {
             dialog.dismiss()
             previewDialog = null
-            // 放弃：删除已拍照片，重置状态
             imagePaths.forEach { File(it.second).delete() }
             imagePaths.clear()
             initCaptureStatus()
             targetDirection = "N"
-            compassService.setTargetDirection("N")
+            compassService.setTargetDirection(targetDirection)
             Toast.makeText(this, "已放弃，请重新采集", Toast.LENGTH_SHORT).show()
         }
 
         dialogView.findViewById<Button>(R.id.btnPreviewSave).setOnClickListener {
+            val descInput = dialogView.findViewById<EditText>(R.id.etPreviewSceneDesc)
+            pendingSceneDesc = descInput?.text?.toString()?.trim() ?: ""
             dialog.dismiss()
             previewDialog = null
             saveCaptureTask()
@@ -480,9 +539,8 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun refreshPreviewGrid(grid: GridLayout) {
         grid.removeAllViews()
-        val dm = resources.displayMetrics
-        val margin = (8 * dm.density).toInt()
-        val size = (dm.widthPixels - 48 * dm.density).toInt() / 2
+        val margin = (8 * resources.displayMetrics.density).toInt()
+        val size = ((resources.displayMetrics.widthPixels - 48 * resources.displayMetrics.density) / 2).toInt()
 
         for ((dir, path) in imagePaths) {
             val container = LinearLayout(this).apply {
@@ -494,52 +552,25 @@ class DataCollectionActivity : AppCompatActivity() {
                     setMargins(margin, margin, margin, margin)
                 }
             }
-
-            val iv = ImageView(this).apply {
+            val image = ImageView(this).apply {
                 layoutParams = LinearLayout.LayoutParams(size, (size * 0.75).toInt())
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                setImageBitmap(android.graphics.BitmapFactory.decodeFile(path))
-                setOnClickListener { retakePhoto(dir) }
+                setImageURI(Uri.fromFile(File(path)))
+                setOnClickListener { takePhoto(RETAKE_REQUEST, dir) }
             }
-
             val label = TextView(this).apply {
                 text = dir
                 textSize = 14f
                 setTextColor(Color.parseColor("#666666"))
                 gravity = android.view.Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = margin / 2 }
             }
-
-            container.addView(iv)
+            container.addView(image)
             container.addView(label)
             grid.addView(container)
         }
     }
 
-    private fun retakePhoto(dir: String) {
-        retakeDirection = dir
-        val file = File(filesDir, "capture_${System.currentTimeMillis()}.jpg")
-        pendingPhotoFile = file
-
-        val uri = FileProvider.getUriForFile(
-            this,
-            "${packageName}.fileprovider",
-            file
-        )
-
-        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(MediaStore.EXTRA_OUTPUT, uri)
-        }
-
-        if (intent.resolveActivity(packageManager) != null) {
-            startActivityForResult(intent, RETAKE_REQUEST)
-        } else {
-            Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
-            pendingPhotoFile = null
-            retakeDirection = null
-        }
+    private fun hasValidAmapKey(): Boolean {
+        return BuildConfig.AMAP_API_KEY != null && BuildConfig.AMAP_API_KEY.trim().isNotEmpty()
     }
 }

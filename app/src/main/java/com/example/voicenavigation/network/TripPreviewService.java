@@ -55,7 +55,7 @@ public class TripPreviewService {
     private static final String TAG = "TripPreviewService";
 
     /** 后端服务基础地址，请根据实际部署环境修改 */
-    public static final String DEFAULT_BASE_URL = "https://unbuckled-scorpion-quarry.ngrok-free.dev";
+    public static final String DEFAULT_BASE_URL = "http://114.132.86.138:5000";
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final long CONNECT_TIMEOUT_SECONDS = 15;
