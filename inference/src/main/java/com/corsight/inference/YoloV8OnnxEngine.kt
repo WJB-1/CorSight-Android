@@ -1,19 +1,25 @@
 package com.corsight.inference
 
-import ai.onnxruntime.*
+import ai.onnxruntime.OnnxTensor
+import ai.onnxruntime.OrtEnvironment
+import ai.onnxruntime.OrtSession
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Matrix
+import android.graphics.Paint
 import android.graphics.RectF
 import java.nio.FloatBuffer
 import java.util.Collections
+import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 
 class YoloV8OnnxEngine(
     private val modelAssetPath: String = "models/yolov8.onnx",
     private val labelAssetPath: String = "models/coco80.txt",
-    private val confidenceThreshold: Float = 0.5f,
+    private val confidenceThreshold: Float = 0.6f,
     private val nmsThreshold: Float = 0.45f
 ) : ObjectDetector {
 
@@ -21,7 +27,6 @@ class YoloV8OnnxEngine(
     private var ortSession: OrtSession? = null
     private var labels: List<String> = emptyList()
     private val inputSize = 640
-    private val numClasses = 80
 
     @Volatile
     private var released = false
@@ -31,6 +36,7 @@ class YoloV8OnnxEngine(
         get() = ortSession != null
 
     override fun load(context: Context) {
+        released = false
         ortEnv = OrtEnvironment.getEnvironment()
         labels = readLabels(context)
         val modelBytes = context.assets.open(modelAssetPath).readBytes()
@@ -54,10 +60,10 @@ class YoloV8OnnxEngine(
             val session = ortSession ?: return emptyList()
             val env = ortEnv ?: return emptyList()
 
-            val scaled = Bitmap.createScaledBitmap(bitmap, inputSize, inputSize, false)
-            val rotated = scaled.rotate(rotationDegrees.toFloat())
+            val source = bitmap.rotate(rotationDegrees.toFloat())
+            val letterboxed = source.letterbox(inputSize)
             try {
-                val imgData = preProcess(rotated)
+                val imgData = preProcess(letterboxed.bitmap)
                 val inputName = session.inputNames.iterator().next()
                 val shape = longArrayOf(1, 3, inputSize.toLong(), inputSize.toLong())
                 val tensor = OnnxTensor.createTensor(env, imgData, shape)
@@ -66,19 +72,35 @@ class YoloV8OnnxEngine(
                     output.use {
                         @Suppress("UNCHECKED_CAST")
                         val rawOutput = output.get(0).value as Array<Array<FloatArray>>
-                        parseYoloOutput(rawOutput)
+                        parseYoloOutput(normalizeYoloOutput(rawOutput), source.width, source.height, letterboxed)
                     }
                 }
             } finally {
-                if (!scaled.isRecycled) scaled.recycle()
-                if (!rotated.isRecycled) rotated.recycle()
+                if (!source.isRecycled && source !== bitmap) source.recycle()
+                if (!letterboxed.bitmap.isRecycled) letterboxed.bitmap.recycle()
             }
         }
     }
 
     private fun Bitmap.rotate(degrees: Float): Bitmap {
+        if (degrees == 0f) return this
         val matrix = Matrix().apply { postRotate(degrees) }
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
+
+    private fun Bitmap.letterbox(targetSize: Int): Letterbox {
+        val scale = min(targetSize.toFloat() / width, targetSize.toFloat() / height)
+        val resizedW = (width * scale).toInt().coerceAtLeast(1)
+        val resizedH = (height * scale).toInt().coerceAtLeast(1)
+        val dx = (targetSize - resizedW) / 2f
+        val dy = (targetSize - resizedH) / 2f
+        val output = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawColor(Color.BLACK)
+        val resized = Bitmap.createScaledBitmap(this, resizedW, resizedH, true)
+        canvas.drawBitmap(resized, dx, dy, Paint(Paint.FILTER_BITMAP_FLAG))
+        if (!resized.isRecycled) resized.recycle()
+        return Letterbox(output, scale, dx, dy)
     }
 
     private fun preProcess(bitmap: Bitmap): FloatBuffer {
@@ -101,17 +123,55 @@ class YoloV8OnnxEngine(
         return imgData
     }
 
-    private fun parseYoloOutput(output: Array<Array<FloatArray>>): List<Detection> {
+    private fun normalizeYoloOutput(output: Array<Array<FloatArray>>): Array<FloatArray> {
+        require(output.isNotEmpty()) { "YOLO output is empty" }
         val predictions = output[0]
-        val numPredictions = predictions[0].size
+        require(predictions.isNotEmpty()) { "YOLO predictions are empty" }
 
+        val rows = predictions.size
+        val columns = predictions[0].size
+        require(rows >= 5 && columns > 0) { "Unsupported YOLO output shape: [$rows,$columns]" }
+
+        return if (rows <= columns) {
+            predictions
+        } else {
+            Array(columns) { column ->
+                FloatArray(rows) { row -> predictions[row][column] }
+            }
+        }
+    }
+
+    private fun parseYoloOutput(
+        predictions: Array<FloatArray>,
+        sourceWidth: Int,
+        sourceHeight: Int,
+        letterbox: Letterbox
+    ): List<Detection> {
+        val hasObjectness = labels.isNotEmpty() && labels.size == predictions.size - 5
+        val classStart = if (hasObjectness) 5 else 4
+        val availableClasses = predictions.size - classStart
+        val numClasses = if (labels.isNotEmpty()) {
+            min(labels.size, availableClasses)
+        } else {
+            availableClasses
+        }
+        if (numClasses <= 0) return emptyList()
+
+        val numPredictions = predictions[0].size
         val validPredictions = mutableListOf<Prediction>()
 
         for (i in 0 until numPredictions) {
+            val objectness = if (hasObjectness && i < predictions[4].size) {
+                normalizeScore(predictions[4][i])
+            } else {
+                1f
+            }
             var maxScore = 0f
             var maxClassId = 0
             for (c in 0 until numClasses) {
-                val score = predictions[c + 4][i]
+                val classRow = classStart + c
+                if (classRow >= predictions.size || i >= predictions[classRow].size) continue
+                val score = normalizeScore(predictions[classRow][i]) * objectness
                 if (score > maxScore) {
                     maxScore = score
                     maxClassId = c
@@ -123,22 +183,39 @@ class YoloV8OnnxEngine(
                 val cy = predictions[1][i]
                 val w = predictions[2][i]
                 val h = predictions[3][i]
-                val x1 = cx - w / 2
-                val y1 = cy - h / 2
-                val x2 = cx + w / 2
-                val y2 = cy + h / 2
-                validPredictions.add(Prediction(x1, y1, x2, y2, maxScore, maxClassId))
+                val x1 = (cx - w / 2 - letterbox.padX) / letterbox.scale
+                val y1 = (cy - h / 2 - letterbox.padY) / letterbox.scale
+                val x2 = (cx + w / 2 - letterbox.padX) / letterbox.scale
+                val y2 = (cy + h / 2 - letterbox.padY) / letterbox.scale
+                val clipped = RectF(
+                    x1.coerceIn(0f, sourceWidth.toFloat()),
+                    y1.coerceIn(0f, sourceHeight.toFloat()),
+                    x2.coerceIn(0f, sourceWidth.toFloat()),
+                    y2.coerceIn(0f, sourceHeight.toFloat())
+                )
+                if (clipped.width() > 1f && clipped.height() > 1f) {
+                    validPredictions.add(Prediction(clipped, maxScore, maxClassId))
+                }
             }
         }
 
         return nms(validPredictions).map { idx ->
             val p = validPredictions[idx]
             Detection(
-                box = RectF(p.x1, p.y1, p.x2, p.y2),
+                box = p.box,
                 score = p.confidence,
                 classId = p.classId,
                 label = labels.getOrNull(p.classId) ?: "unknown"
             )
+        }
+    }
+
+    private fun normalizeScore(score: Float): Float {
+        if (score.isNaN() || score.isInfinite()) return 0f
+        return if (score in 0f..1f) {
+            score
+        } else {
+            (1.0 / (1.0 + exp(-score.toDouble()))).toFloat()
         }
     }
 
@@ -152,22 +229,8 @@ class YoloV8OnnxEngine(
             selected.add(i)
             for (j in indices) {
                 if (i == j || suppressed[j]) continue
-                val box1 = predictions[i]
-                val box2 = predictions[j]
-                if (box1.classId != box2.classId) continue
-
-                val x1 = maxOf(box1.x1, box2.x1)
-                val y1 = maxOf(box1.y1, box2.y1)
-                val x2 = minOf(box1.x2, box2.x2)
-                val y2 = minOf(box1.y2, box2.y2)
-
-                val intersection = maxOf(0f, x2 - x1) * maxOf(0f, y2 - y1)
-                val area1 = (box1.x2 - box1.x1) * (box1.y2 - box1.y1)
-                val area2 = (box2.x2 - box2.x1) * (box2.y2 - box2.y1)
-                val union = area1 + area2 - intersection
-                val iou = if (union > 0) intersection / union else 0f
-
-                if (iou > nmsThreshold) {
+                if (predictions[i].classId != predictions[j].classId) continue
+                if (iou(predictions[i].box, predictions[j].box) > nmsThreshold) {
                     suppressed[j] = true
                 }
             }
@@ -175,16 +238,36 @@ class YoloV8OnnxEngine(
         return selected
     }
 
+    private fun iou(box1: RectF, box2: RectF): Float {
+        val x1 = max(box1.left, box2.left)
+        val y1 = max(box1.top, box2.top)
+        val x2 = min(box1.right, box2.right)
+        val y2 = min(box1.bottom, box2.bottom)
+        val intersection = max(0f, x2 - x1) * max(0f, y2 - y1)
+        val union = box1.width() * box1.height() + box2.width() * box2.height() - intersection
+        return if (union > 0f) intersection / union else 0f
+    }
+
     private fun readLabels(context: Context): List<String> {
         val lines = context.assets.open(labelAssetPath).bufferedReader().readLines()
-        return lines.map { line ->
-            val parts = line.split(":", limit = 2)
-            if (parts.size == 2) parts[1].trim() else line.trim()
+        return lines.mapNotNull { line ->
+            val cleaned = line.trim().removePrefix("﻿")
+            if (cleaned.isEmpty()) return@mapNotNull null
+            val parts = cleaned.split(":", limit = 2)
+            if (parts.size == 2) parts[1].trim() else cleaned
         }
     }
 
+    private data class Letterbox(
+        val bitmap: Bitmap,
+        val scale: Float,
+        val padX: Float,
+        val padY: Float
+    )
+
     private data class Prediction(
-        val x1: Float, val y1: Float, val x2: Float, val y2: Float,
-        val confidence: Float, val classId: Int
+        val box: RectF,
+        val confidence: Float,
+        val classId: Int
     )
 }
