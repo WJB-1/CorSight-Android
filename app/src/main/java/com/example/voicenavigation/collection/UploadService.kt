@@ -204,8 +204,8 @@ class UploadService(private val baseUrl: String) {
                     return result
                 }
                 Log.w("UploadService", "$tag 第 $attempt 次尝试失败，准备重试...")
-            } catch (e: IOException) {
-                Log.w("UploadService", "$tag 第 $attempt 次尝试网络异常: ${e.message}，准备重试...")
+            } catch (e: Exception) {
+                Log.w("UploadService", "$tag 第 $attempt 次尝试异常: ${e.message}，准备重试...")
             }
             if (attempt < MAX_RETRY) {
                 Thread.sleep(RETRY_DELAY_MS)
@@ -227,8 +227,8 @@ class UploadService(private val baseUrl: String) {
                     return true
                 }
                 Log.w("UploadService", "$tag 第 $attempt 次尝试失败，准备重试...")
-            } catch (e: IOException) {
-                Log.w("UploadService", "$tag 第 $attempt 次尝试网络异常: ${e.message}，准备重试...")
+            } catch (e: Exception) {
+                Log.w("UploadService", "$tag 第 $attempt 次尝试异常: ${e.message}，准备重试...")
             }
             if (attempt < MAX_RETRY) {
                 Thread.sleep(RETRY_DELAY_MS)

@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.GridLayout
@@ -383,12 +384,18 @@ class DataCollectionActivity : AppCompatActivity() {
             var successCount = 0
             var lastError = ""
             for (task in tasks) {
-                if (uploadService.uploadTask(task)) {
-                    taskStorage.updateStatus(task.pointId, "success")
-                    successCount++
-                } else {
+                try {
+                    if (uploadService.uploadTask(task)) {
+                        taskStorage.updateStatus(task.pointId, "success")
+                        successCount++
+                    } else {
+                        taskStorage.updateStatus(task.pointId, "failed")
+                        lastError = uploadService.lastError
+                    }
+                } catch (e: Exception) {
+                    Log.e("DataCollection", "Upload task ${task.pointId} failed", e)
                     taskStorage.updateStatus(task.pointId, "failed")
-                    lastError = uploadService.lastError
+                    lastError = e.message ?: "未知错误"
                 }
             }
             withContext(Dispatchers.Main) {
