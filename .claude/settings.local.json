@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew :app:compileDebugJavaWithJavac :app:compileDebugKotlin)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(curl *)"
+    ]
+  }
+}

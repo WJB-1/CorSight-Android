@@ -1,0 +1,26 @@
+# Build outputs
+*.apk
+*.ap_
+*.aab
+*.dex
+bin/
+gen/
+out/
+app/build/
+inference/build/
+vision/build/
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+local.properties
+debug/
+.DS_Store
+Thumbs.db
+
+# Native
+*.o
+*.so
+*.h

@@ -1,0 +1,4 @@
+0:bump
+1:fence
+2:hole
+3:pole
