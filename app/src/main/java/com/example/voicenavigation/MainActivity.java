@@ -915,6 +915,8 @@ public class MainActivity extends AppCompatActivity implements
         navigationManager.planRoute(currentLocation, selectedDestLatLng, selectedDestName);
     }
 
+    private static final String FIXED_ROUTE_ID = "gzdx_stadium";
+
     private void sendTripPreview() {
         String previewBaseUrl = AppConfig.normalizeBaseUrl(
                 AppConfig.prefs(this).getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL));
@@ -923,27 +925,27 @@ public class MainActivity extends AppCompatActivity implements
             return;
         }
         tripPreviewService.setBaseUrl(previewBaseUrl);
-        if (selectedDestLatLng == null) {
-            Toast.makeText(this, R.string.preview_no_destination, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (currentLocation == null) {
-            locateMe();
-            Toast.makeText(this, R.string.preview_no_location, Toast.LENGTH_SHORT).show();
-            return;
-        }
-        tripPreviewService.sendPreviewRequest(
-                currentLocation.latitude, currentLocation.longitude,
-                selectedDestLatLng.latitude, selectedDestLatLng.longitude,
-                new TripPreviewService.PreviewCallback() {
-                    @Override public void onSuccess(String response) {
-                        parseAndShowPreviewResult(response);
-                    }
 
-                    @Override public void onError(String error) {
-                        Toast.makeText(MainActivity.this, "行前预览失败：" + error, Toast.LENGTH_LONG).show();
-                    }
-                });
+        TripPreviewService.PreviewCallback callback = new TripPreviewService.PreviewCallback() {
+            @Override public void onSuccess(String response) {
+                parseAndShowPreviewResult(response);
+            }
+            @Override public void onError(String error) {
+                Toast.makeText(MainActivity.this, "行前预览失败：" + error, Toast.LENGTH_LONG).show();
+            }
+        };
+
+        if (selectedDestLatLng != null && currentLocation != null) {
+            // 有目的地：使用标准路线预览（高德规划）
+            tripPreviewService.sendPreviewRequest(
+                    currentLocation.latitude, currentLocation.longitude,
+                    selectedDestLatLng.latitude, selectedDestLatLng.longitude,
+                    callback);
+        } else {
+            // 没有目的地：使用固定路线预览（跳过高德，直接用预设采样点路线）
+            Toast.makeText(this, "使用固定路线预览（广大→体育场）", Toast.LENGTH_SHORT).show();
+            tripPreviewService.sendFixedPreviewRequest(FIXED_ROUTE_ID, callback);
+        }
     }
 
     private void parseAndShowPreviewResult(String responseJson) {

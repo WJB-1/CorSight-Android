@@ -26,55 +26,64 @@ public class VoiceCommandInterpreter {
     /** 停止导航 */
     private static final List<String> STOP_NAV_KEYWORDS = Arrays.asList(
             "停止导航", "结束导航", "关闭导航", "取消导航", "不要导航了",
-            "不导航了", "退出导航", "停下导航"
+            "不导航了", "退出导航", "停下导航", "停导航", "别导了",
+            "不走了", "不去了", "算了不去了", "取消", "停下来"
     );
 
     /** 开始避障 */
     private static final List<String> START_OBSTACLE_KEYWORDS = Arrays.asList(
             "开始避障", "打开避障", "启动避障", "避障模式", "检测障碍物",
-            "障碍物检测", "进入避障", "开启避障", "避障"
+            "障碍物检测", "进入避障", "开启避障", "避障", "检测一下",
+            "帮我看看前面", "前面有什么", "前面有障碍物吗", "探测"
     );
 
     /** 停止避障 */
     private static final List<String> STOP_OBSTACLE_KEYWORDS = Arrays.asList(
             "停止避障", "结束避障", "关闭避障", "退出避障", "取消避障",
-            "不要避障了", "不避障了", "停下避障"
+            "不要避障了", "不避障了", "停下避障", "关掉检测", "不检测了"
     );
 
     /** 我在哪里 */
     private static final List<String> WHERE_AM_I_KEYWORDS = Arrays.asList(
             "我在哪里", "我在哪儿", "当前位置", "我的位置", "这是哪里",
-            "这是哪儿", "我在什么地方", "现在在哪"
+            "这是哪儿", "我在什么地方", "现在在哪", "在哪里", "在哪",
+            "我在哪", "现在在哪儿", "这是啥地方", "什么地方"
     );
 
     /** 重复播报 */
     private static final List<String> REPEAT_KEYWORDS = Arrays.asList(
             "重复", "再说一遍", "重新播报", "再讲一遍", "再听一遍",
-            "重复一遍", "刚才说什么", "再说一次"
+            "重复一遍", "刚才说什么", "再说一次", "啥意思", "什么",
+            "没听清", "再报一次", "你刚说什么"
     );
 
     /** 预览路线 */
     private static final List<String> PREVIEW_KEYWORDS = Arrays.asList(
             "预览路线", "路线预览", "行前预览", "预览导航", "看路线",
-            "查看路线"
+            "查看路线", "看看路线", "路线怎么走"
     );
 
     /** 查询状态 */
     private static final List<String> STATUS_KEYWORDS = Arrays.asList(
             "查询状态", "现在什么情况", "当前状态", "状态怎么样",
-            "怎么样了", "什么情况", "在干什么"
+            "怎么样了", "什么情况", "在干什么", "还在导航吗",
+            "还在跑吗", "还要多久", "还有多远"
     );
 
     /** 导航前缀：文本以这些词开头时，视为导航意图 */
     private static final List<String> NAVIGATE_PREFIXES = Arrays.asList(
-            "导航到", "导航去", "带我去", "我要去", "我想去",
-            "请带我去", "带我去一下", "去一下"
+            "导航到", "导航去", "导航岛", "导航道", // "导航到"常见ASR误识别
+            "带我去", "我要去", "我想去", "我想到", "我想去到",
+            "请带我去", "带我去一下", "去一下",
+            "帮我导航", "帮我导", "帮我找", "帮我查",
+            "去", "到", "找一下", "查一下"
     );
 
     /** 导航后缀：文本以这些词结尾时，视为导航意图 */
     private static final List<String> NAVIGATE_SUFFIXES = Arrays.asList(
-            "怎么走", "怎么去", "在哪里", "在哪儿", "的位置",
-            "怎么去啊", "怎么走啊"
+            "怎么走", "怎么去", "怎么走啊", "怎么去啊",
+            "在哪里", "在哪儿", "在哪", "的位置",
+            "怎么到达", "路线", "走法"
     );
 
     /**

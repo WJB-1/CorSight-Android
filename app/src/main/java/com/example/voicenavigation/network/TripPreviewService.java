@@ -144,6 +144,58 @@ public class TripPreviewService {
     }
 
     /**
+     * 发送固定路线预览请求（跳过高德路线规划）。
+     *
+     * @param routeId         预设路线 ID（如 "gzdx_stadium"）
+     * @param previewCallback 结果回调（在主线程执行）
+     */
+    public void sendFixedPreviewRequest(@NonNull String routeId,
+                                         @NonNull PreviewCallback previewCallback) {
+        String url = baseUrl + "/api/navigation/preview/fixed/" + routeId;
+
+        JSONObject requestBody = new JSONObject();
+        try {
+            JSONObject options = new JSONObject();
+            options.put("enable_perception", false);
+            options.put("enable_broadcast", true);
+            requestBody.put("options", options);
+        } catch (JSONException e) {
+            Log.e(TAG, "Failed to build request JSON", e);
+            mainHandler.post(() -> previewCallback.onError("请求参数构建失败: " + e.getMessage()));
+            return;
+        }
+
+        RequestBody body = RequestBody.create(requestBody.toString(), JSON);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .header("Content-Type", "application/json")
+                .build();
+
+        Log.d(TAG, "Sending fixed preview request to " + url);
+
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                Log.e(TAG, "Fixed preview request failed", e);
+                mainHandler.post(() -> previewCallback.onError("网络请求失败: " + e.getMessage()));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                String responseBody = response.body() != null ? response.body().string() : "";
+                if (response.isSuccessful()) {
+                    Log.d(TAG, "Fixed preview success: " + responseBody);
+                    mainHandler.post(() -> previewCallback.onSuccess(responseBody));
+                } else {
+                    Log.e(TAG, "Fixed preview error, code=" + response.code() + ", body=" + responseBody);
+                    mainHandler.post(() -> previewCallback.onError("服务器错误 (" + response.code() + "): " + responseBody));
+                }
+            }
+        });
+    }
+
+    /**
      * 取消所有进行中的请求。
      */
     public void cancelAll() {
