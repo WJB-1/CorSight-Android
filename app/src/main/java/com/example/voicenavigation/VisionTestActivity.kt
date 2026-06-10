@@ -1,6 +1,10 @@
 package com.example.voicenavigation
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -8,7 +12,10 @@ import android.graphics.RectF
 import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.os.SystemClock
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -75,6 +82,8 @@ class VisionTestActivity : AppCompatActivity() {
         CameraSource(this, this, binding.previewView, cameraExecutor)
     }
 
+    private var stopObstacleReceiver: BroadcastReceiver? = null
+
     // UDP 自动发现相关
     private var udpSocket: DatagramSocket? = null
     private var udpReceiveThread: Thread? = null
@@ -87,7 +96,7 @@ class VisionTestActivity : AppCompatActivity() {
         private const val LOCAL_FRAME_INTERVAL_MS = 120L
         private const val MODEL_INPUT_SIZE = 640
         private const val DEFAULT_STREAM_PORT = 8080
-        private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
+        private val REQUIRED_PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
     }
 
     private enum class DetectionMode {
@@ -102,6 +111,7 @@ class VisionTestActivity : AppCompatActivity() {
         ToolRegistry.register(GenericDetectionTool())
         initTts()
         setupUI()
+        registerStopObstacleReceiver()
 
         val useExternal = getSharedPreferences("corsight_config", MODE_PRIVATE)
             .getBoolean("use_external_device", false)
@@ -190,6 +200,20 @@ class VisionTestActivity : AppCompatActivity() {
         } else {
             "检测服务：$savedUrl"
         }
+    }
+
+    private fun registerStopObstacleReceiver() {
+        stopObstacleReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "com.example.voicenavigation.ACTION_STOP_OBSTACLE") {
+                    Log.d(TAG, "Received stop obstacle broadcast")
+                    speakObstacleMessage("正在退出避障模式")
+                    finish()
+                }
+            }
+        }
+        val filter = IntentFilter("com.example.voicenavigation.ACTION_STOP_OBSTACLE")
+        registerReceiver(stopObstacleReceiver, filter)
     }
 
     private fun startCameraOrRequestPermission() {
@@ -717,6 +741,11 @@ class VisionTestActivity : AppCompatActivity() {
         httpClient.dispatcher.cancelAll()
         closeUdpSocket()
         udpReceiveThread?.interrupt()
+        // 注销广播接收器
+        try {
+            stopObstacleReceiver?.let { unregisterReceiver(it) }
+        } catch (_: Exception) {}
+        stopObstacleReceiver = null
         super.onDestroy()
     }
 }

@@ -78,6 +78,7 @@
             android:text="选择下方检测模式"
             android:textColor="#B3FFFFFF"
             android:textSize="15sp" />
+
     </FrameLayout>
 
     <LinearLayout

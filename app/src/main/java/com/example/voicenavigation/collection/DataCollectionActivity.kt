@@ -8,7 +8,6 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.GridLayout
@@ -370,32 +369,26 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun doSync(tasks: List<CaptureTask>) {
         val prefs = AppConfig.prefs(this)
-        val rawUrl = prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
-        val baseUrl = AppConfig.normalizeBaseUrl(rawUrl)
-        Log.d("DataCollection", "Raw URL: $rawUrl, Normalized: $baseUrl")
+        val baseUrl = AppConfig.normalizeBaseUrl(
+            prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
+        )
         if (baseUrl.isEmpty()) {
             Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
             return
         }
         val uploadService = UploadService(baseUrl)
 
-        Toast.makeText(this, "开始同步到 $baseUrl...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "开始同步...", Toast.LENGTH_SHORT).show()
         CoroutineScope(Dispatchers.IO).launch {
             var successCount = 0
             var lastError = ""
             for (task in tasks) {
-                try {
-                    if (uploadService.uploadTask(task)) {
-                        taskStorage.updateStatus(task.pointId, "success")
-                        successCount++
-                    } else {
-                        taskStorage.updateStatus(task.pointId, "failed")
-                        lastError = uploadService.lastError
-                    }
-                } catch (e: Exception) {
-                    Log.e("DataCollection", "Upload task ${task.pointId} failed", e)
+                if (uploadService.uploadTask(task)) {
+                    taskStorage.updateStatus(task.pointId, "success")
+                    successCount++
+                } else {
                     taskStorage.updateStatus(task.pointId, "failed")
-                    lastError = e.message ?: "未知错误"
+                    lastError = uploadService.lastError
                 }
             }
             withContext(Dispatchers.Main) {

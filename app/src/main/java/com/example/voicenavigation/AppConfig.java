@@ -10,6 +10,12 @@ public final class AppConfig {
 
     private AppConfig() {}
 
+    // LLM Function Calling 配置
+    public static final String KEY_LLM_ENABLED = "llm_enabled";
+    public static final String KEY_LLM_BASE_URL = "llm_base_url";
+    public static final String KEY_LLM_API_KEY = "llm_api_key";
+    public static final String KEY_LLM_MODEL = "llm_model";
+
     public static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }

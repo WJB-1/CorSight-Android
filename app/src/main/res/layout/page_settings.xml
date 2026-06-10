@@ -231,6 +231,114 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="LLM Function Calling（语音助手云端兜底）"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginBottom="12dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="API 地址（支持 OpenAI 兼容的任何服务）"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_llm_base_url"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:hint="https://api.deepseek.com（默认）"
+            android:singleLine="true"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:background="@drawable/edit_text_background"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="API Key"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_llm_api_key"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:hint="sk-你的DeepSeek密钥"
+            android:singleLine="true"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:background="@drawable/edit_text_background"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="模型名"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_llm_model"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:hint="deepseek-chat（默认）"
+            android:singleLine="true"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:background="@drawable/edit_text_background"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textColorHint="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/tv_llm_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="状态：未配置（仅用本地关键词匹配）"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btn_save_llm"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="保存 LLM 配置"
+            android:textColor="@color/white"
+            android:background="@color/orange"
+            android:textSize="14sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="语音助手识别到指令后，先本地匹配；\n匹配失败时自动调用 LLM 进行语义理解。\n支持的 API：OpenAI、DeepSeek、通义千问、Ollama 等。"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="6dp"/>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/colorControlHighlight"
+            android:layout_marginVertical="24dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="开发者工具"
             android:textSize="16sp"
             android:textStyle="bold"

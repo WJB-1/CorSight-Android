@@ -28,6 +28,10 @@ public class BaiduSpeechManager {
     private Handler handler;
     private boolean isListening = false;
     private boolean resultDelivered = false;
+    /** 记录最后一条 partial 结果，用于 FINISH 未返回时的兜底 */
+    private String lastPartialResult = "";
+    /** asr.end 后延迟交付兜底结果的 Runnable，等待尾帧 partial 到达 */
+    private final Runnable pendingFallbackRunnable = this::deliverFallbackIfNeeded;
 
     private final Runnable stopRunnable = () -> {
         Log.d(TAG, "Auto-stop timeout reached");
@@ -83,15 +87,32 @@ public class BaiduSpeechManager {
         try {
             if (name.equals(SpeechConstant.CALLBACK_EVENT_ASR_READY)) {
                 Log.d(TAG, "ASR ready");
+                notifyListening();
             } else if (name.equals(SpeechConstant.CALLBACK_EVENT_ASR_PARTIAL)) {
                 JSONObject json = new JSONObject(params);
                 String resultType = json.optString("result_type", "");
                 String result = json.optString("best_result", json.optString("results_recognition", ""));
-                if ("partial_result".equals(resultType) && !result.isEmpty()) {
-                    Log.d(TAG, "Partial result: " + result);
+                if (!result.isEmpty()) {
+                    Log.d(TAG, "Partial/Final result: [" + result + "] type=" + resultType
+                            + " isListening=" + isListening + " delivered=" + resultDelivered);
+                    lastPartialResult = cleanResultText(result);
+                    // final_result：百度引擎把最终识别结果通过 PARTIAL 事件发来
+                    // 如果还没交过结果，且引擎已停止（!isListening），直接交付
+                    if ("final_result".equals(resultType) && !resultDelivered) {
+                        handler.removeCallbacks(pendingFallbackRunnable);
+                        resultDelivered = true;
+                        notifyResult(lastPartialResult);
+                        return;
+                    }
+                    // 尾帧 partial：引擎已停但结果还在陆续到达，重武装兜底延迟
+                    if (!isListening && !resultDelivered) {
+                        handler.removeCallbacks(pendingFallbackRunnable);
+                        handler.postDelayed(pendingFallbackRunnable, 300);
+                    }
                     notifyPartialResult(result);
                 }
             } else if (name.equals(SpeechConstant.CALLBACK_EVENT_ASR_FINISH)) {
+                handler.removeCallbacks(pendingFallbackRunnable);  // 取消兜底等待
                 if (resultDelivered) {
                     Log.d(TAG, "Result already delivered, skipping FINISH");
                     isListening = false;
@@ -101,10 +122,12 @@ public class BaiduSpeechManager {
                 }
                 JSONObject json = new JSONObject(params);
                 String result = json.optString("best_result", json.optString("results_recognition", ""));
-                Log.d(TAG, "Final result: " + result);
-                if (!result.isEmpty()) {
+                Log.d(TAG, "Final result: [" + result + "], lastPartial: [" + lastPartialResult + "]");
+                if (!result.isEmpty() || !lastPartialResult.isEmpty()) {
+                    String finalResult = !result.isEmpty() ? result : lastPartialResult;
+                    Log.d(TAG, "Delivering result: " + finalResult);
                     resultDelivered = true;
-                    notifyResult(result);
+                    notifyResult(finalResult);
                 }
                 isListening = false;
                 handler.removeCallbacks(stopRunnable);
@@ -121,8 +144,14 @@ public class BaiduSpeechManager {
                 handler.removeCallbacks(stopRunnable);
             } else if (name.equals(SpeechConstant.CALLBACK_EVENT_ASR_EXIT)) {
                 Log.d(TAG, "ASR exit");
-                isListening = false;
-                handler.removeCallbacks(stopRunnable);
+                deliverFallbackIfNeeded();
+            } else if (name.equals("asr.end")) {
+                // asr.end 事件：引擎会话结束。等 300ms 看尾帧 partial 是否到达，再决定是否兜底
+                Log.d(TAG, "ASR end event, lastPartial=[" + lastPartialResult + "], delivered=" + resultDelivered);
+                if (!resultDelivered && !lastPartialResult.isEmpty()) {
+                    handler.removeCallbacks(pendingFallbackRunnable);
+                    handler.postDelayed(pendingFallbackRunnable, 300);
+                }
             } else {
                 Log.d(TAG, "Unhandled ASR event: " + name);
             }
@@ -157,7 +186,7 @@ public class BaiduSpeechManager {
 
         isListening = true;
         resultDelivered = false;
-        notifyListening();
+        lastPartialResult = "";
 
         Map<String, Object> params = new HashMap<>();
         params.put(SpeechConstant.ACCEPT_AUDIO_VOLUME, false);
@@ -248,6 +277,12 @@ public class BaiduSpeechManager {
         });
     }
 
+    /** 清理识别结果末尾的标点 */
+    private String cleanResultText(String text) {
+        if (text == null) return "";
+        return text.replaceAll("[。，、！？；：,.!?;:]+$", "").trim();
+    }
+
     private void notifyListening() {
         handler.post(() -> {
             if (callback != null) {
@@ -262,6 +297,20 @@ public class BaiduSpeechManager {
                 callback.onStopped();
             }
         });
+    }
+
+    /**
+     * 当 ASR 会话结束但没有 FINISH 结果时，用最后一条 partial 作为兜底。
+     * 仅在 stopListening 已调用但 FINISH 未到达时使用。
+     */
+    private void deliverFallbackIfNeeded() {
+        isListening = false;
+        handler.removeCallbacks(stopRunnable);
+        if (!resultDelivered && !lastPartialResult.isEmpty()) {
+            Log.d(TAG, "No FINISH received, delivering last partial as final: " + lastPartialResult);
+            resultDelivered = true;
+            notifyResult(lastPartialResult);
+        }
     }
 
     private String translateErrorCode(int errorCode, String errorMessage) {

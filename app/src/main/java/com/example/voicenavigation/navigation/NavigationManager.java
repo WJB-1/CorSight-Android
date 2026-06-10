@@ -48,7 +48,11 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
     private List<String> stepInstructions;
 
     public interface NavigationCallback {
-        void onLocationUpdated(Location location);
+        /**
+         * @param location 定位位置
+         * @param address  地址描述（如"北京市海淀区xxx路"），可能为空
+         */
+        void onLocationUpdated(Location location, String address);
         void onRouteReady(List<LatLng> routePoints, float totalDistance, float totalDuration, List<String> instructions);
         void onNavigationInfoUpdated(float remainingDistance, float remainingDuration, String nextInstruction);
         void onReRouting();
@@ -118,8 +122,13 @@ public class NavigationManager implements RouteSearch.OnRouteSearchListener {
                         updateNavigationProgress(location);
                     }
 
+                    String address = aMapLocation.getAddress();
+                    if (address == null || address.isEmpty()) {
+                        address = aMapLocation.getDescription();
+                    }
+
                     if (navigationCallback != null) {
-                        navigationCallback.onLocationUpdated(location);
+                        navigationCallback.onLocationUpdated(location, address);
                     }
                 } else {
                     String error = "定位失败：" + aMapLocation.getErrorInfo();

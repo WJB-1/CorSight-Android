@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -59,6 +60,8 @@ import com.example.voicenavigation.navigation.NavigationManager;
 import com.example.voicenavigation.network.TripPreviewService;
 import com.example.voicenavigation.stt.BaiduSpeechManager;
 import com.example.voicenavigation.stt.BaiduTtsManager;
+import com.example.voicenavigation.voice.LLMFunctionCaller;
+import com.example.voicenavigation.voice.VoiceInteractionManager;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import java.util.ArrayList;
@@ -66,8 +69,10 @@ import java.util.List;
 import java.security.MessageDigest;
 
 public class MainActivity extends AppCompatActivity implements
-        BaiduSpeechManager.STTCallback, NavigationManager.NavigationCallback,
-        PoiSearch.OnPoiSearchListener {
+        NavigationManager.NavigationCallback,
+        PoiSearch.OnPoiSearchListener,
+        VoiceInteractionManager.CommandExecutor,
+        VoiceInteractionManager.TextInputListener {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_PERMISSIONS_CODE = 100;
@@ -83,6 +88,12 @@ public class MainActivity extends AppCompatActivity implements
     private FrameLayout btnVoiceContainer;
     private TextView tvVoiceHint;
     private View voiceRipple;
+
+    // 语音助手按钮（Function Calling）
+    private FrameLayout btnVoiceCommandContainer;
+    private TextView tvVoiceCommandHint;
+    private View voiceCommandRipple;
+
     private Button btnStartNavigation;
     private Button btnPreviewRoute;
     private Button btnVisionTest;
@@ -122,6 +133,13 @@ public class MainActivity extends AppCompatActivity implements
     private VoiceRecordAdapter historyAdapter;
     private TripPreviewService tripPreviewService;
     private boolean isSelectingDestination = false;
+
+    // ===== 语音交互（Function Calling）状态 =====
+    private VoiceInteractionManager voiceInteractionManager;
+    private boolean autoStartNavigationAfterSearch = false;
+    private String pendingVoiceDestination = null;
+    private String lastAddress = null;
+    private boolean isObstacleRunning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,9 +203,16 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initViews() {
+        // 语音转文字按钮
         btnVoiceContainer = findViewById(R.id.btn_voice_container);
         tvVoiceHint = findViewById(R.id.tv_voice_hint);
         voiceRipple = findViewById(R.id.voice_ripple);
+
+        // 语音助手按钮（Function Calling）
+        btnVoiceCommandContainer = findViewById(R.id.btn_voice_command_container);
+        tvVoiceCommandHint = findViewById(R.id.tv_voice_command_hint);
+        voiceCommandRipple = findViewById(R.id.voice_command_ripple);
+
         btnStartNavigation = findViewById(R.id.btn_start_navigation);
         btnPreviewRoute = findViewById(R.id.btn_preview_route);
         btnVisionTest = findViewById(R.id.btn_vision_test);
@@ -242,6 +267,7 @@ public class MainActivity extends AppCompatActivity implements
 
         vibrator = (android.os.Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         setupVoiceButton();
+        setupVoiceCommandButton();
         setupSearchBar();
 
         btnStartNavigation.setOnClickListener(v -> toggleNavigation());
@@ -257,6 +283,15 @@ public class MainActivity extends AppCompatActivity implements
         });
     }
 
+    /**
+     * 语音转文字按钮 —— 按住说话，识别结果填入搜索框。
+     * 使用独立的 BaiduSpeechManager 实例，与语音助手互不影响。
+     */
+    /**
+     * 语音转文字按钮（蓝色「按住说话」）
+     * 按下 → 语音识别 → 结果填入搜索框。
+     * 松开后延迟 150ms 再发送 ASR_STOP，防止最后一个字被截断。
+     */
     private void setupVoiceButton() {
         btnVoiceContainer.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
@@ -266,27 +301,63 @@ public class MainActivity extends AppCompatActivity implements
                         requestPermissions();
                         return true;
                     }
-                    if (vibrator != null && vibrator.hasVibrator()) {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                            vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE));
-                        } else {
-                            vibrator.vibrate(50);
-                        }
-                    }
+                    vibrate(50);
                     tvVoiceHint.setText("松开结束");
                     voiceRipple.setVisibility(View.VISIBLE);
-                    startListening();
+                    voiceInteractionManager.startListening(VoiceInteractionManager.Mode.TEXT_INPUT);
                     return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    tvVoiceHint.setText("按住说话");
+                    tvVoiceHint.setText("识别中...");
                     voiceRipple.setVisibility(View.GONE);
-                    stopListening();
+                    // 立即停止（不延迟），百度引擎用 VAD Endpoint Timeout 自行采集尾音
+                    voiceInteractionManager.stopListening();
                     return true;
                 default:
                     return false;
             }
         });
+    }
+
+    /**
+     * 语音助手按钮（橙色「语音助手」）
+     * 按下 → 语音识别 → Function Calling 执行指令。
+     */
+    private void setupVoiceCommandButton() {
+        btnVoiceCommandContainer.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    if (!checkAudioPermission()) {
+                        Toast.makeText(this, R.string.permission_audio_denied, Toast.LENGTH_SHORT).show();
+                        requestPermissions();
+                        return true;
+                    }
+                    vibrate(50);
+                    tvVoiceCommandHint.setText("正在识别...");
+                    voiceCommandRipple.setVisibility(View.VISIBLE);
+                    Toast.makeText(this, "开始收听，松开后执行", Toast.LENGTH_SHORT).show();
+                    voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND);
+                    return true;
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL:
+                    tvVoiceCommandHint.setText("识别中...");
+                    voiceCommandRipple.setVisibility(View.GONE);
+                    voiceInteractionManager.stopListening();
+                    return true;
+                default:
+                    return false;
+            }
+        });
+    }
+
+    private void vibrate(long ms) {
+        if (vibrator != null && vibrator.hasVibrator()) {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(ms);
+            }
+        }
     }
 
     private void setupSearchBar() {
@@ -471,6 +542,51 @@ public class MainActivity extends AppCompatActivity implements
             Toast.makeText(this, isChecked ? "已开启外部设备优先" : "已关闭外部设备优先", Toast.LENGTH_SHORT).show();
         });
 
+        // ===== LLM Function Calling 配置 =====
+        EditText etLlmBaseUrl = pageSettingsView.findViewById(R.id.et_llm_base_url);
+        EditText etLlmApiKey = pageSettingsView.findViewById(R.id.et_llm_api_key);
+        EditText etLlmModel = pageSettingsView.findViewById(R.id.et_llm_model);
+        Button btnSaveLlm = pageSettingsView.findViewById(R.id.btn_save_llm);
+        TextView tvLlmStatus = pageSettingsView.findViewById(R.id.tv_llm_status);
+
+        String savedLlmUrl = AppConfig.normalizeBaseUrl(
+                prefs.getString(AppConfig.KEY_LLM_BASE_URL, ""));
+        String savedLlmKey = prefs.getString(AppConfig.KEY_LLM_API_KEY, "");
+        String savedLlmModel = prefs.getString(AppConfig.KEY_LLM_MODEL, "deepseek-chat");
+        etLlmBaseUrl.setText(savedLlmUrl);
+        etLlmApiKey.setText(savedLlmKey);
+        etLlmModel.setText(savedLlmModel);
+
+        // 显示 LLM 配置状态
+        String llmStatus = "状态：";
+        if (!savedLlmUrl.isEmpty() && !savedLlmKey.isEmpty()) {
+            llmStatus += "已配置（本地不匹配时自动调用云端）";
+        } else if (!savedLlmUrl.isEmpty() || !savedLlmKey.isEmpty()) {
+            llmStatus += "配置不完整";
+        } else {
+            llmStatus += "未配置（仅用本地关键词匹配）";
+        }
+        tvLlmStatus.setText(llmStatus);
+
+        btnSaveLlm.setOnClickListener(v -> {
+            String url = AppConfig.normalizeBaseUrl(etLlmBaseUrl.getText().toString());
+            String key = etLlmApiKey.getText().toString().trim();
+            String model = etLlmModel.getText().toString().trim();
+            prefs.edit()
+                    .putString(AppConfig.KEY_LLM_BASE_URL, url)
+                    .putString(AppConfig.KEY_LLM_API_KEY, key)
+                    .putString(AppConfig.KEY_LLM_MODEL, model.isEmpty() ? "deepseek-chat" : model)
+                    .apply();
+            String statusText = "状态：";
+            if (!url.isEmpty() && !key.isEmpty()) {
+                statusText += "已配置（本地不匹配时自动调用云端）";
+            } else {
+                statusText += !url.isEmpty() || !key.isEmpty() ? "配置不完整" : "未配置（仅用本地关键词匹配）";
+            }
+            tvLlmStatus.setText(statusText);
+            Toast.makeText(this, "LLM 配置已保存", Toast.LENGTH_SHORT).show();
+        });
+
         Button btnDataCollection = pageSettingsView.findViewById(R.id.btn_data_collection);
         btnDataCollection.setOnClickListener(v -> startActivity(
                 new android.content.Intent(this, com.example.voicenavigation.collection.DataCollectionActivity.class)));
@@ -484,8 +600,9 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     private void initServices() {
+        // 唯一的语音识别实例，供两种模式共用
         speechManager = new BaiduSpeechManager(this);
-        speechManager.setCallback(this);
+
         navigationManager = new NavigationManager(this);
         navigationManager.setNavigationCallback(this);
         appDatabase = AppDatabase.getInstance(this);
@@ -496,6 +613,23 @@ public class MainActivity extends AppCompatActivity implements
                 prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL));
         tripPreviewService = new TripPreviewService(savedUrl);
         initTts();
+
+        // LLM Function Calling 客户端（云端兜底，需要网络）
+        LLMFunctionCaller llmCaller = new LLMFunctionCaller(this);
+
+        // 语音交互管理器（双模式：TEXT_INPUT + COMMAND），共用同一个 speechManager
+        voiceInteractionManager = new VoiceInteractionManager(this, speechManager, baiduTts, llmCaller);
+        voiceInteractionManager.setTextInputListener(this);      // 蓝色按钮的 STT → 搜索框
+        voiceInteractionManager.setCommandExecutor(this);        // 橙色按钮的 Function Calling
+        voiceInteractionManager.setVoiceEventListener(new VoiceInteractionManager.VoiceEventListener() {
+            @Override public void onListeningStarted() {}
+            @Override public void onListeningStopped() {}
+            @Override public void onPartialResultReceived(String text) {}
+            @Override public void onPipelineStage(String stage) {
+                // 实时更新橙色按钮文字，显示流水线进度
+                runOnUiThread(() -> tvVoiceCommandHint.setText(stage));
+            }
+        });
     }
 
     private void initTts() {
@@ -644,18 +778,6 @@ public class MainActivity extends AppCompatActivity implements
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void startListening() {
-        if (speechManager == null) {
-            Toast.makeText(this, "语音识别服务未就绪", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        speechManager.startListening();
-    }
-
-    private void stopListening() {
-        if (speechManager != null) speechManager.stopListening();
-    }
-
     private void searchDestination(String keyword) {
         if (!hasValidAmapKey()) {
             hideSuggestions();
@@ -688,13 +810,59 @@ public class MainActivity extends AppCompatActivity implements
             poiResults = poiResult.getPois();
             if (poiResults == null || poiResults.isEmpty()) {
                 hideSuggestions();
-                Toast.makeText(this, "未找到匹配地点", Toast.LENGTH_SHORT).show();
+                if (autoStartNavigationAfterSearch) {
+                    speakForce("未找到目的地，请换个名称试试");
+                    autoStartNavigationAfterSearch = false;
+                    pendingVoiceDestination = null;
+                } else {
+                    Toast.makeText(this, "未找到匹配地点", Toast.LENGTH_SHORT).show();
+                }
             } else {
-                showSuggestions(poiResults);
+                // 语音导航模式：自动选择第一个结果，不弹搜索列表
+                if (autoStartNavigationAfterSearch) {
+                    autoStartNavigationAfterSearch = false;
+                    hideSuggestions();  // 语音模式不弹列表
+                    etDestination.setText("");  // 清空搜索框残留
+
+                    PoiItem firstItem = poiResults.get(0);
+                    LatLonPoint point = firstItem.getLatLonPoint();
+                    LatLng latLng = new LatLng(point.getLatitude(), point.getLongitude());
+                    // 设置 isSelectingDestination 防止 setDestination 中的
+                    // etDestination.setText() 触发 TextWatcher 再次发起 POI 搜索
+                    isSelectingDestination = true;
+                    setDestination(latLng, firstItem.getTitle());
+                    isSelectingDestination = false;
+                    saveVoiceRecord(firstItem.getTitle());
+
+                    // 播报 + Toast 确认目的地
+                    String confirmMsg = "为您找到" + firstItem.getTitle() + "，开始导航";
+                    if (voiceInteractionManager != null) {
+                        voiceInteractionManager.speakAndToast(confirmMsg);
+                    } else {
+                        speakForce(confirmMsg);
+                    }
+
+                    // TTS 播报队列自动顺序播放，无需延迟
+                    if (currentLocation != null) {
+                        layoutNavInfo.setVisibility(View.VISIBLE);
+                        navigationManager.planRoute(currentLocation, selectedDestLatLng, selectedDestName);
+                    } else {
+                        locateMe();
+                        speakForce("正在获取当前位置，请稍后");
+                    }
+                } else {
+                    showSuggestions(poiResults);
+                }
             }
         } else {
             hideSuggestions();
-            Toast.makeText(this, "地点搜索失败，错误码：" + rCode, Toast.LENGTH_SHORT).show();
+            if (autoStartNavigationAfterSearch) {
+                speakForce("地点搜索失败，错误码：" + rCode);
+                autoStartNavigationAfterSearch = false;
+                pendingVoiceDestination = null;
+            } else {
+                Toast.makeText(this, "地点搜索失败，错误码：" + rCode, Toast.LENGTH_SHORT).show();
+            }
             Log.e(TAG, "POI search failed, rCode=" + rCode);
         }
     }
@@ -918,19 +1086,135 @@ public class MainActivity extends AppCompatActivity implements
         }).start();
     }
 
+    // ==================== TextInputListener（语音转文字 → 搜索框）====================
+
     @Override
-    public void onResult(String result) {
+    public void onTextResult(@NonNull String result) {
         String cleaned = cleanSpeechText(result);
         etDestination.setText(cleaned);
         etDestination.setSelection(cleaned.length());
-        if (!cleaned.isEmpty()) searchDestination(cleaned);
+        if (!cleaned.isEmpty()) {
+            searchDestination(cleaned);
+            Toast.makeText(this, "已识别：" + cleaned, Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
-    public void onPartialResult(String result) {
-        String cleaned = cleanSpeechText(result);
+    public void onTextPartial(@NonNull String partial) {
+        String cleaned = cleanSpeechText(partial);
         etDestination.setText(cleaned);
         etDestination.setSelection(cleaned.length());
+    }
+
+    // ==================== CommandExecutor 实现（Function Calling）====================
+
+    @Override
+    public void executeNavigateTo(String destination) {
+        if (!hasValidAmapKey()) {
+            speakForce("高德地图Key未配置，无法导航");
+            return;
+        }
+        pendingVoiceDestination = destination;
+        autoStartNavigationAfterSearch = true;
+        searchDestination(destination);
+    }
+
+    @Override
+    public void executeStartObstacleAvoidance() {
+        isObstacleRunning = true;
+        Intent intent = new Intent(this, VisionTestActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void executeStopNavigation() {
+        if (navigationManager != null && navigationManager.isNavigating()) {
+            navigationManager.stopNavigation();
+            btnStartNavigation.setText(R.string.start_navigation);
+            clearRouteDisplay();
+        }
+    }
+
+    @Override
+    public void executeStopObstacleAvoidance() {
+        // 发送广播通知 VisionTestActivity 关闭
+        Intent intent = new Intent("com.example.voicenavigation.ACTION_STOP_OBSTACLE");
+        sendBroadcast(intent);
+        isObstacleRunning = false;
+    }
+
+    @Override
+    public void executeWhereAmI() {
+        // TTS 播报已在 VoiceInteractionManager 中完成，此处执行额外操作
+        if (currentLocation != null) {
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 16));
+            }
+        } else {
+            locateMe();
+        }
+    }
+
+    @Override
+    public void executeRepeatLast() {
+        // TTS 播报已在 VoiceInteractionManager 中完成
+    }
+
+    @Override
+    public void executePreviewRoute() {
+        sendTripPreview();
+    }
+
+    @Override
+    public void executeQueryStatus() {
+        // TTS 播报已在 VoiceInteractionManager 中完成
+    }
+
+    @Override
+    public void executeTextSearch(String text) {
+        String cleaned = cleanSpeechText(text);
+        etDestination.setText(cleaned);
+        etDestination.setSelection(cleaned.length());
+        if (!cleaned.isEmpty()) {
+            searchDestination(cleaned);
+        }
+    }
+
+    @Override
+    public void executeUnknown(String text) {
+        // 未识别的指令，作为普通搜索尝试一次
+        String cleaned = cleanSpeechText(text);
+        if (cleaned.length() >= 2) {
+            etDestination.setText(cleaned);
+            etDestination.setSelection(cleaned.length());
+            searchDestination(cleaned);
+        }
+    }
+
+    @Override
+    public String getLastSpokenText() {
+        return lastSpokenInstruction;
+    }
+
+    @Override
+    public boolean isNavigating() {
+        return navigationManager != null && navigationManager.isNavigating();
+    }
+
+    @Override
+    public boolean isObstacleAvoiding() {
+        return isObstacleRunning;
+    }
+
+    @Override
+    public String getCurrentLocationDescription() {
+        if (lastAddress != null && !lastAddress.isEmpty()) {
+            return lastAddress;
+        }
+        if (currentLocation != null) {
+            return currentLocation.latitude + "，" + currentLocation.longitude;
+        }
+        return null;
     }
 
     private String cleanSpeechText(String result) {
@@ -939,16 +1223,11 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onError(String error) {
-        Toast.makeText(this, error, Toast.LENGTH_SHORT).show();
-    }
-
-    @Override public void onListening() { Log.d(TAG, "STT listening"); }
-    @Override public void onStopped() { Log.d(TAG, "STT stopped"); }
-
-    @Override
-    public void onLocationUpdated(Location location) {
+    public void onLocationUpdated(Location location, String address) {
         currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        if (address != null && !address.isEmpty()) {
+            lastAddress = address;
+        }
     }
 
     @Override
