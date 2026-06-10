@@ -156,7 +156,7 @@ public class TripPreviewService {
         JSONObject requestBody = new JSONObject();
         try {
             JSONObject options = new JSONObject();
-            options.put("enable_perception", false);
+            options.put("enable_perception", true);
             options.put("enable_broadcast", true);
             requestBody.put("options", options);
         } catch (JSONException e) {
