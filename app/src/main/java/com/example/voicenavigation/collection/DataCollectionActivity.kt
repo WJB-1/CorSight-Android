@@ -1,8 +1,10 @@
 package com.example.voicenavigation.collection
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
@@ -101,6 +103,8 @@ class DataCollectionActivity : AppCompatActivity() {
         compassService = CompassService(this)
         taskStorage = TaskStorage(this)
 
+        setupLongPressVoiceLauncher()
+
         // 恢复旋转前的采集状态
         if (savedInstanceState != null) {
             restoreInstanceState(savedInstanceState)
@@ -113,6 +117,40 @@ class DataCollectionActivity : AppCompatActivity() {
             updateGridColors()
         }
         checkLocationPermission()
+    }
+
+    /**
+     * 长按唤醒语音助手：跳回 MainActivity 并自动启动语音识别。
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupLongPressVoiceLauncher() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        val root = findViewById<View>(android.R.id.content)
+        val handler = android.os.Handler(mainLooper)
+        var longPressRunnable: Runnable? = null
+
+        root.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    longPressRunnable = Runnable {
+                        vibrator.vibrate(android.os.VibrationEffect.createOneShot(100, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                        val intent = Intent(this, com.example.voicenavigation.MainActivity::class.java)
+                        intent.putExtra("START_VOICE_COMMAND", true)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        startActivity(intent)
+                    }
+                    handler.postDelayed(longPressRunnable!!, 500)
+                    false
+                }
+                android.view.MotionEvent.ACTION_MOVE,
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let { handler.removeCallbacks(it) }
+                    false
+                }
+                else -> false
+            }
+        }
     }
 
     private fun initViews() {

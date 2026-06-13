@@ -60,6 +60,7 @@ import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.voice.LLMFunctionCaller
+import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.security.MessageDigest
@@ -153,10 +154,29 @@ class MainActivity : AppCompatActivity(),
         initServices()
         requestPermissions()
 
+        // 全局长按唤醒语音助手
+        GestureVoiceLauncher.attach(this, voiceInteractionManager)
+
         mapView = findViewById(R.id.map)
         mapView.onCreate(savedInstanceState)
         mMap = mapView.map
         initMap()
+
+        // 从其他页面长按跳转回来时，自动启动语音助手
+        handleVoiceCommandIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleVoiceCommandIntent(intent)
+    }
+
+    private fun handleVoiceCommandIntent(intent: Intent?) {
+        if (intent?.getBooleanExtra("START_VOICE_COMMAND", false) == true) {
+            intent.removeExtra("START_VOICE_COMMAND")
+            voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+            Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun initAmapSdk() {
@@ -1313,6 +1333,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
+        GestureVoiceLauncher.detach()
         super.onDestroy()
         baiduTts?.destroy()
         baiduTts = null

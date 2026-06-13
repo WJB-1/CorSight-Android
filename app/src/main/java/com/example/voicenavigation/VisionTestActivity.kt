@@ -1,6 +1,7 @@
 package com.example.voicenavigation
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -110,6 +111,7 @@ class VisionTestActivity : AppCompatActivity() {
         setContentView(binding.root)
         ToolRegistry.register(GenericDetectionTool())
         initTts()
+        setupLongPressVoiceLauncher()
         setupUI()
         registerStopObstacleReceiver()
 
@@ -146,6 +148,40 @@ class VisionTestActivity : AppCompatActivity() {
                 }
             }
             init()
+        }
+    }
+
+    /**
+     * 长按唤醒语音助手：跳回 MainActivity 并自动启动语音识别。
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun setupLongPressVoiceLauncher() {
+        val vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        val root = findViewById<View>(android.R.id.content)
+        val handler = android.os.Handler(mainLooper)
+        var longPressRunnable: Runnable? = null
+
+        root.setOnTouchListener { _, event ->
+            when (event.action) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    longPressRunnable = Runnable {
+                        vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.putExtra("START_VOICE_COMMAND", true)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        startActivity(intent)
+                    }
+                    handler.postDelayed(longPressRunnable!!, 500)
+                    false
+                }
+                android.view.MotionEvent.ACTION_MOVE,
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    longPressRunnable?.let { handler.removeCallbacks(it) }
+                    false
+                }
+                else -> false
+            }
         }
     }
 
