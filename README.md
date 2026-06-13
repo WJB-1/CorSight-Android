@@ -1,109 +1,86 @@
-# CorSight Android
+# CorSight Android v2.0
 
-视障语音导航 Android 客户端。
+瞳心引航 — 面向盲人/视障用户的语音导航 + 视觉避障 Android 应用。
+
+## 功能
+
+- 语音输入目的地（百度 ASR）+ 语音助手（本地关键词 + LLM Function Calling 混合架构）
+- POI 搜索与地图选点（高德地图 SDK）
+- 实时步行导航 + 偏航自动重规划
+- TTS 语音播报（百度 TTS）
+- 视觉避障（本地 YOLOv8 ONNX 推理 / 云端 HTTP 推理）
+- ESP32 外设自动发现（UDP 广播 + Socket 网络流）
+- 行前路线预览（调用 CorSight-Server 后端）
+- 8 方向街景数据采集 + 云端上传
+- 导航历史记录（Room 本地存储）
 
 ## 项目结构
 
 ```
-CorSight-Android/
-├── app/
-│   ├── src/main/java/com/example/voicenavigation/
-│   │   ├── MainActivity.java              # 主界面
-│   │   ├── data/                          # Room 数据库（导航历史）
-│   │   ├── navigation/                    # 导航引擎
-│   │   ├── network/
-│   │   │   └── TripPreviewService.java    # 行前预览 HTTP 客户端
-│   │   └── stt/                           # 百度语音 SDK 封装
-│   ├── src/main/res/                      # 布局、资源、主题
-│   └── build.gradle                       # 模块构建配置
-├── build.gradle
-├── settings.gradle
-└── docs/
-    └── TRIP_PREVIEW_API.md                # 后端接口联调文档
+CorSight-Android_v2.0/
+├── app/                  # 主应用
+│   ├── src/main/java/
+│   │   └── com/example/voicenavigation/
+│   │       ├── app/          # CorSightApp (@HiltAndroidApp)
+│   │       ├── di/           # Hilt 依赖注入 (4 个 Module)
+│   │       ├── data/         # Room + Repository
+│   │       ├── voice/        # 语音子系统 (ASR/TTS/LLM)
+│   │       ├── navigation/   # 高德步行导航
+│   │       ├── network/      # 行前预览 HTTP
+│   │       ├── collection/   # 数据采集
+│   │       ├── ui/           # ViewModel + Fragment
+│   │       └── ...
+│   └── build.gradle
+├── inference/            # 推理引擎库 (YOLOv8 ONNX)
+├── vision/               # 视觉处理库 (ImageSource/VisionTool)
+├── docs/                 # 项目文档
+├── debug/                # 调试截图
+├── build.gradle          # 根构建配置
+├── settings.gradle       # 模块声明
+└── ARCHITECTURE.md       # 架构文档 (详见此文件)
 ```
-
-## 功能
-
-- 语音输入目的地（百度语音识别）
-- POI 搜索与地图选点（高德地图 SDK）
-- 实时步行导航 + 偏航自动重规划
-- TTS 语音播报（百度语音合成）
-- 导航历史记录（Room 本地存储）
-- **行前路线预览**（调用 CorSight-Server 后端）
 
 ## 技术栈
 
-| 技术 | 用途 |
-|:---|:---|
-| 高德 3D Map SDK 9.7.0 | 地图显示 + 定位 + POI 搜索 |
-| 高德 Search SDK 9.7.0 | 步行路线规划 |
-| 百度语音 SDK (bdasr.aar) | 语音识别 (STT) |
-| 百度语音合成 REST API | 语音播报 (TTS) |
-| Room 2.6.1 | 本地导航历史 |
-| OkHttp 4.12.0 | 行前预览网络请求 |
-| minSdk 24 / targetSdk 34 | Android 7.0+ |
+| 类别 | 技术 |
+|------|------|
+| 语言 | Kotlin 100% |
+| 架构 | MVVM (ViewModel + StateFlow) |
+| 依赖注入 | Hilt (Dagger) |
+| 地图 | 高德 3D Map + POI Search |
+| 语音 | 百度 ASR/TTS SDK |
+| LLM | OpenAI 兼容 API (DeepSeek) |
+| 推理 | ONNX Runtime (YOLOv8) |
+| 相机 | CameraX |
+| 网络 | OkHttp + Retrofit |
+| 数据库 | Room + Flow |
+| minSdk | 24 (Android 7.0) |
 
 ## 快速开始
 
-### 环境要求
-
-- Android Studio Hedgehog+
-- JDK 17+
-- Android SDK 34
-- Android 7.0+ 真机或模拟器
-
-### 运行步骤
-
-1. **用 Android Studio 打开**项目根目录，等待 Gradle 同步
-
-2. **检查 AAR 依赖**
+1. 用 Android Studio 打开项目，等待 Gradle 同步
+2. 确认 `app/libs/bdasr.aar` 存在（百度语音 SDK）
+3. 在 `local.properties` 中配置高德 API Key：
    ```
-   app/libs/bdasr.aar   # 百度语音识别 SDK
+   amap.api.key=你的高德Key
    ```
-   如缺失，从[百度 AI 开放平台](https://ai.baidu.com/)下载。
+4. 连接手机（USB 调试），点击 Run
 
-3. **配置 API Key**
+## 文档
 
-   在 `app/src/main/res/values/strings.xml` 中配置：
-   ```xml
-   <string name="amap_api_key">你的高德 Key</string>
-   ```
-
-   > 高德 Key 需要和包名 `com.example.voicenavigation` + 调试证书 SHA1 绑定。
-
-4. **配置后端地址**
-
-   打开 `app/src/main/java/com/example/voicenavigation/network/TripPreviewService.java`，
-   修改第 65 行：
-   ```java
-   public static final String DEFAULT_BASE_URL = "https://your-backend-domain.com";
-   ```
-
-   | 环境 | 地址示例 |
-   |------|----------|
-   | 生产环境 | `"https://api.example.com"` |
-   | 模拟器调试本机后端 | `"http://10.0.2.2:3002"` |
-   | 真机局域网调试 | `"http://192.168.1.x:3002"` |
-
-5. **连接手机**（开启 USB 调试），点击 **Run**
-
-## 权限
-
-| 权限 | 用途 |
-|:---|:---|
-| `RECORD_AUDIO` | 语音输入 |
-| `INTERNET` | 地图、搜索、TTS、后端请求 |
-| `ACCESS_FINE_LOCATION` | GPS 定位导航 |
-| `ACCESS_COARSE_LOCATION` | 网络辅助定位 |
-
-## 相关仓库
-
-- [CorSight-Server](https://github.com/你的用户名/CorSight-Server) — 后端服务（语义地图 + 智能导航）
+| 文档 | 说明 |
+|------|------|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 详细架构文档、包结构、数据流、文件清单 |
+| [docs/TRIP_PREVIEW_API.md](docs/TRIP_PREVIEW_API.md) | 行前预览后端接口联调文档 |
+| [docs/TECHNICAL_DOCUMENTATION.md](docs/TECHNICAL_DOCUMENTATION.md) | 技术设计文档 |
+| [docs/安卓开发入门笔记.md](docs/安卓开发入门笔记.md) | 开发入门笔记 |
 
 ## 调试
 
 Logcat 标签过滤：
-- `TripPreviewService` — 行前预览网络请求
-- `NavigationManager` — 定位、路线规划、偏航检测
+- `VoiceInteractionManager` — 语音交互全流程
 - `BaiduSpeechManager` — 语音识别
 - `BaiduTtsManager` — 语音合成
+- `NavigationManager` — 导航
+- `VisionTest` — 避障检测
+- `TripPreviewService` — 行前预览
