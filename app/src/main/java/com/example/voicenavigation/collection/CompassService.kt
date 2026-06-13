@@ -5,18 +5,23 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.view.Surface
+import android.view.WindowManager
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class CompassService(context: Context) : SensorEventListener {
 
+    private val appContext = context.applicationContext
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
     private val accelValues = FloatArray(3)
     private val magnetValues = FloatArray(3)
     private val rotationMatrix = FloatArray(9)
+    private val remappedRotationMatrix = FloatArray(9)
     private val orientationValues = FloatArray(3)
 
     private var callback: ((heading: Float, direction: String, isAligned: Boolean) -> Unit)? = null
@@ -58,7 +63,31 @@ class CompassService(context: Context) : SensorEventListener {
         }
 
         if (!SensorManager.getRotationMatrix(rotationMatrix, null, accelValues, magnetValues)) return
-        SensorManager.getOrientation(rotationMatrix, orientationValues)
+
+        // 根据屏幕旋转方向补偿坐标系，使 heading 始终指向屏幕顶部（= 相机镜头方向）
+        val displayRotation = windowManager.defaultDisplay.rotation
+        val orientedMatrix = when (displayRotation) {
+            Surface.ROTATION_90 -> {
+                SensorManager.remapCoordinateSystem(
+                    rotationMatrix, SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X, remappedRotationMatrix
+                )
+                remappedRotationMatrix
+            }
+            Surface.ROTATION_270 -> {
+                SensorManager.remapCoordinateSystem(
+                    rotationMatrix, SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X, remappedRotationMatrix
+                )
+                remappedRotationMatrix
+            }
+            Surface.ROTATION_180 -> {
+                SensorManager.remapCoordinateSystem(
+                    rotationMatrix, SensorManager.AXIS_MINUS_X, SensorManager.AXIS_MINUS_Y, remappedRotationMatrix
+                )
+                remappedRotationMatrix
+            }
+            else -> rotationMatrix // ROTATION_0 竖屏，无需remap
+        }
+        SensorManager.getOrientation(orientedMatrix, orientationValues)
 
         var heading = Math.toDegrees(orientationValues[0].toDouble()).toFloat()
         if (heading < 0) heading += 360f

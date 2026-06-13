@@ -70,6 +70,15 @@ class DataCollectionActivity : AppCompatActivity() {
         private const val CAMERA_REQUEST = 201
         private const val RETAKE_REQUEST = 202
         private const val CAMERA_PERMISSION = 203
+
+        // 状态保存 key
+        private const val KEY_TARGET_DIR = "target_dir"
+        private const val KEY_CAPTURED_STATUS = "captured_status"
+        private const val KEY_IMAGE_PATHS = "image_paths"
+        private const val KEY_CURRENT_LAT = "current_lat"
+        private const val KEY_CURRENT_LON = "current_lon"
+        private const val KEY_CHUNK_ID = "chunk_id"
+        private const val KEY_PENDING_SCENE_DESC = "pending_scene_desc"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -92,8 +101,17 @@ class DataCollectionActivity : AppCompatActivity() {
         compassService = CompassService(this)
         taskStorage = TaskStorage(this)
 
+        // 恢复旋转前的采集状态
+        if (savedInstanceState != null) {
+            restoreInstanceState(savedInstanceState)
+        }
+
         initViews()
-        initCaptureStatus()
+        if (savedInstanceState == null) {
+            initCaptureStatus()
+        } else {
+            updateGridColors()
+        }
         checkLocationPermission()
     }
 
@@ -497,6 +515,37 @@ class DataCollectionActivity : AppCompatActivity() {
         if (::compassService.isInitialized) {
             compassService.stop()
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_TARGET_DIR, targetDirection)
+        outState.putBooleanArray(KEY_CAPTURED_STATUS, directions.map { capturedStatus[it] ?: false }.toBooleanArray())
+        outState.putStringArrayList(KEY_IMAGE_PATHS, ArrayList(imagePaths.map { "${it.first}|${it.second}" }))
+        outState.putDouble(KEY_CURRENT_LAT, currentLat)
+        outState.putDouble(KEY_CURRENT_LON, currentLon)
+        outState.putString(KEY_CHUNK_ID, chunkId)
+        outState.putString(KEY_PENDING_SCENE_DESC, pendingSceneDesc)
+    }
+
+    private fun restoreInstanceState(savedInstanceState: Bundle) {
+        targetDirection = savedInstanceState.getString(KEY_TARGET_DIR, "N")
+        val statusArray = savedInstanceState.getBooleanArray(KEY_CAPTURED_STATUS)
+        if (statusArray != null) {
+            directions.forEachIndexed { i, dir -> capturedStatus[dir] = statusArray[i] }
+        }
+        val pathStrings = savedInstanceState.getStringArrayList(KEY_IMAGE_PATHS)
+        if (pathStrings != null) {
+            imagePaths.clear()
+            pathStrings.forEach { s ->
+                val parts = s.split("|", limit = 2)
+                if (parts.size == 2) imagePaths.add(parts[0] to parts[1])
+            }
+        }
+        currentLat = savedInstanceState.getDouble(KEY_CURRENT_LAT, 0.0)
+        currentLon = savedInstanceState.getDouble(KEY_CURRENT_LON, 0.0)
+        chunkId = savedInstanceState.getString(KEY_CHUNK_ID, "未计算")
+        pendingSceneDesc = savedInstanceState.getString(KEY_PENDING_SCENE_DESC, "")
     }
 
     override fun onDestroy() {
