@@ -52,6 +52,7 @@ import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
 import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.data.SuggestionAdapter
+import androidx.room.Room
 import com.example.voicenavigation.data.VoiceRecord
 import com.example.voicenavigation.data.VoiceRecordAdapter
 import com.example.voicenavigation.navigation.NavigationManager
@@ -189,7 +190,8 @@ class MainActivity : AppCompatActivity(),
                 return "unknown"
             }
             val digest = MessageDigest.getInstance("SHA1")
-            val sha1 = digest.digest(packageInfo.signatures[0].toByteArray())
+            val signatures = packageInfo.signatures!!
+            val sha1 = digest.digest(signatures[0].toByteArray())
             val builder = StringBuilder()
             for (i in sha1.indices) {
                 if (i > 0) builder.append(":")
@@ -242,15 +244,17 @@ class MainActivity : AppCompatActivity(),
 
         rvSuggestions.layoutManager = LinearLayoutManager(this)
         suggestionAdapter = SuggestionAdapter(ArrayList())
-        suggestionAdapter.setOnItemClickListener { item, _ ->
-            isSelectingDestination = true
-            val point = item.latLonPoint
-            val latLng = LatLng(point.latitude, point.longitude)
-            setDestination(latLng, item.title)
-            hideSuggestions()
-            hideKeyboard()
-            isSelectingDestination = false
-        }
+        suggestionAdapter.setOnItemClickListener(object : SuggestionAdapter.OnItemClickListener {
+            override fun onItemClick(item: PoiItem, position: Int) {
+                isSelectingDestination = true
+                val point = item.latLonPoint
+                val latLng = LatLng(point.latitude, point.longitude)
+                setDestination(latLng, item.title)
+                hideSuggestions()
+                hideKeyboard()
+                isSelectingDestination = false
+            }
+        })
         rvSuggestions.adapter = suggestionAdapter
 
         bottomNav.setOnItemSelectedListener { item ->
@@ -430,7 +434,8 @@ class MainActivity : AppCompatActivity(),
                 var destCount = 0
                 if (records != null) {
                     for (record in records) {
-                        if (record.destination != null && record.destination.isNotEmpty()) {
+                        val dest = record.destination
+                        if (!dest.isNullOrEmpty()) {
                             destCount++
                         }
                     }
@@ -446,7 +451,7 @@ class MainActivity : AppCompatActivity(),
                         layoutHistoryEmpty.visibility = View.GONE
                         rvHistory.visibility = View.VISIBLE
                         if (historyAdapter == null) {
-                            historyAdapter = VoiceRecordAdapter(records)
+                            historyAdapter = VoiceRecordAdapter(records.toMutableList())
                             setupHistoryAdapterListener()
                             rvHistory.adapter = historyAdapter
                         } else {
@@ -510,7 +515,7 @@ class MainActivity : AppCompatActivity(),
                 return@setOnClickListener
             }
             prefs.edit().putString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, url).apply()
-            tripPreviewService.setBaseUrl(url)
+            tripPreviewService.baseUrl = url
             Toast.makeText(this, "地图服务地址已保存", Toast.LENGTH_SHORT).show()
         }
 
@@ -529,7 +534,7 @@ class MainActivity : AppCompatActivity(),
             val defaultUrl = TripPreviewService.DEFAULT_BASE_URL
             prefs.edit().putString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, defaultUrl).apply()
             etServerUrl.setText(defaultUrl)
-            tripPreviewService.setBaseUrl(defaultUrl)
+            tripPreviewService.baseUrl = defaultUrl
             Toast.makeText(this, "已恢复默认地址", Toast.LENGTH_SHORT).show()
         }
 
@@ -610,7 +615,9 @@ class MainActivity : AppCompatActivity(),
 
         navigationManager = NavigationManager(this)
         navigationManager.setNavigationCallback(this)
-        appDatabase = AppDatabase.getInstance(this)
+        appDatabase = Room.databaseBuilder(this, AppDatabase::class.java, "voice_navigation.db")
+            .fallbackToDestructiveMigration()
+            .build()
         handler = Handler(Looper.getMainLooper())
 
         val prefs = AppConfig.prefs(this)
@@ -630,8 +637,8 @@ class MainActivity : AppCompatActivity(),
         voiceInteractionManager.setVoiceEventListener(object : VoiceInteractionManager.VoiceEventListener {
             override fun onListeningStarted() {}
             override fun onListeningStopped() {}
-            override fun onPartialResultReceived(text: String?) {}
-            override fun onPipelineStage(stage: String?) {
+            override fun onPartialResultReceived(text: String) {}
+            override fun onPipelineStage(stage: String) {
                 // 实时更新橙色按钮文字，显示流水线进度
                 runOnUiThread { tvVoiceCommandHint.text = stage }
             }
@@ -644,10 +651,10 @@ class MainActivity : AppCompatActivity(),
             getString(R.string.baidu_speech_api_key),
             getString(R.string.baidu_speech_secret_key)
         )
-        baiduTts?.setCallback(object : BaiduTtsManager.TtsCallback {
+        baiduTts?.callback = object : BaiduTtsManager.TtsCallback {
             override fun onTtsReady() { Log.d(TAG, "TTS ready") }
-            override fun onTtsError(error: String?) { Log.e(TAG, "TTS error: $error") }
-        })
+            override fun onTtsError(error: String) { Log.e(TAG, "TTS error: $error") }
+        }
         baiduTts?.init()
     }
 
@@ -687,14 +694,15 @@ class MainActivity : AppCompatActivity(),
         map.setOnMyLocationChangeListener { location ->
             if (location == null) return@setOnMyLocationChangeListener
             val shouldMoveCamera = currentLocation == null
-            currentLocation = LatLng(location.latitude, location.longitude)
+            val newLoc = LatLng(location.latitude, location.longitude)
+            currentLocation = newLoc
             if (shouldMoveCamera) {
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15f))
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(newLoc, 15f))
             }
         }
 
         map.setOnMapClickListener { latLng ->
-            if (navigationManager.isNavigating) return@setOnMapClickListener
+            if (navigationManager.isNavigating()) return@setOnMapClickListener
             setDestination(latLng, latLng.latitude.toString() + ", " + latLng.longitude)
             etDestination.setText("")
             etDestination.hint = "已在地图上选点"
@@ -723,8 +731,9 @@ class MainActivity : AppCompatActivity(),
         }
         enableMapLocation()
         navigationManager.requestCurrentLocation()
-        if (mMap != null && currentLocation != null) {
-            mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 16f))
+        val loc = currentLocation
+        if (mMap != null && loc != null) {
+            mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16f))
         } else {
             Toast.makeText(this, "正在获取当前位置", Toast.LENGTH_SHORT).show()
         }
@@ -796,7 +805,7 @@ class MainActivity : AppCompatActivity(),
         val query = PoiSearch.Query(keyword, "", "")
         query.pageSize = 10
         query.pageNum = 0
-        query.isCityLimit = false
+        query.setCityLimit(false)
 
         try {
             if (poiSearch == null) {
@@ -846,9 +855,10 @@ class MainActivity : AppCompatActivity(),
                     voiceInteractionManager.speakAndToast(confirmMsg)
 
                     // TTS 播报队列自动顺序播放，无需延迟
-                    if (currentLocation != null) {
+                    val loc = currentLocation
+                    if (loc != null) {
                         layoutNavInfo.visibility = View.VISIBLE
-                        navigationManager.planRoute(currentLocation, selectedDestLatLng, selectedDestName)
+                        navigationManager.planRoute(loc, selectedDestLatLng!!, selectedDestName)
                     } else {
                         locateMe()
                         speakForce("正在获取当前位置，请稍后")
@@ -895,7 +905,7 @@ class MainActivity : AppCompatActivity(),
             Toast.makeText(this, "导航服务未就绪", Toast.LENGTH_SHORT).show()
             return
         }
-        if (navigationManager.isNavigating) {
+        if (navigationManager.isNavigating()) {
             navigationManager.stopNavigation()
             btnStartNavigation.setText(R.string.start_navigation)
             clearRouteDisplay()
@@ -912,7 +922,7 @@ class MainActivity : AppCompatActivity(),
         }
         layoutNavInfo.visibility = View.VISIBLE
         saveVoiceRecord(selectedDestName)
-        navigationManager.planRoute(currentLocation, selectedDestLatLng, selectedDestName)
+        navigationManager.planRoute(currentLocation!!, selectedDestLatLng!!, selectedDestName)
     }
 
     private fun sendTripPreview() {
@@ -923,14 +933,14 @@ class MainActivity : AppCompatActivity(),
             Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
             return
         }
-        tripPreviewService.setBaseUrl(previewBaseUrl)
+        tripPreviewService.baseUrl = previewBaseUrl
 
         val callback = object : TripPreviewService.PreviewCallback {
-            override fun onSuccess(response: String?) {
+            override fun onSuccess(response: String) {
                 parseAndShowPreviewResult(response)
             }
 
-            override fun onError(error: String?) {
+            override fun onError(error: String) {
                 Toast.makeText(this@MainActivity, "行前预览失败：$error", Toast.LENGTH_LONG).show()
             }
         }
@@ -1107,14 +1117,14 @@ class MainActivity : AppCompatActivity(),
 
     // ==================== CommandExecutor 实现（Function Calling）====================
 
-    override fun executeNavigateTo(destination: String?) {
+    override fun executeNavigateTo(destination: String) {
         if (!hasValidAmapKey()) {
             speakForce("高德地图Key未配置，无法导航")
             return
         }
         pendingVoiceDestination = destination
         autoStartNavigationAfterSearch = true
-        searchDestination(destination!!)
+        searchDestination(destination)
     }
 
     override fun executeStartObstacleAvoidance() {
@@ -1124,7 +1134,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun executeStopNavigation() {
-        if (navigationManager.isNavigating) {
+        if (navigationManager.isNavigating()) {
             navigationManager.stopNavigation()
             btnStartNavigation.setText(R.string.start_navigation)
             clearRouteDisplay()
@@ -1140,8 +1150,9 @@ class MainActivity : AppCompatActivity(),
 
     override fun executeWhereAmI() {
         // TTS 播报已在 VoiceInteractionManager 中完成，此处执行额外操作
-        if (currentLocation != null) {
-            mMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 16f))
+        val loc = currentLocation
+        if (loc != null) {
+            mMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16f))
         } else {
             locateMe()
         }
@@ -1159,7 +1170,7 @@ class MainActivity : AppCompatActivity(),
         // TTS 播报已在 VoiceInteractionManager 中完成
     }
 
-    override fun executeTextSearch(text: String?) {
+    override fun executeTextSearch(text: String) {
         val cleaned = cleanSpeechText(text)
         etDestination.setText(cleaned)
         etDestination.setSelection(cleaned.length)
@@ -1168,7 +1179,7 @@ class MainActivity : AppCompatActivity(),
         }
     }
 
-    override fun executeUnknown(text: String?) {
+    override fun executeUnknown(text: String) {
         // 未识别的指令，作为普通搜索尝试一次
         val cleaned = cleanSpeechText(text)
         if (cleaned.length >= 2) {
@@ -1183,7 +1194,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun isNavigating(): Boolean {
-        return navigationManager.isNavigating
+        return navigationManager.isNavigating()
     }
 
     override fun isObstacleAvoiding(): Boolean {
@@ -1194,8 +1205,9 @@ class MainActivity : AppCompatActivity(),
         if (!lastAddress.isNullOrEmpty()) {
             return lastAddress
         }
-        if (currentLocation != null) {
-            return currentLocation!!.latitude.toString() + "，" + currentLocation!!.longitude
+        val loc = currentLocation
+        if (loc != null) {
+            return loc.latitude.toString() + "，" + loc.longitude
         }
         return null
     }
@@ -1213,25 +1225,27 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onRouteReady(
-        routePoints: List<LatLng>?,
+        routePoints: List<LatLng>,
         totalDistance: Float,
         totalDuration: Float,
-        instructions: List<String>?
+        instructions: List<String>
     ) {
         drawRoute(routePoints)
         tvNavDistance.text = formatDistance(totalDistance)
         tvNavDuration.text = formatDuration(totalDuration)
-        if (!instructions.isNullOrEmpty()) {
+        if (instructions.isNotEmpty()) {
             tvNavInstruction.text = instructions[0]
             speak(instructions[0])
         }
-        if (mMap != null && currentLocation != null) {
-            mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 14f))
+        val loc = currentLocation
+        val map = mMap
+        if (map != null && loc != null) {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 14f))
         }
         btnStartNavigation.setText(R.string.stop_navigation)
     }
 
-    override fun onNavigationInfoUpdated(remainingDistance: Float, remainingDuration: Float, nextInstruction: String?) {
+    override fun onNavigationInfoUpdated(remainingDistance: Float, remainingDuration: Float, nextInstruction: String) {
         tvNavDistance.text = formatDistance(remainingDistance)
         tvNavDuration.text = formatDuration(remainingDuration)
         if (!nextInstruction.isNullOrEmpty()) {
@@ -1265,7 +1279,7 @@ class MainActivity : AppCompatActivity(),
         selectedDestName = null
     }
 
-    override fun onNavigationError(error: String?) {
+    override fun onNavigationError(error: String) {
         Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
         layoutNavInfo.visibility = View.GONE
     }

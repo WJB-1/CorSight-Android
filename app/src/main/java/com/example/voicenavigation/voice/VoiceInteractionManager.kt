@@ -85,7 +85,7 @@ class VoiceInteractionManager(
     private var waitingForResult = false
 
     init {
-        speechManager.setCallback(this)
+        speechManager.callback = this
     }
 
     fun setTextInputListener(listener: TextInputListener?) { textInputListener = listener }
@@ -175,12 +175,12 @@ class VoiceInteractionManager(
 
     // ==================== STT 回调 ====================
 
-    override fun onResult(result: String?) {
+    override fun onResult(result: String) {
         waitingForResult = false
         watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
 
         Log.d(TAG, "=== STT RESULT === mode=$currentMode text=[$result]")
-        if (result.isNullOrBlank()) {
+        if (result.isBlank()) {
             showToast("❌ 没有听清，请松开后再说一次")
             emitStage("语音助手")
             return
@@ -196,8 +196,7 @@ class VoiceInteractionManager(
         }
     }
 
-    override fun onPartialResult(result: String?) {
-        if (result == null) return
+    override fun onPartialResult(result: String) {
         Log.d(TAG, "STT partial: [$result]")
         if (currentMode == Mode.TEXT_INPUT) {
             textInputListener?.onTextPartial(result)
@@ -206,7 +205,7 @@ class VoiceInteractionManager(
         }
     }
 
-    override fun onError(error: String?) {
+    override fun onError(error: String) {
         waitingForResult = false
         watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
 

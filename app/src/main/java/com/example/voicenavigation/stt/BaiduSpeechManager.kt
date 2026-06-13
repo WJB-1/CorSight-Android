@@ -183,14 +183,14 @@ class BaiduSpeechManager(context: Context) {
         resultDelivered = false
         lastPartialResult = ""
 
-        val params = HashMap<String, Any>()
+        val params = mutableMapOf<String, Any>()
         params[SpeechConstant.ACCEPT_AUDIO_VOLUME] = false
         params[SpeechConstant.NLU] = "enable"
         params[SpeechConstant.VAD_ENDPOINT_TIMEOUT] = 0
         params[SpeechConstant.VAD] = SpeechConstant.VAD_TOUCH
         params[SpeechConstant.WP_VAD_ENABLE] = false
 
-        val jsonParam = JSONObject(params).toString()
+        val jsonParam = JSONObject(params as Map<*, *>).toString()
 
         Log.d(TAG, "Starting Baidu ASR with params: $jsonParam")
 

@@ -135,7 +135,7 @@ class VisionTestActivity : AppCompatActivity() {
             getString(R.string.baidu_speech_api_key),
             getString(R.string.baidu_speech_secret_key)
         ).apply {
-            setCallback(object : BaiduTtsManager.TtsCallback {
+            callback = object : BaiduTtsManager.TtsCallback {
                 override fun onTtsReady() {
                     ttsReady = true
                     flushPendingSpeechMessages()
@@ -144,7 +144,7 @@ class VisionTestActivity : AppCompatActivity() {
                 override fun onTtsError(error: String) {
                     Log.e(TAG, "Obstacle TTS error: $error")
                 }
-            })
+            }
             init()
         }
     }

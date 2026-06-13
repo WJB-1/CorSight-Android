@@ -244,8 +244,8 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
 
             currentRouteResult = result
             currentWalkPath = result.paths[0]
-            totalDistance = currentWalkPath!!.distance
-            totalDuration = currentWalkPath!!.duration
+            totalDistance = currentWalkPath!!.distance.toFloat()
+            totalDuration = currentWalkPath!!.duration.toFloat()
             remainingDistance = totalDistance
 
             val steps: List<WalkStep> = currentWalkPath!!.steps
