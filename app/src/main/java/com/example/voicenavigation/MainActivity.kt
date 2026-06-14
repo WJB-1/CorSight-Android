@@ -16,6 +16,7 @@ import android.text.TextWatcher
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -60,6 +61,9 @@ import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.voice.LLMFunctionCaller
+import com.example.voicenavigation.ui.ringmenu.RingMenuView
+import com.example.voicenavigation.ui.ringmenu.RingMenuItem
+import com.example.voicenavigation.ui.ringmenu.MenuAction
 import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -72,7 +76,8 @@ class MainActivity : AppCompatActivity(),
     NavigationManager.NavigationCallback,
     PoiSearch.OnPoiSearchListener,
     VoiceInteractionManager.CommandExecutor,
-    VoiceInteractionManager.TextInputListener {
+    VoiceInteractionManager.TextInputListener,
+    GestureVoiceLauncher.GestureCallback {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -144,6 +149,10 @@ class MainActivity : AppCompatActivity(),
     private var lastAddress: String? = null
     private var isObstacleRunning = false
 
+    // 环形菜单
+    private var ringMenuView: RingMenuView? = null
+    private lateinit var ringMenuContainer: FrameLayout
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -152,10 +161,11 @@ class MainActivity : AppCompatActivity(),
 
         initViews()
         initServices()
+        setupRingMenu()
         requestPermissions()
 
         // 全局长按唤醒语音助手
-        GestureVoiceLauncher.attach(this, voiceInteractionManager)
+        GestureVoiceLauncher.attach(this, voiceInteractionManager, this)
 
         mapView = findViewById(R.id.map)
         mapView.onCreate(savedInstanceState)
@@ -1235,6 +1245,121 @@ class MainActivity : AppCompatActivity(),
     private fun cleanSpeechText(result: String?): String {
         if (result == null) return ""
         return result.replace(Regex("[。 ，、！；：,.!?;:]*$"), "").trim()
+    }
+
+    // ==================== 环形菜单 ====================
+
+    private fun setupRingMenu() {
+        ringMenuContainer = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            visibility = View.GONE
+        }
+
+        // Add as overlay on top of everything
+        val rootLayout = findViewById<ViewGroup>(android.R.id.content)
+        rootLayout.addView(ringMenuContainer)
+
+        ringMenuView = RingMenuView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setMenuItems(listOf(
+                RingMenuItem("voice", "语音助手", color = 0xFF4CAF50.toInt(), action = MenuAction.Navigate),
+                RingMenuItem("obstacle", "避障", color = 0xFFF44336.toInt(), action = MenuAction.ObstacleAvoid),
+                RingMenuItem("preview", "预览路线", color = 0xFF2196F3.toInt(), action = MenuAction.PreviewRoute),
+                RingMenuItem("stop_nav", "停止导航", color = 0xFFFF9800.toInt(), action = MenuAction.StopNavigation),
+                RingMenuItem("more", "更多", color = 0xFF9E9E9E.toInt(), children = listOf(
+                    RingMenuItem("history", "历史", color = 0xFF795548.toInt(), action = MenuAction.History),
+                    RingMenuItem("settings", "设置", color = 0xFF607D8B.toInt(), action = MenuAction.Settings),
+                    RingMenuItem("collect", "数据采集", color = 0xFF009688.toInt(), action = MenuAction.DataCollection)
+                ))
+            ))
+
+            onItemExecuted = { item ->
+                executeRingMenuItem(item)
+            }
+            onCenterClicked = {
+                hideRingMenu()
+            }
+        }
+        ringMenuContainer.addView(ringMenuView)
+    }
+
+    private fun executeRingMenuItem(item: RingMenuItem) {
+        hideRingMenu()
+        when (item.action) {
+            is MenuAction.Navigate -> {
+                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
+            }
+            is MenuAction.ObstacleAvoid -> {
+                startActivity(Intent(this, VisionTestActivity::class.java))
+            }
+            is MenuAction.PreviewRoute -> {
+                sendTripPreview()
+            }
+            is MenuAction.StopNavigation -> {
+                if (navigationManager.isNavigating()) {
+                    navigationManager.stopNavigation()
+                    btnStartNavigation.text = getString(R.string.start_navigation)
+                    clearRouteDisplay()
+                } else {
+                    Toast.makeText(this, "当前没有导航", Toast.LENGTH_SHORT).show()
+                }
+            }
+            is MenuAction.History -> {
+                switchTab(1)
+                containerPages.visibility = View.VISIBLE
+                bottomControls.visibility = View.GONE
+                searchBarContainer.visibility = View.GONE
+            }
+            is MenuAction.Settings -> {
+                switchTab(2)
+                containerPages.visibility = View.VISIBLE
+                bottomControls.visibility = View.GONE
+                searchBarContainer.visibility = View.GONE
+            }
+            is MenuAction.DataCollection -> {
+                startActivity(Intent(this, com.example.voicenavigation.collection.DataCollectionActivity::class.java))
+            }
+            is MenuAction.CloseMenu -> {
+                hideRingMenu()
+            }
+            else -> {}
+        }
+    }
+
+    private fun showRingMenu(centerX: Float, centerY: Float) {
+        ringMenuContainer.visibility = View.VISIBLE
+        ringMenuView?.invalidate()
+    }
+
+    private fun hideRingMenu() {
+        ringMenuContainer.visibility = View.GONE
+    }
+
+    // ==================== GestureVoiceLauncher.GestureCallback ====================
+
+    override fun onVoiceAssistant() {
+        voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+        Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onRingMenuShow(centerX: Float, centerY: Float) {
+        showRingMenu(centerX, centerY)
+    }
+
+    override fun onRingMenuConfirm() {
+        // RingMenuView handles the selection internally via onTouchEvent
+        // The view's onItemExecuted callback will fire
+    }
+
+    override fun onCancel() {
+        hideRingMenu()
     }
 
     override fun onLocationUpdated(location: Location, address: String?) {

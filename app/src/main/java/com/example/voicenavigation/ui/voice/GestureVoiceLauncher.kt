@@ -13,27 +13,25 @@ import android.view.View
 import com.example.voicenavigation.voice.VoiceInteractionManager
 
 /**
- * 全局单指长按语音助手唤醒器。
- * 通过 Activity.dispatchTouchEvent() 捕获事件，可穿透 MapView/PreviewView 等子 View 的事件消费。
+ * 全局单指长按手势检测器。
+ *
+ * 交互逻辑：
+ * - 长按 500ms → 震动 → 弹出环形菜单
+ * - 手指不抬起，在菜单上滑动选择功能 → 松手执行
+ * - 如果长按后手指没移动直接松手 → 启动语音助手
  *
  * 用法：
- * 1. 在 Activity.onCreate 中调用：
- *    GestureVoiceLauncher.attach(this, voiceInteractionManager)
- * 2. 在 Activity 中重写：
- *    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
- *        GestureVoiceLauncher.onDispatchTouchEvent(ev)
- *        return super.dispatchTouchEvent(ev)
- *    }
+ * 1. 在 Activity.onCreate 中调用 GestureVoiceLauncher.attach(this, callback)
+ * 2. 在 Activity 中重写 dispatchTouchEvent
  */
 object GestureVoiceLauncher {
 
     private const val TAG = "GestureVoiceLauncher"
     private const val LONG_PRESS_DURATION_MS = 500L
 
-    @SuppressLint("StaticFieldLeak")
-    private var attachedView: View? = null
     private var vibrator: Vibrator? = null
     private var voiceInteractionManager: VoiceInteractionManager? = null
+    private var callback: GestureCallback? = null
     private val handler = Handler(Looper.getMainLooper())
 
     private var longPressRunnable: Runnable? = null
@@ -41,36 +39,38 @@ object GestureVoiceLauncher {
     private var startX = 0f
     private var startY = 0f
 
-    /**
-     * 在 Activity 中初始化。
-     */
-    fun attach(activity: Activity, vim: VoiceInteractionManager) {
+    interface GestureCallback {
+        /** 长按后手指没动直接松手 → 启动语音助手 */
+        fun onVoiceAssistant()
+        /** 长按触发 → 弹出环形菜单，传入按住位置 */
+        fun onRingMenuShow(centerX: Float, centerY: Float)
+        /** 手指松开 → 确认执行当前选中项 */
+        fun onRingMenuConfirm()
+        /** 取消（手指滑出范围等） */
+        fun onCancel()
+    }
+
+    fun attach(activity: Activity, vim: VoiceInteractionManager, cb: GestureCallback) {
         voiceInteractionManager = vim
         vibrator = activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        attachedView = activity.findViewById(android.R.id.content)
-        Log.d(TAG, "GestureVoiceLauncher attached to Activity dispatch")
+        callback = cb
+        Log.d(TAG, "GestureVoiceLauncher attached")
+    }
+
+    fun detach() {
+        cancelLongPress()
+        voiceInteractionManager = null
+        callback = null
+        vibrator = null
+        isLongPressing = false
+        Log.d(TAG, "GestureVoiceLauncher detached")
     }
 
     /**
      * 在 Activity.dispatchTouchEvent() 中调用。
-     * 返回 false 表示不拦截，事件继续正常传递。
+     * 返回 false 不拦截事件，让它正常传递给子 View。
      */
     fun onDispatchTouchEvent(event: MotionEvent): Boolean {
-        return handleTouchEvent(event)
-    }
-
-    /**
-     * 移除监听。
-     */
-    fun detach() {
-        cancelLongPress()
-        attachedView = null
-        voiceInteractionManager = null
-        vibrator = null
-        Log.d(TAG, "GestureVoiceLauncher detached")
-    }
-
-    private fun handleTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 startX = event.x
@@ -83,14 +83,32 @@ object GestureVoiceLauncher {
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.x - startX
                 val dy = event.y - startY
-                if (dx * dx + dy * dy > 50 * 50) {
+                if (dx * dx + dy * dy > 50 * 50 && !isLongPressing) {
+                    // 手指移动超过 50px 且还没触发长按 → 普通滑动，取消
                     cancelLongPress()
                 }
                 return false
             }
 
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            MotionEvent.ACTION_UP -> {
+                if (isLongPressing) {
+                    // 长按已触发，松手 → 确认执行菜单项
+                    callback?.onRingMenuConfirm()
+                    isLongPressing = false
+                    return true
+                } else {
+                    // 还没触发长按就松手了
+                    cancelLongPress()
+                    return false
+                }
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                if (isLongPressing) {
+                    callback?.onCancel()
+                }
                 cancelLongPress()
+                isLongPressing = false
                 return false
             }
         }
@@ -112,16 +130,14 @@ object GestureVoiceLauncher {
     }
 
     private fun onLongPressTriggered() {
-        val vim = voiceInteractionManager ?: return
-        val ctx = attachedView?.context ?: return
+        Log.d(TAG, "Long press detected — showing ring menu")
 
-        Log.d(TAG, "Long press detected — launching voice assistant")
-
+        // 震动反馈
         vibrator?.vibrate(
             VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
         )
 
-        vim.speakFeedback("语音助手已就绪，请说话")
-        vim.startListening(VoiceInteractionManager.Mode.COMMAND)
+        // 弹出环形菜单
+        callback?.onRingMenuShow(startX, startY)
     }
 }
