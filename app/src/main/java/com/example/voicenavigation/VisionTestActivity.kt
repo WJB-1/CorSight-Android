@@ -119,11 +119,11 @@ class VisionTestActivity : AppCompatActivity() {
             .getBoolean("use_external_device", false)
 
         if (useExternal) {
-            binding.tvDetections.text = "正在寻找外设..."
+            binding.tvDetections.text = getString(R.string.vision_searching_peripheral)
             startUdpAutoDiscovery(onFound = { ip ->
                 connectToNetworkSource(ip, DEFAULT_STREAM_PORT)
             }, onTimeout = {
-                Toast.makeText(this, "未找到外设，退回本机相机", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.vision_peripheral_not_found), Toast.LENGTH_SHORT).show()
                 startCameraOrRequestPermission()
             })
         } else {
@@ -200,12 +200,12 @@ class VisionTestActivity : AppCompatActivity() {
             val serverUrl = getDetectionServerUrl()
             binding.layoutNetworkConfig.visibility = View.VISIBLE
             binding.tvDetectionServer.text = if (serverUrl.isEmpty()) {
-                "检测服务地址未配置，请在设置中填写"
+                getString(R.string.vision_detection_server_not_configured_hint)
             } else {
-                "检测服务：$serverUrl"
+                getString(R.string.vision_detection_server, serverUrl)
             }
             if (serverUrl.isEmpty()) {
-                Toast.makeText(this, "请先在设置中保存检测服务地址", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.vision_save_server_first), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
             activeMode = DetectionMode.CLOUD
@@ -223,7 +223,7 @@ class VisionTestActivity : AppCompatActivity() {
             val port = if (parts.size > 1) parts[1].toIntOrNull() ?: DEFAULT_STREAM_PORT else DEFAULT_STREAM_PORT
 
             if (ip.isEmpty()) {
-                Toast.makeText(this, "请输入 IP 地址", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.vision_enter_ip), Toast.LENGTH_SHORT).show()
                 return@setOnLongClickListener true
             }
             connectToNetworkSource(ip, port)
@@ -232,9 +232,9 @@ class VisionTestActivity : AppCompatActivity() {
 
         val savedUrl = getDetectionServerUrl()
         binding.tvDetectionServer.text = if (savedUrl.isEmpty()) {
-            "检测服务地址未配置"
+            getString(R.string.vision_detection_server_not_configured)
         } else {
-            "检测服务：$savedUrl"
+            getString(R.string.vision_detection_server, savedUrl)
         }
     }
 
@@ -243,7 +243,7 @@ class VisionTestActivity : AppCompatActivity() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == "com.example.voicenavigation.ACTION_STOP_OBSTACLE") {
                     Log.d(TAG, "Received stop obstacle broadcast")
-                    speakObstacleMessage("正在退出避障模式")
+                    speakObstacleMessage(getString(R.string.vision_exiting_obstacle))
                     finish()
                 }
             }
@@ -267,12 +267,12 @@ class VisionTestActivity : AppCompatActivity() {
         onTimeout: (() -> Unit)? = null
     ) {
         if (udpReceiveThread != null && udpReceiveThread!!.isAlive) {
-            Toast.makeText(this, "正在自动发现中，请稍候...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.vision_auto_discovering), Toast.LENGTH_SHORT).show()
             return
         }
 
         binding.progressConnecting.visibility = View.VISIBLE
-        binding.tvDetections.text = "等待设备广播..."
+        binding.tvDetections.text = getString(R.string.vision_waiting_broadcast)
 
         udpReceiveThread = Thread {
             try {
@@ -295,7 +295,7 @@ class VisionTestActivity : AppCompatActivity() {
                         if (ip != null) {
                             runOnUiThread {
                                 binding.progressConnecting.visibility = View.GONE
-                                binding.tvDetections.text = "发现设备: $ip"
+                                binding.tvDetections.text = getString(R.string.vision_device_found, ip)
                                 binding.etStreamIp.setText(ip)
                                 if (onFound != null) {
                                     onFound(ip)
@@ -313,12 +313,12 @@ class VisionTestActivity : AppCompatActivity() {
                 if (!found) {
                     runOnUiThread {
                         binding.progressConnecting.visibility = View.GONE
-                        binding.tvDetections.text = "自动发现超时"
+                        binding.tvDetections.text = getString(R.string.vision_discovery_timeout)
                         if (onTimeout != null) {
                             onTimeout()
                         } else {
                             Toast.makeText(this@VisionTestActivity,
-                                "未收到设备广播，请确保 ESP32 已连接热点并正在发送广播", Toast.LENGTH_LONG).show()
+                                getString(R.string.vision_no_broadcast_received), Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -326,11 +326,11 @@ class VisionTestActivity : AppCompatActivity() {
                 Log.e(TAG, "UDP 接收错误", e)
                 runOnUiThread {
                     binding.progressConnecting.visibility = View.GONE
-                    binding.tvDetections.text = "自动发现失败"
+                    binding.tvDetections.text = getString(R.string.vision_discovery_failed)
                     if (onTimeout != null) {
                         onTimeout()
                     } else {
-                        Toast.makeText(this@VisionTestActivity, "UDP 监听失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@VisionTestActivity, getString(R.string.vision_udp_listen_failed, e.message.orEmpty()), Toast.LENGTH_SHORT).show()
                     }
                 }
             } finally {
@@ -389,12 +389,12 @@ class VisionTestActivity : AppCompatActivity() {
         if (ok) {
             currentSource = source
             binding.tvDetections.text = if (activeMode == DetectionMode.LOCAL) {
-                "本地检测已启动"
+                getString(R.string.vision_local_detection_started)
             } else {
-                "云端检测已启动"
+                getString(R.string.vision_cloud_detection_started)
             }
         } else {
-            Toast.makeText(this, "启动 ${source.displayName} 失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.vision_source_start_failed, source.displayName), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -404,13 +404,13 @@ class VisionTestActivity : AppCompatActivity() {
             ToolRegistry.activate(this, "generic_detection")
             localToolReady = ToolRegistry.activeTool.value != null
             if (!localToolReady) {
-                binding.tvDetections.text = "本地检测模型未就绪"
+                binding.tvDetections.text = getString(R.string.vision_local_model_not_ready)
             }
             localToolReady
         } catch (e: Exception) {
             Log.e(TAG, "Local detection model activation failed", e)
-            binding.tvDetections.text = "本地检测模型加载失败：${e.message.orEmpty()}"
-            Toast.makeText(this, "本地检测模型加载失败", Toast.LENGTH_LONG).show()
+            binding.tvDetections.text = getString(R.string.vision_local_model_load_failed_with_detail, e.message.orEmpty())
+            Toast.makeText(this, getString(R.string.vision_local_model_load_failed), Toast.LENGTH_LONG).show()
             false
         }
     }
@@ -458,7 +458,7 @@ class VisionTestActivity : AppCompatActivity() {
                 Log.e(TAG, "Local detection failed", e)
                 runOnUiThread {
                     localInferenceRunning = false
-                    binding.tvDetections.text = "本地检测失败：${e.message.orEmpty()}"
+                    binding.tvDetections.text = getString(R.string.vision_local_detection_failed, e.message.orEmpty())
                     binding.overlayView.updateDetections(emptyList())
                     ObstacleWarningNotifier.dispatch(emptyList())
                 }
@@ -517,7 +517,7 @@ class VisionTestActivity : AppCompatActivity() {
                 Log.e(TAG, "Cloud detection failed", e)
                 runOnUiThread {
                     binding.progressConnecting.visibility = View.GONE
-                    binding.tvDetections.text = "云端检测失败：${e.message.orEmpty()}"
+                    binding.tvDetections.text = getString(R.string.vision_cloud_detection_failed, e.message.orEmpty())
                     binding.overlayView.updateDetections(emptyList())
                     ObstacleWarningNotifier.dispatch(emptyList())
                 }
@@ -532,7 +532,7 @@ class VisionTestActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         renderDetections(detections, quality)
                     } else {
-                        binding.tvDetections.text = "云端检测失败：HTTP ${response.code}"
+                        binding.tvDetections.text = getString(R.string.vision_cloud_detection_http_failed, response.code)
                         binding.overlayView.updateDetections(emptyList())
                         ObstacleWarningNotifier.dispatch(emptyList())
                     }
@@ -543,7 +543,7 @@ class VisionTestActivity : AppCompatActivity() {
 
     private fun renderBlurredFrame(quality: ImageQualityAnalyzer.Result) {
         smoothedHistory.clear()
-        binding.tvDetections.text = "画面较模糊，等待清晰帧（清晰度 ${quality.sharpness.toInt()}）"
+        binding.tvDetections.text = getString(R.string.vision_blurred_frame, quality.sharpness.toInt())
         binding.overlayView.updateDetections(emptyList())
         ObstacleWarningNotifier.dispatch(emptyList())
     }
@@ -563,12 +563,12 @@ class VisionTestActivity : AppCompatActivity() {
         dispatchSpeechEvents(speechEvents)
 
         binding.tvDetections.text = when {
-            stableItems.isEmpty() -> "未检测到明显障碍物（清晰度 ${quality.sharpness.toInt()}）"
+            stableItems.isEmpty() -> getString(R.string.vision_no_obstacle, quality.sharpness.toInt())
             alerts.isEmpty() -> stableItems.take(5).joinToString("\n") {
-                "${it.label}: ${(it.score * 100).toInt()}%，风险区外"
+                getString(R.string.vision_outside_risk_zone, it.label, (it.score * 100).toInt())
             }
             else -> alerts.sortedByDescending { it.urgency.ordinal }.take(5).joinToString("\n") {
-                "${urgencyText(it.urgency)}：${it.detection.label}，重叠 ${(it.overlapRatio * 100).toInt()}%"
+                getString(R.string.vision_alert_line, urgencyText(it.urgency), it.detection.label, (it.overlapRatio * 100).toInt())
             }
         }
 
@@ -600,9 +600,9 @@ class VisionTestActivity : AppCompatActivity() {
 
     private fun urgencyText(urgency: ObstacleUrgency): String {
         return when (urgency) {
-            ObstacleUrgency.LOW -> "低紧急度"
-            ObstacleUrgency.MEDIUM -> "中等紧急"
-            ObstacleUrgency.HIGH -> "重要告警"
+            ObstacleUrgency.LOW -> getString(R.string.vision_urgency_low)
+            ObstacleUrgency.MEDIUM -> getString(R.string.vision_urgency_medium)
+            ObstacleUrgency.HIGH -> getString(R.string.vision_urgency_high)
         }
     }
 
@@ -752,7 +752,7 @@ class VisionTestActivity : AppCompatActivity() {
             if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 switchToSource(cameraSource)
             } else {
-                Toast.makeText(this, "相机权限未授予", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.vision_camera_permission_denied), Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import com.example.voicenavigation.R
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
 import org.json.JSONObject
@@ -120,8 +121,8 @@ class VoiceInteractionManager(
                 if (!waitingForResult) return@Runnable
                 waitingForResult = false
                 Log.w(TAG, "Result timeout — no onResult received after stop")
-                showToast("⚠️ 识别超时/无结果，请重试")
-                emitStage("语音助手")
+                showToast(context.getString(R.string.tts_timeout_no_result))
+                emitStage(context.getString(R.string.stage_voice_assistant))
             }
         }
         return resultTimeoutRunnable!!
@@ -170,7 +171,7 @@ class VoiceInteractionManager(
     }
 
     private fun restoreButtonAfter(delayMs: Long) {
-        Handler(context.mainLooper).postDelayed({ emitStage("语音助手") }, delayMs)
+        Handler(context.mainLooper).postDelayed({ emitStage(context.getString(R.string.stage_voice_assistant)) }, delayMs)
     }
 
     // ==================== STT 回调 ====================
@@ -181,8 +182,8 @@ class VoiceInteractionManager(
 
         Log.d(TAG, "=== STT RESULT === mode=$currentMode text=[$result]")
         if (result.isBlank()) {
-            showToast("❌ 没有听清，请松开后再说一次")
-            emitStage("语音助手")
+            showToast(context.getString(R.string.tts_not_heard))
+            emitStage(context.getString(R.string.stage_voice_assistant))
             return
         }
         val trimmed = result.trim()
@@ -191,7 +192,7 @@ class VoiceInteractionManager(
         if (currentMode == Mode.TEXT_INPUT) {
             textInputListener?.onTextResult(trimmed)
         } else {
-            showToast("📝 识别：【$trimmed】")
+            showToast(context.getString(R.string.msg_stt_recognized, trimmed))
             processCommand(trimmed)
         }
     }
@@ -210,22 +211,22 @@ class VoiceInteractionManager(
         watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
 
         Log.e(TAG, "=== STT ERROR === $error")
-        showToast("❌ 识别失败：$error")
-        emitStage("语音助手")
+        showToast(context.getString(R.string.msg_stt_failed, error))
+        emitStage(context.getString(R.string.stage_voice_assistant))
     }
 
     override fun onListening() {
         Log.d(TAG, "=== STT LISTENING ===")
         if (currentMode == Mode.COMMAND) {
-            showToast("🎙️ 麦克风已开，请说话")
-            emitStage("🎙️ 正在听...")
+            showToast(context.getString(R.string.msg_mic_open))
+            emitStage(context.getString(R.string.stage_listening))
         }
         voiceEventListener?.onListeningStarted()
     }
 
     override fun onStopped() {
         Log.d(TAG, "=== STT STOPPED ===")
-        if (currentMode == Mode.COMMAND) emitStage("⏳ 识别中...")
+        if (currentMode == Mode.COMMAND) emitStage(context.getString(R.string.stage_recognizing))
         voiceEventListener?.onListeningStopped()
     }
 
@@ -238,17 +239,17 @@ class VoiceInteractionManager(
 
         if (command.type != VoiceCommand.Type.UNKNOWN) {
             val typeLabel = command.type.description
-            showToast("✅ 本地命中 → $typeLabel")
+            showToast(context.getString(R.string.msg_local_match, typeLabel))
             emitStage("✅ $typeLabel")
             executeCommand(command)
         } else if (llmCaller != null && llmCaller.isConfigured()) {
-            showToast("⏳ 本地未匹配 → 云端 LLM...")
-            emitStage("☁️ 请求云端...")
+            showToast(context.getString(R.string.msg_local_miss_cloud))
+            emitStage(context.getString(R.string.msg_cloud_requesting))
             Log.d(TAG, "Local miss, falling back to LLM for: $rawText")
             llmCaller.call(rawText, object : LlmFunctionCaller.Callback {
                 override fun onSuccess(result: LlmFunctionCaller.Result) {
                     Log.d(TAG, "LLM SUCCESS: function=${result.functionName} args=${result.arguments}")
-                    showToast("☁️ LLM→${result.functionName}")
+                    showToast(context.getString(R.string.msg_llm_result, result.functionName))
                     emitStage("☁️ ${result.functionName}")
                     val llmCommand = mapLLMResultToCommand(result)
                     executeCommand(llmCommand)
@@ -256,16 +257,16 @@ class VoiceInteractionManager(
 
                 override fun onFailure(error: String) {
                     Log.w(TAG, "LLM FAILED: $error")
-                    showToast("❌ LLM 超时/失败")
-                    emitStage("❌ LLM 失败")
-                    speakFeedback("抱歉，没有听懂。您可以试试说：导航去某地、开始避障、查询状态、我在哪里等")
+                    showToast(context.getString(R.string.msg_llm_timeout))
+                    emitStage(context.getString(R.string.msg_llm_failed))
+                    speakFeedback(context.getString(R.string.tts_not_understood))
                     commandExecutor?.executeUnknown(rawText)
                 }
             })
         } else {
-            showToast("❌ 本地未匹配，LLM 未配置")
-            emitStage("❌ 无法响应")
-            speakFeedback("抱歉，没有听懂。您可以试试说：导航去某地、开始避障、查询状态、我在哪里等")
+            showToast(context.getString(R.string.msg_local_miss_no_llm))
+            emitStage(context.getString(R.string.msg_no_response))
+            speakFeedback(context.getString(R.string.tts_not_understood))
             commandExecutor?.executeUnknown(rawText)
         }
     }
@@ -309,43 +310,43 @@ class VoiceInteractionManager(
     private fun executeCommand(command: VoiceCommand) {
         val executor = commandExecutor
         if (executor == null) {
-            speakFeedback("语音助手尚未就绪")
+            speakFeedback(context.getString(R.string.msg_voice_assistant_not_ready))
             restoreButtonAfter(2000)
             return
         }
 
         when (command.type) {
             VoiceCommand.Type.NAVIGATE_TO -> {
-                speakFeedback("正在搜索${command.destination}")
-                emitStage("🔍 搜索${command.destination}")
+                speakFeedback(context.getString(R.string.tts_searching, command.destination))
+                emitStage(context.getString(R.string.stage_searching, command.destination))
                 executor.executeNavigateTo(command.destination!!)
             }
             VoiceCommand.Type.START_OBSTACLE_AVOIDANCE -> {
-                speakFeedback("正在启动避障模式")
+                speakFeedback(context.getString(R.string.tts_starting_obstacle))
                 executor.executeStartObstacleAvoidance()
             }
             VoiceCommand.Type.STOP_NAVIGATION -> {
                 if (executor.isNavigating()) {
-                    speakFeedback("正在停止导航")
+                    speakFeedback(context.getString(R.string.tts_stopping_navigation))
                 } else {
-                    speakFeedback("当前没有正在进行的导航")
+                    speakFeedback(context.getString(R.string.tts_no_active_navigation))
                 }
                 executor.executeStopNavigation()
             }
             VoiceCommand.Type.STOP_OBSTACLE_AVOIDANCE -> {
                 if (executor.isObstacleAvoiding()) {
-                    speakFeedback("正在停止避障")
+                    speakFeedback(context.getString(R.string.tts_stopping_obstacle))
                 } else {
-                    speakFeedback("当前没有正在进行的避障")
+                    speakFeedback(context.getString(R.string.tts_no_active_obstacle))
                 }
                 executor.executeStopObstacleAvoidance()
             }
             VoiceCommand.Type.WHERE_AM_I -> {
                 val locDesc = executor.getCurrentLocationDescription()
                 if (!locDesc.isNullOrEmpty()) {
-                    speakAndToast("您当前位于$locDesc")
+                    speakAndToast(context.getString(R.string.tts_current_location, locDesc))
                 } else {
-                    speakAndToast("正在定位中，请稍后再试")
+                    speakAndToast(context.getString(R.string.tts_locating_wait))
                 }
                 executor.executeWhereAmI()
             }
@@ -355,28 +356,28 @@ class VoiceInteractionManager(
                 if (!lastText.isNullOrEmpty()) {
                     speakAndToast(lastText)
                 } else {
-                    speakAndToast("暂无可重复播报的内容")
+                    speakAndToast(context.getString(R.string.tts_nothing_to_repeat))
                 }
                 executor.executeRepeatLast()
             }
             VoiceCommand.Type.PREVIEW_ROUTE -> {
-                speakAndToast("正在生成路线预览")
+                speakAndToast(context.getString(R.string.tts_generating_preview))
                 executor.executePreviewRoute()
             }
             VoiceCommand.Type.QUERY_STATUS -> {
                 val nav = executor.isNavigating()
                 val obs = executor.isObstacleAvoiding()
-                val status = (if (nav) "当前正在导航中" else "导航未启动") +
-                        "，" + (if (obs) "避障模式已开启" else "避障模式未开启")
+                val status = (if (nav) context.getString(R.string.tts_nav_active) else context.getString(R.string.tts_nav_inactive)) +
+                        "，" + (if (obs) context.getString(R.string.tts_obstacle_active) else context.getString(R.string.tts_obstacle_inactive))
                 speakAndToast(status)
                 executor.executeQueryStatus()
             }
             VoiceCommand.Type.TEXT_SEARCH -> {
-                speakAndToast("正在搜索${command.destination}")
+                speakAndToast(context.getString(R.string.tts_searching, command.destination))
                 executor.executeTextSearch(command.destination!!)
             }
             VoiceCommand.Type.UNKNOWN -> {
-                speakAndToast("抱歉，没有听懂。您可以试试说：导航去某地、开始避障、查询状态、我在哪里等")
+                speakAndToast(context.getString(R.string.tts_not_understood))
                 executor.executeUnknown(command.rawText)
             }
         }

@@ -49,7 +49,7 @@ class DataCollectionActivity : AppCompatActivity() {
     private var locationClient: AMapLocationClient? = null
     private var currentLat = 0.0
     private var currentLon = 0.0
-    private var chunkId = "未计算"
+    private var chunkId = ""
     private var targetDirection = "N"
     private var lastAlignedState = false
     private var pendingPhotoFile: File? = null
@@ -86,7 +86,7 @@ class DataCollectionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_data_collection)
-        title = "数据采集"
+        title = getString(R.string.collect_title)
 
         AMapLocationClient.updatePrivacyShow(this, true, true)
         AMapLocationClient.updatePrivacyAgree(this, true)
@@ -179,7 +179,7 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun checkLocationPermission() {
         if (!hasValidAmapKey()) {
-            Toast.makeText(this, "高德Key未配置，无法定位采集点", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.collect_amap_key_missing_location), Toast.LENGTH_LONG).show()
             initCompass()
             return
         }
@@ -202,7 +202,7 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun initLocation() {
         if (!hasValidAmapKey()) {
-            Toast.makeText(this, "高德Key未配置，无法刷新位置", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_amap_key_missing_refresh), Toast.LENGTH_SHORT).show()
             return
         }
         try {
@@ -219,12 +219,12 @@ class DataCollectionActivity : AppCompatActivity() {
             }
             locationClient?.startLocation()
         } catch (e: Exception) {
-            Toast.makeText(this, "定位初始化失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_location_init_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun refreshLocation() {
-        Toast.makeText(this, "刷新位置...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.collect_refreshing_location), Toast.LENGTH_SHORT).show()
         initLocation()
     }
 
@@ -243,7 +243,7 @@ class DataCollectionActivity : AppCompatActivity() {
             tvTargetDir.text = targetDirection
 
             if (isAligned) {
-                tvAligned.text = "已对准"
+                tvAligned.text = getString(R.string.collect_aligned)
                 tvAligned.setTextColor(Color.parseColor("#4CAF50"))
                 btnCapture.isEnabled = true
                 btnCapture.setBackgroundColor(ContextCompat.getColor(this, R.color.vision_green))
@@ -258,7 +258,7 @@ class DataCollectionActivity : AppCompatActivity() {
                 lastAlignedState = false
             }
 
-            btnCapture.text = "拍摄 $targetDirection 方向"
+            btnCapture.text = getString(R.string.collect_capture_direction, targetDirection)
         }
         compassService.setTargetDirection(targetDirection)
     }
@@ -275,7 +275,7 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun takePhoto(requestCode: Int, direction: String) {
         if (requestCode == CAMERA_REQUEST && capturedStatus[direction] == true) {
-            Toast.makeText(this, "该方向已拍摄", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_direction_already_captured), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -301,7 +301,7 @@ class DataCollectionActivity : AppCompatActivity() {
         } else {
             pendingPhotoFile = null
             retakeDirection = null
-            Toast.makeText(this, "相机不可用", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_camera_unavailable), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -317,7 +317,7 @@ class DataCollectionActivity : AppCompatActivity() {
         pendingPhotoFile = null
         if (file == null || !file.exists() || file.length() == 0L) {
             retakeDirection = null
-            Toast.makeText(this, "拍照失败，请重试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_photo_failed), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -350,7 +350,7 @@ class DataCollectionActivity : AppCompatActivity() {
             nextIndex = (nextIndex + 1) % directions.size
         }
         if (nextIndex == currentIndex) {
-            Toast.makeText(this, "8 个方向已完成", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_all_directions_done), Toast.LENGTH_SHORT).show()
             return
         }
         targetDirection = directions[nextIndex]
@@ -389,12 +389,12 @@ class DataCollectionActivity : AppCompatActivity() {
             chunkId = chunkId,
             latitude = currentLat,
             longitude = currentLon,
-            sceneDescription = pendingSceneDesc.ifEmpty { "未描述" },
+            sceneDescription = pendingSceneDesc.ifEmpty { getString(R.string.collect_no_description) },
             images = imagesMap
         )
 
         taskStorage.saveTask(task)
-        Toast.makeText(this, "任务已保存", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.collect_task_saved), Toast.LENGTH_SHORT).show()
         imagePaths.clear()
         initCaptureStatus()
         targetDirection = "N"
@@ -405,21 +405,21 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun updateSyncButton() {
         val pending = taskStorage.getPendingTasks().size
-        btnSync.text = "同步到云端($pending)"
+        btnSync.text = getString(R.string.collect_sync_to_cloud, pending)
     }
 
     private fun syncToCloud() {
         val pending = taskStorage.getPendingTasks()
         if (pending.isEmpty()) {
-            Toast.makeText(this, "没有待上传任务", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_no_pending_tasks), Toast.LENGTH_SHORT).show()
             return
         }
 
         AlertDialog.Builder(this)
-            .setTitle("同步确认")
-            .setMessage("确定要上传 ${pending.size} 个任务吗？")
-            .setPositiveButton("确定") { _, _ -> doSync(pending) }
-            .setNegativeButton("取消", null)
+            .setTitle(getString(R.string.collect_sync_confirm))
+            .setMessage(getString(R.string.collect_upload_confirm, pending.size))
+            .setPositiveButton(getString(R.string.collect_confirm)) { _, _ -> doSync(pending) }
+            .setNegativeButton(getString(R.string.collect_cancel), null)
             .show()
     }
 
@@ -429,12 +429,12 @@ class DataCollectionActivity : AppCompatActivity() {
             prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
         )
         if (baseUrl.isEmpty()) {
-            Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_set_backend_url), Toast.LENGTH_SHORT).show()
             return
         }
         val uploadService = UploadService(baseUrl)
 
-        Toast.makeText(this, "开始同步...", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.collect_syncing), Toast.LENGTH_SHORT).show()
         CoroutineScope(Dispatchers.IO).launch {
             var successCount = 0
             var lastError = ""
@@ -449,9 +449,9 @@ class DataCollectionActivity : AppCompatActivity() {
             }
             withContext(Dispatchers.Main) {
                 val message = if (successCount == tasks.size) {
-                    "上传成功 $successCount/${tasks.size}"
+                    getString(R.string.collect_upload_success, successCount, tasks.size)
                 } else {
-                    "上传 $successCount/${tasks.size}，失败：$lastError"
+                    getString(R.string.collect_upload_partial, successCount, tasks.size, lastError)
                 }
                 Toast.makeText(this@DataCollectionActivity, message, Toast.LENGTH_LONG).show()
                 updateSyncButton()
@@ -462,23 +462,23 @@ class DataCollectionActivity : AppCompatActivity() {
     private fun viewTasks() {
         val tasks = taskStorage.getAllTasks()
         if (tasks.isEmpty()) {
-            Toast.makeText(this, "暂无任务", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_no_tasks), Toast.LENGTH_SHORT).show()
             return
         }
 
         val items = tasks.map { task ->
-            "${task.pointId}\n${task.chunkId} | ${task.status} | ${task.images.size}/8张"
+            getString(R.string.collect_task_list_item, task.pointId, task.chunkId, task.status, task.images.size)
         }.toTypedArray()
 
         AlertDialog.Builder(this)
-            .setTitle("本地任务 (${tasks.size})")
+            .setTitle(getString(R.string.collect_local_tasks_title, tasks.size))
             .setItems(items) { _, _ -> }
-            .setPositiveButton("清空已完成") { _, _ ->
+            .setPositiveButton(getString(R.string.collect_clear_success)) { _, _ ->
                 taskStorage.clearSuccessTasks()
                 updateSyncButton()
-                Toast.makeText(this, "已清空完成任务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.collect_cleared), Toast.LENGTH_SHORT).show()
             }
-            .setNegativeButton("关闭", null)
+            .setNegativeButton(getString(R.string.collect_close), null)
             .show()
     }
 
@@ -505,10 +505,10 @@ class DataCollectionActivity : AppCompatActivity() {
                     initLocation()
                     initCompass()
                 } else {
-                    showPermissionDeniedDialog("位置权限", "需要位置权限来获取当前坐标")
+                    showPermissionDeniedDialog(getString(R.string.collect_location_permission_not_granted), getString(R.string.collect_location_permission_message))
                 }
                 if (!cameraGranted) {
-                    showPermissionDeniedDialog("相机权限", "需要相机权限来拍摄街景照片")
+                    showPermissionDeniedDialog(getString(R.string.collect_camera_permission_not_granted), getString(R.string.collect_camera_permission_message))
                 }
             }
             CAMERA_PERMISSION -> {
@@ -519,7 +519,7 @@ class DataCollectionActivity : AppCompatActivity() {
                         takePhoto(CAMERA_REQUEST, targetDirection)
                     }
                 } else {
-                    showPermissionDeniedDialog("相机权限", "需要相机权限来拍摄街景照片")
+                    showPermissionDeniedDialog(getString(R.string.collect_camera_permission_not_granted), getString(R.string.collect_camera_permission_message))
                 }
             }
         }
@@ -527,15 +527,15 @@ class DataCollectionActivity : AppCompatActivity() {
 
     private fun showPermissionDeniedDialog(title: String, message: String) {
         AlertDialog.Builder(this)
-            .setTitle("$title 未授予")
-            .setMessage("$message。请在系统设置中开启权限。")
-            .setPositiveButton("去设置") { _, _ ->
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(getString(R.string.collect_go_to_settings)) { _, _ ->
                 val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.fromParts("package", packageName, null)
                 }
                 startActivity(intent)
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(getString(R.string.collect_cancel), null)
             .setCancelable(false)
             .show()
     }
@@ -582,7 +582,7 @@ class DataCollectionActivity : AppCompatActivity() {
         }
         currentLat = savedInstanceState.getDouble(KEY_CURRENT_LAT, 0.0)
         currentLon = savedInstanceState.getDouble(KEY_CURRENT_LON, 0.0)
-        chunkId = savedInstanceState.getString(KEY_CHUNK_ID, "未计算")
+        chunkId = savedInstanceState.getString(KEY_CHUNK_ID, getString(R.string.collect_not_calculated))
         pendingSceneDesc = savedInstanceState.getString(KEY_PENDING_SCENE_DESC, "")
     }
 
@@ -610,7 +610,7 @@ class DataCollectionActivity : AppCompatActivity() {
             initCaptureStatus()
             targetDirection = "N"
             compassService.setTargetDirection(targetDirection)
-            Toast.makeText(this, "已放弃，请重新采集", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.collect_abandoned), Toast.LENGTH_SHORT).show()
         }
 
         dialogView.findViewById<Button>(R.id.btnPreviewSave).setOnClickListener {

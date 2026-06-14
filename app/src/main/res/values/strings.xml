@@ -17,4 +17,187 @@
     <string name="preview_requesting">正在请求行前预览信息...</string>
     <string name="preview_success">行前预览请求成功，请留意推送</string>
     <string name="preview_failed">行前预览请求失败</string>
+
+    <!-- ==================== MainActivity Toast messages ==================== -->
+    <string name="msg_voice_assistant_ready">语音助手已就绪，请说话</string>
+    <string name="msg_amap_key_missing_location">高德Key未配置，定位和搜索不可用</string>
+    <string name="msg_amap_key_missing">高德Key未配置：请在 local.properties 添加 amap.api.key</string>
+    <string name="msg_amap_key_missing_search">高德Key未配置，无法搜索地点</string>
+    <string name="msg_amap_key_missing_nav">高德Key未配置，无法使用导航</string>
+    <string name="msg_getting_location">正在获取当前位置</string>
+    <string name="msg_permission_partial">部分权限未授予，相关功能可能不可用</string>
+    <string name="msg_search_failed">搜索失败，请稍后重试</string>
+    <string name="msg_no_match">未找到匹配地点</string>
+    <string name="msg_nav_service_not_ready">导航服务未就绪</string>
+    <string name="msg_select_destination_first">请先选择目的地</string>
+    <string name="msg_getting_location_wait">正在获取当前位置，请稍后再开始导航</string>
+    <string name="msg_set_backend_url">请先在设置中填写后端服务地址</string>
+    <string name="msg_preview_failed_with_error">行前预览失败：%s</string>
+    <string name="msg_preview_fixed_route">使用固定路线预览（广大→体育场）</string>
+    <string name="msg_preview_return_failed">行前预览返回失败</string>
+    <string name="msg_preview_data_empty">行前预览数据为空</string>
+    <string name="msg_preview_parse_failed">行前预览解析失败</string>
+    <string name="msg_listening_start">开始收听，松开后执行</string>
+    <string name="msg_recognized">已识别：%s</string>
+    <string name="msg_location_search_failed">地点搜索失败，错误码：%d</string>
+    <string name="msg_arrived">已到达目的地附近</string>
+    <string name="msg_deleted">已删除</string>
+    <string name="msg_amap_key_missing_nav_tts">高德地图Key未配置，无法导航</string>
+
+    <!-- ==================== MainActivity Dialog ==================== -->
+    <string name="title_delete_record">删除记录</string>
+    <string name="msg_confirm_delete">确定要删除这条历史记录吗？</string>
+    <string name="btn_delete">删除</string>
+    <string name="btn_cancel">取消</string>
+
+    <!-- ==================== MainActivity UI labels ==================== -->
+    <string name="ui_release_to_stop">松开结束</string>
+    <string name="ui_recognizing">识别中…</string>
+    <string name="ui_recognizing_active">正在识别…</string>
+    <string name="ui_map_point_selected">已在地图上选点</string>
+
+    <!-- ==================== MainActivity TTS ==================== -->
+    <string name="tts_destination_not_found">未找到目的地，请换个名称试试</string>
+    <string name="tts_navigation_started">为您找到%s，开始导航</string>
+    <string name="tts_getting_location_wait">正在获取当前位置，请稍后</string>
+    <string name="tts_rerouting">正在重新规划步行路线</string>
+    <string name="tts_arrived">您已到达目的地附近</string>
+    <string name="tts_preview">行前预览：%s</string>
+    <string name="tts_location_search_failed">地点搜索失败，错误码：%d</string>
+
+    <!-- ==================== VoiceInteractionManager Toast ==================== -->
+    <string name="tts_timeout_no_result">⚠️ 识别超时/无结果，请重试</string>
+    <string name="tts_not_heard">❌ 没有听清，请松开后再说一次</string>
+    <string name="msg_stt_recognized">📝 识别：【%s】</string>
+    <string name="msg_stt_failed">❌ 识别失败：%s</string>
+    <string name="msg_mic_open">🎙️ 麦克风已开，请说话</string>
+    <string name="msg_local_match">✅ 本地命中 → %s</string>
+    <string name="msg_local_miss_cloud">⏳ 本地未匹配 → 云端 LLM…</string>
+    <string name="msg_cloud_requesting">☁️ 请求云端…</string>
+    <string name="msg_llm_result">☁️ LLM→%s</string>
+    <string name="msg_llm_timeout">❌ LLM 超时/失败</string>
+    <string name="msg_llm_failed">❌ LLM 失败</string>
+    <string name="msg_local_miss_no_llm">❌ 本地未匹配，LLM 未配置</string>
+    <string name="msg_no_response">❌ 无法响应</string>
+    <string name="msg_voice_assistant_not_ready">语音助手尚未就绪</string>
+
+    <!-- ==================== VoiceInteractionManager TTS ==================== -->
+    <string name="tts_not_understood">抱歉，没有听懂。您可以试试说：导航去某地、开始避障、查询状态、我在哪里等</string>
+    <string name="tts_searching">正在搜索%s</string>
+    <string name="tts_starting_obstacle">正在启动避障模式</string>
+    <string name="tts_stopping_navigation">正在停止导航</string>
+    <string name="tts_no_active_navigation">当前没有正在进行的导航</string>
+    <string name="tts_stopping_obstacle">正在停止避障</string>
+    <string name="tts_no_active_obstacle">当前没有正在进行的避障</string>
+    <string name="tts_current_location">您当前位于%s</string>
+    <string name="tts_locating_wait">正在定位中，请稍后再试</string>
+    <string name="tts_nothing_to_repeat">暂无可重复播报的内容</string>
+    <string name="tts_generating_preview">正在生成路线预览</string>
+    <string name="tts_nav_active">当前正在导航中</string>
+    <string name="tts_nav_inactive">导航未启动</string>
+    <string name="tts_obstacle_active">避障模式已开启</string>
+    <string name="tts_obstacle_inactive">避障模式未开启</string>
+
+    <!-- ==================== VoiceInteractionManager Stage labels ==================== -->
+    <string name="stage_voice_assistant">语音助手</string>
+    <string name="stage_listening">🎙️ 正在听…</string>
+    <string name="stage_recognizing">⏳ 识别中…</string>
+    <string name="stage_searching">🔍 搜索%s</string>
+
+    <!-- ==================== BaiduSpeechManager error messages ==================== -->
+    <string name="stt_error_unknown">未知错误</string>
+    <string name="stt_error_parse_failed">解析结果失败</string>
+    <string name="stt_status_not_initialized">百度语音识别器未初始化</string>
+    <string name="stt_status_available">可用</string>
+    <string name="stt_error_not_initialized">语音识别器未初始化</string>
+    <string name="stt_error_start_failed">启动语音识别失败：%s</string>
+    <string name="stt_error_network_timeout">语音识别失败：网络连接超时</string>
+    <string name="stt_error_network_failed">语音识别失败：网络连接失败</string>
+    <string name="stt_error_server">语音识别失败：服务端错误</string>
+    <string name="stt_error_param">语音识别失败：参数错误</string>
+    <string name="stt_error_api_key">语音识别失败：API Key 错误，请检查配置</string>
+    <string name="stt_error_api_key_expired">语音识别失败：API Key 过期</string>
+    <string name="stt_error_api_key_missing">语音识别失败：API Key 不存在</string>
+    <string name="stt_error_permission">语音识别失败：权限不足</string>
+    <string name="stt_error_rate_limit">语音识别失败：请求超限</string>
+    <string name="stt_error_service_not_open">语音识别失败：服务未开通</string>
+    <string name="stt_error_audio_format">语音识别失败：音频格式错误</string>
+    <string name="stt_error_audio_sample_rate">语音识别失败：音频采样率错误</string>
+    <string name="stt_error_audio_channel">语音识别失败：音频通道数错误</string>
+    <string name="stt_error_no_speech">语音识别失败：没有检测到语音</string>
+    <string name="stt_error_speech_too_long">语音识别失败：语音过长</string>
+    <string name="stt_error_speech_too_short">语音识别失败：语音过短</string>
+    <string name="stt_error_generic">语音识别失败：%s</string>
+
+    <!-- ==================== VisionTestActivity ==================== -->
+    <string name="vision_searching_peripheral">正在寻找外设…</string>
+    <string name="vision_peripheral_not_found">未找到外设，退回本机相机</string>
+    <string name="vision_detection_server_not_configured_hint">检测服务地址未配置，请在设置中填写</string>
+    <string name="vision_detection_server_not_configured">检测服务地址未配置</string>
+    <string name="vision_save_server_first">请先在设置中保存检测服务地址</string>
+    <string name="vision_detection_server">检测服务：%s</string>
+    <string name="vision_enter_ip">请输入 IP 地址</string>
+    <string name="vision_exiting_obstacle">正在退出避障模式</string>
+    <string name="vision_auto_discovering">正在自动发现中，请稍候…</string>
+    <string name="vision_waiting_broadcast">等待设备广播…</string>
+    <string name="vision_device_found">发现设备：%s</string>
+    <string name="vision_discovery_timeout">自动发现超时</string>
+    <string name="vision_no_broadcast_received">未收到设备广播，请确保 ESP32 已连接热点并正在发送广播</string>
+    <string name="vision_discovery_failed">自动发现失败</string>
+    <string name="vision_udp_listen_failed">UDP 监听失败：%s</string>
+    <string name="vision_local_detection_started">本地检测已启动</string>
+    <string name="vision_cloud_detection_started">云端检测已启动</string>
+    <string name="vision_source_start_failed">启动 %s 失败</string>
+    <string name="vision_local_model_not_ready">本地检测模型未就绪</string>
+    <string name="vision_local_model_load_failed_with_detail">本地检测模型加载失败：%s</string>
+    <string name="vision_local_model_load_failed">本地检测模型加载失败</string>
+    <string name="vision_local_detection_failed">本地检测失败：%s</string>
+    <string name="vision_cloud_detection_failed">云端检测失败：%s</string>
+    <string name="vision_cloud_detection_http_failed">云端检测失败：HTTP %d</string>
+    <string name="vision_blurred_frame">画面较模糊，等待清晰帧（清晰度 %d）</string>
+    <string name="vision_no_obstacle">未检测到明显障碍物（清晰度 %d）</string>
+    <string name="vision_outside_risk_zone">%1$s：%2$d%%，风险区外</string>
+    <string name="vision_urgency_low">低紧急度</string>
+    <string name="vision_urgency_medium">中等紧急</string>
+    <string name="vision_urgency_high">重要告警</string>
+    <string name="vision_camera_permission_denied">相机权限未授予</string>
+    <string name="vision_alert_line">%1$s：%2$s，重叠 %3$d%%</string>
+
+    <!-- ==================== DataCollectionActivity ==================== -->
+    <string name="collect_not_calculated">未计算</string>
+    <string name="collect_title">数据采集</string>
+    <string name="collect_amap_key_missing_location">高德Key未配置，无法定位采集点</string>
+    <string name="collect_amap_key_missing_refresh">高德Key未配置，无法刷新位置</string>
+    <string name="collect_location_init_failed">定位初始化失败</string>
+    <string name="collect_refreshing_location">刷新位置…</string>
+    <string name="collect_aligned">已对准</string>
+    <string name="collect_capture_direction">拍摄 %s 方向</string>
+    <string name="collect_direction_already_captured">该方向已拍摄</string>
+    <string name="collect_camera_unavailable">相机不可用</string>
+    <string name="collect_photo_failed">拍照失败，请重试</string>
+    <string name="collect_all_directions_done">8 个方向已完成</string>
+    <string name="collect_no_description">未描述</string>
+    <string name="collect_task_saved">任务已保存</string>
+    <string name="collect_sync_to_cloud">同步到云端(%d)</string>
+    <string name="collect_no_pending_tasks">没有待上传任务</string>
+    <string name="collect_sync_confirm">同步确认</string>
+    <string name="collect_upload_confirm">确定要上传 %d 个任务吗？</string>
+    <string name="collect_confirm">确定</string>
+    <string name="collect_cancel">取消</string>
+    <string name="collect_set_backend_url">请先在设置中填写后端服务地址</string>
+    <string name="collect_syncing">开始同步…</string>
+    <string name="collect_upload_success">上传成功 %1$d/%2$d</string>
+    <string name="collect_upload_partial">上传 %1$d/%2$d，失败：%3$s</string>
+    <string name="collect_no_tasks">暂无任务</string>
+    <string name="collect_local_tasks_title">本地任务 (%d)</string>
+    <string name="collect_clear_success">清空已完成</string>
+    <string name="collect_cleared">已清空完成任务</string>
+    <string name="collect_close">关闭</string>
+    <string name="collect_abandoned">已放弃，请重新采集</string>
+    <string name="collect_location_permission_not_granted">位置权限 未授予</string>
+    <string name="collect_location_permission_message">需要位置权限来获取当前坐标。请在系统设置中开启权限。</string>
+    <string name="collect_camera_permission_not_granted">相机权限 未授予</string>
+    <string name="collect_camera_permission_message">需要相机权限来拍摄街景照片。请在系统设置中开启权限。</string>
+    <string name="collect_go_to_settings">去设置</string>
+    <string name="collect_task_list_item">%1$s\n%2$s | %3$s | %4$d/8张</string>
 </resources>

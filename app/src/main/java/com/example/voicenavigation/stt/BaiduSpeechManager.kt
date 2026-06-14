@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.example.voicenavigation.R
 import com.baidu.speech.EventListener
 import com.baidu.speech.EventManagerFactory
 import com.baidu.speech.asr.SpeechConstant
@@ -137,7 +138,7 @@ class BaiduSpeechManager(context: Context) {
                     resultDelivered = true
                     val json = JSONObject(params)
                     val errorCode = json.optInt("error_code", -1)
-                    val errorMessage = json.optString("error_desc", json.optString("desc", "未知错误"))
+                    val errorMessage = json.optString("error_desc", json.optString("desc", context.getString(R.string.stt_error_unknown)))
                     Log.e(TAG, "ASR error: $errorCode - $errorMessage")
                     val error = translateErrorCode(errorCode, errorMessage)
                     notifyError(error)
@@ -162,18 +163,18 @@ class BaiduSpeechManager(context: Context) {
             }
         } catch (e: org.json.JSONException) {
             Log.e(TAG, "Failed to parse JSON for event [$name], params: $params", e)
-            notifyError("解析结果失败")
+            notifyError(context.getString(R.string.stt_error_parse_failed))
         }
     }
 
     fun isRecognitionAvailable(): Boolean = asr != null
 
     fun getRecognitionStatus(): String =
-        if (asr == null) "百度语音识别器未初始化" else "可用"
+        if (asr == null) context.getString(R.string.stt_status_not_initialized) else context.getString(R.string.stt_status_available)
 
     fun startListening() {
         if (asr == null) {
-            val error = "语音识别器未初始化"
+            val error = context.getString(R.string.stt_error_not_initialized)
             Log.e(TAG, error)
             notifyError(error)
             return
@@ -199,7 +200,7 @@ class BaiduSpeechManager(context: Context) {
             handler.postDelayed(stopRunnable, AUTO_STOP_TIMEOUT)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start ASR", e)
-            notifyError("启动语音识别失败: ${e.message}")
+            notifyError(context.getString(R.string.stt_error_start_failed, e.message))
             isListening = false
         }
     }
@@ -299,22 +300,22 @@ class BaiduSpeechManager(context: Context) {
 
     private fun translateErrorCode(errorCode: Int, errorMessage: String): String =
         when (errorCode) {
-            1000 -> "语音识别失败：网络连接超时"
-            1001 -> "语音识别失败：网络连接失败"
-            2000 -> "语音识别失败：服务端错误"
-            3000 -> "语音识别失败：参数错误"
-            3300 -> "语音识别失败：API Key 错误，请检查配置"
-            3301 -> "语音识别失败：API Key 过期"
-            3302 -> "语音识别失败：API Key 不存在"
-            3307 -> "语音识别失败：权限不足"
-            3308 -> "语音识别失败：请求超限"
-            3309 -> "语音识别失败：服务未开通"
-            4000 -> "语音识别失败：音频格式错误"
-            4001 -> "语音识别失败：音频采样率错误"
-            4002 -> "语音识别失败：音频通道数错误"
-            5000 -> "语音识别失败：没有检测到语音"
-            5001 -> "语音识别失败：语音过长"
-            5002 -> "语音识别失败：语音过短"
-            else -> "语音识别失败：$errorMessage"
+            1000 -> context.getString(R.string.stt_error_network_timeout)
+            1001 -> context.getString(R.string.stt_error_network_failed)
+            2000 -> context.getString(R.string.stt_error_server)
+            3000 -> context.getString(R.string.stt_error_param)
+            3300 -> context.getString(R.string.stt_error_api_key)
+            3301 -> context.getString(R.string.stt_error_api_key_expired)
+            3302 -> context.getString(R.string.stt_error_api_key_missing)
+            3307 -> context.getString(R.string.stt_error_permission)
+            3308 -> context.getString(R.string.stt_error_rate_limit)
+            3309 -> context.getString(R.string.stt_error_service_not_open)
+            4000 -> context.getString(R.string.stt_error_audio_format)
+            4001 -> context.getString(R.string.stt_error_audio_sample_rate)
+            4002 -> context.getString(R.string.stt_error_audio_channel)
+            5000 -> context.getString(R.string.stt_error_no_speech)
+            5001 -> context.getString(R.string.stt_error_speech_too_long)
+            5002 -> context.getString(R.string.stt_error_speech_too_short)
+            else -> context.getString(R.string.stt_error_generic, errorMessage)
         }
 }

@@ -192,7 +192,7 @@ class MainActivity : AppCompatActivity(),
         if (intent?.getBooleanExtra("START_VOICE_COMMAND", false) == true) {
             intent.removeExtra("START_VOICE_COMMAND")
             voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
-            Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -211,7 +211,7 @@ class MainActivity : AppCompatActivity(),
             Log.d(TAG, "AMap runtime package=${packageName}, sha1=${getAppSignatureSha1()}")
         } else {
             Log.e(TAG, "AMap API key is missing. Add amap.api.key to local.properties.")
-            Toast.makeText(this, "高德Key未配置，定位和搜索不可用", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.msg_amap_key_missing_location), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -320,13 +320,13 @@ class MainActivity : AppCompatActivity(),
                         return@setOnTouchListener true
                     }
                     vibrate(50)
-                    tvVoiceHint.text = "松开结束"
+                    tvVoiceHint.text = getString(R.string.ui_release_to_stop)
                     voiceRipple.visibility = View.VISIBLE
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.TEXT_INPUT)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    tvVoiceHint.text = "识别中..."
+                    tvVoiceHint.text = getString(R.string.ui_recognizing)
                     voiceRipple.visibility = View.GONE
                     // 立即停止（不延迟），百度引擎用 VAD Endpoint Timeout 自行采集尾音
                     voiceInteractionManager.stopListening()
@@ -351,14 +351,14 @@ class MainActivity : AppCompatActivity(),
                         return@setOnTouchListener true
                     }
                     vibrate(50)
-                    tvVoiceCommandHint.text = "正在识别..."
+                    tvVoiceCommandHint.text = getString(R.string.ui_recognizing_active)
                     voiceCommandRipple.visibility = View.VISIBLE
-                    Toast.makeText(this, "开始收听，松开后执行", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.msg_listening_start), Toast.LENGTH_SHORT).show()
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    tvVoiceCommandHint.text = "识别中..."
+                    tvVoiceCommandHint.text = getString(R.string.ui_recognizing)
                     voiceCommandRipple.visibility = View.GONE
                     voiceInteractionManager.stopListening()
                     true
@@ -414,21 +414,12 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun switchTab(index: Int) {
+        // TODO: History/Settings pages now managed by Fragments.
+        // Retained for bottomNav compatibility; will be fully replaced
+        // when Navigation Component is integrated.
         if (index == 0) {
-            containerPages.visibility = View.GONE
-            bottomControls.visibility = View.VISIBLE
-            searchBarContainer.visibility = View.VISIBLE
-            btnMyLocation.visibility = View.VISIBLE
-        } else {
-            containerPages.visibility = View.VISIBLE
-            bottomControls.visibility = View.GONE
-            searchBarContainer.visibility = View.GONE
-            btnMyLocation.visibility = View.GONE
-            hideSuggestions()
-            pageHistoryView.visibility = if (index == 1) View.VISIBLE else View.GONE
-            pageSettingsView.visibility = if (index == 2) View.VISIBLE else View.GONE
-            if (index == 1) loadHistory()
-            else if (index == 2) loadSettings()
+            containerPages?.visibility = View.GONE
+            btnMyLocation?.visibility = View.VISIBLE
         }
     }
 
@@ -457,19 +448,19 @@ class MainActivity : AppCompatActivity(),
 
             override fun onDelete(record: VoiceRecord, position: Int) {
                 AlertDialog.Builder(this@MainActivity)
-                    .setTitle("删除记录")
-                    .setMessage("确定要删除这条历史记录吗？")
-                    .setPositiveButton("删除") { _, _ ->
+                    .setTitle(R.string.title_delete_record)
+                    .setMessage(R.string.msg_confirm_delete)
+                    .setPositiveButton(R.string.btn_delete) { _, _ ->
                         Thread {
                             appDatabase.voiceRecordDao().deleteById(record.id)
                             runOnUiThread {
                                 historyAdapter?.removeItem(position)
                                 loadHistory()
-                                Toast.makeText(this@MainActivity, "已删除", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, getString(R.string.msg_deleted), Toast.LENGTH_SHORT).show()
                             }
                         }.start()
                     }
-                    .setNegativeButton("取消", null)
+                    .setNegativeButton(R.string.btn_cancel, null)
                     .show()
             }
         })
@@ -583,7 +574,7 @@ class MainActivity : AppCompatActivity(),
             if (navigationManager.isNavigating()) return@setOnMapClickListener
             setDestination(latLng, latLng.latitude.toString() + ", " + latLng.longitude)
             etDestination.setText("")
-            etDestination.hint = "已在地图上选点"
+            etDestination.hint = getString(R.string.ui_map_point_selected)
         }
     }
 
@@ -599,7 +590,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun locateMe() {
         if (!hasValidAmapKey()) {
-            Toast.makeText(this, "高德Key未配置：请在 local.properties 添加 amap.api.key", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, getString(R.string.msg_amap_key_missing), Toast.LENGTH_LONG).show()
             return
         }
         if (!checkLocationPermission()) {
@@ -613,7 +604,7 @@ class MainActivity : AppCompatActivity(),
         if (mMap != null && loc != null) {
             mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16f))
         } else {
-            Toast.makeText(this, "正在获取当前位置", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_getting_location), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -656,7 +647,7 @@ class MainActivity : AppCompatActivity(),
                 navigationManager.requestCurrentLocation()
             }
             if (!checkAudioPermission() || !checkLocationPermission()) {
-                Toast.makeText(this, "部分权限未授予，相关功能可能不可用", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.msg_permission_partial), Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -676,7 +667,7 @@ class MainActivity : AppCompatActivity(),
     private fun searchDestination(keyword: String) {
         if (!hasValidAmapKey()) {
             hideSuggestions()
-            Toast.makeText(this, "高德Key未配置，无法搜索地点", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_amap_key_missing_search), Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -695,7 +686,7 @@ class MainActivity : AppCompatActivity(),
             poiSearch?.searchPOIAsyn()
         } catch (e: Exception) {
             Log.e(TAG, "Search failed", e)
-            Toast.makeText(this, "搜索失败，请稍后重试", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_search_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -705,11 +696,11 @@ class MainActivity : AppCompatActivity(),
             if (poiResults.isNullOrEmpty()) {
                 hideSuggestions()
                 if (autoStartNavigationAfterSearch) {
-                    speakForce("未找到目的地，请换个名称试试")
+                    speakForce(getString(R.string.tts_destination_not_found))
                     autoStartNavigationAfterSearch = false
                     pendingVoiceDestination = null
                 } else {
-                    Toast.makeText(this, "未找到匹配地点", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.msg_no_match), Toast.LENGTH_SHORT).show()
                 }
             } else {
                 // 语音导航模式：自动选择第一个结果，不弹搜索列表
@@ -729,7 +720,7 @@ class MainActivity : AppCompatActivity(),
                     saveVoiceRecord(firstItem.title)
 
                     // 播报 + Toast 确认目的地
-                    val confirmMsg = "为您找到${firstItem.title}，开始导航"
+                    val confirmMsg = getString(R.string.tts_navigation_started, firstItem.title)
                     voiceInteractionManager.speakAndToast(confirmMsg)
 
                     // TTS 播报队列自动顺序播放，无需延迟
@@ -739,7 +730,7 @@ class MainActivity : AppCompatActivity(),
                         navigationManager.planRoute(loc, selectedDestLatLng!!, selectedDestName)
                     } else {
                         locateMe()
-                        speakForce("正在获取当前位置，请稍后")
+                        speakForce(getString(R.string.tts_getting_location_wait))
                     }
                 } else {
                     showSuggestions(poiResults)
@@ -748,11 +739,11 @@ class MainActivity : AppCompatActivity(),
         } else {
             hideSuggestions()
             if (autoStartNavigationAfterSearch) {
-                speakForce("地点搜索失败，错误码：$rCode")
+                speakForce(getString(R.string.tts_location_search_failed, rCode))
                 autoStartNavigationAfterSearch = false
                 pendingVoiceDestination = null
             } else {
-                Toast.makeText(this, "地点搜索失败，错误码：$rCode", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.msg_location_search_failed, rCode), Toast.LENGTH_SHORT).show()
             }
             Log.e(TAG, "POI search failed, rCode=$rCode")
         }
@@ -776,11 +767,11 @@ class MainActivity : AppCompatActivity(),
             return
         }
         if (!hasValidAmapKey()) {
-            Toast.makeText(this, "高德Key未配置，无法使用导航", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_amap_key_missing_nav), Toast.LENGTH_SHORT).show()
             return
         }
         if (!::navigationManager.isInitialized) {
-            Toast.makeText(this, "导航服务未就绪", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_nav_service_not_ready), Toast.LENGTH_SHORT).show()
             return
         }
         if (navigationManager.isNavigating()) {
@@ -790,12 +781,12 @@ class MainActivity : AppCompatActivity(),
             return
         }
         if (selectedDestLatLng == null) {
-            Toast.makeText(this, "请先选择目的地", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_select_destination_first), Toast.LENGTH_SHORT).show()
             return
         }
         if (currentLocation == null) {
             locateMe()
-            Toast.makeText(this, "正在获取当前位置，请稍后再开始导航", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_getting_location_wait), Toast.LENGTH_SHORT).show()
             return
         }
         layoutNavInfo.visibility = View.VISIBLE
@@ -808,7 +799,7 @@ class MainActivity : AppCompatActivity(),
             AppConfig.prefs(this).getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
         )
         if (previewBaseUrl.isEmpty()) {
-            Toast.makeText(this, "请先在设置中填写后端服务地址", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_set_backend_url), Toast.LENGTH_SHORT).show()
             return
         }
         tripPreviewService.baseUrl = previewBaseUrl
@@ -819,7 +810,7 @@ class MainActivity : AppCompatActivity(),
             }
 
             override fun onError(error: String) {
-                Toast.makeText(this@MainActivity, "行前预览失败：$error", Toast.LENGTH_LONG).show()
+                Toast.makeText(this@MainActivity, getString(R.string.msg_preview_failed_with_error, error), Toast.LENGTH_LONG).show()
             }
         }
 
@@ -832,7 +823,7 @@ class MainActivity : AppCompatActivity(),
             )
         } else {
             // 没有目的地：使用固定路线预览（跳过高德，直接用预设采样点路线）
-            Toast.makeText(this, "使用固定路线预览（广大→体育场）", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_preview_fixed_route), Toast.LENGTH_SHORT).show()
             tripPreviewService.sendFixedPreviewRequest(FIXED_ROUTE_ID, callback)
         }
     }
@@ -841,24 +832,24 @@ class MainActivity : AppCompatActivity(),
         try {
             val root = JSONObject(responseJson)
             if (!root.optBoolean("success", false)) {
-                Toast.makeText(this, "行前预览返回失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.msg_preview_return_failed), Toast.LENGTH_SHORT).show()
                 return
             }
             val data = root.optJSONObject("data")
             if (data == null) {
-                Toast.makeText(this, "行前预览数据为空", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.msg_preview_data_empty), Toast.LENGTH_SHORT).show()
                 return
             }
             val broadcastText = data.optString("text", "")
             val routeSummary = data.optJSONObject("route_summary")
             val keyNodes = data.optJSONArray("key_nodes")
             if (broadcastText.isNotEmpty()) {
-                speakForce("行前预览：$broadcastText")
+                speakForce(getString(R.string.tts_preview, broadcastText))
             }
             showPreviewDialog(broadcastText, routeSummary, keyNodes)
         } catch (e: JSONException) {
             Log.e(TAG, "Parse preview failed", e)
-            Toast.makeText(this, "行前预览解析失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_preview_parse_failed), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -893,7 +884,7 @@ class MainActivity : AppCompatActivity(),
         destinationMarker = mMap!!.addMarker(
             MarkerOptions()
                 .position(latLng)
-                .title("目的地")
+                .title(getString(R.string.destination_hint))
                 .snippet(selectedDestName)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))
         )
@@ -929,7 +920,7 @@ class MainActivity : AppCompatActivity(),
         etDestination.setSelection(cleaned.length)
         if (cleaned.isNotEmpty()) {
             searchDestination(cleaned)
-            Toast.makeText(this, "已识别：$cleaned", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.msg_recognized, cleaned), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -943,7 +934,7 @@ class MainActivity : AppCompatActivity(),
 
     override fun executeNavigateTo(destination: String) {
         if (!hasValidAmapKey()) {
-            speakForce("高德地图Key未配置，无法导航")
+            speakForce(getString(R.string.msg_amap_key_missing_nav_tts))
             return
         }
         pendingVoiceDestination = destination
@@ -1091,7 +1082,7 @@ class MainActivity : AppCompatActivity(),
 
     override fun onVoiceAssistant() {
         voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
-        Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
     }
 
     override fun onRingMenuShow(centerX: Float, centerY: Float) {
@@ -1145,12 +1136,12 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onReRouting() {
-        speakForce("正在重新规划步行路线")
+        speakForce(getString(R.string.tts_rerouting))
     }
 
     override fun onArrived() {
-        Toast.makeText(this, "已到达目的地附近", Toast.LENGTH_LONG).show()
-        speakForce("您已到达目的地附近")
+        Toast.makeText(this, getString(R.string.msg_arrived), Toast.LENGTH_LONG).show()
+        speakForce(getString(R.string.tts_arrived))
         btnStartNavigation.setText(R.string.start_navigation)
         clearRouteDisplay()
         selectedDestLatLng = null
