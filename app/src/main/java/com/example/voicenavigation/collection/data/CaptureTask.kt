@@ -1,11 +1,14 @@
 package com.example.voicenavigation.collection.data
 
+import com.example.voicenavigation.core.camera.Crs
+
 /**
  * 一个采样点的完整数据。
  *
  * @param pointId    全局唯一 ID，格式 P_{timestamp}_{random5}，对应后端 point_id
- * @param latitude   纬度 WGS-84
- * @param longitude  经度 WGS-84
+ * @param latitude   纬度
+ * @param longitude  经度
+ * @param crs        坐标系标识（默认 GCJ02，后端据此决定是否纠偏）
  * @param sceneDescription 场景描述，对应后端 scene_description
  * @param mode       采集模式：FREE（自由拍照）或 GRID（八方向）
  * @param photos     该点位的所有照片
@@ -16,6 +19,7 @@ data class CaptureTask(
     val pointId: String,
     val latitude: Double,
     val longitude: Double,
+    val crs: Crs = Crs.GCJ02,
     val sceneDescription: String,
     val mode: CaptureMode,
     val photos: MutableList<PhotoRecord> = mutableListOf(),

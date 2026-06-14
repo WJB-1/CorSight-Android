@@ -166,6 +166,7 @@ class UploadService(
                 put("lng", task.longitude)
                 put("lat", task.latitude)
             })
+            put("crs", task.crs.name)
             if (task.sceneDescription.isNotEmpty()) put("scene_description", task.sceneDescription)
             put("images", imagesArray)
         }.toString().toRequestBody(jsonMediaType)

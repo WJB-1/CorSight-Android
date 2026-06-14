@@ -2,6 +2,7 @@ package com.example.voicenavigation.collection.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.example.voicenavigation.core.camera.Crs
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -156,6 +157,7 @@ class TaskStorage @Inject constructor(
                 put("point_id", task.pointId)
                 put("latitude", task.latitude)
                 put("longitude", task.longitude)
+                put("crs", task.crs.name)
                 put("scene_description", task.sceneDescription)
                 put("mode", task.mode.name)
                 put("upload_session_id", task.uploadSessionId ?: JSONObject.NULL)
@@ -211,6 +213,11 @@ class TaskStorage @Inject constructor(
                 pointId = obj.getString("point_id"),
                 latitude = obj.getDouble("latitude"),
                 longitude = obj.getDouble("longitude"),
+                crs = try {
+                    Crs.valueOf(obj.optString("crs", "GCJ02"))
+                } catch (_: Exception) {
+                    Crs.GCJ02
+                },
                 sceneDescription = obj.getString("scene_description"),
                 mode = try {
                     CaptureMode.valueOf(obj.optString("mode", "FREE"))
