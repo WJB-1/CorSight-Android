@@ -1332,6 +1332,11 @@ class MainActivity : AppCompatActivity(),
         mapView.onSaveInstanceState(outState)
     }
 
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        GestureVoiceLauncher.onDispatchTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
+    }
+
     override fun onDestroy() {
         GestureVoiceLauncher.detach()
         super.onDestroy()
