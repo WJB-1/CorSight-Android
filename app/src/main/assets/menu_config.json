@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "id": "voice",
+      "label": "语音助手",
+      "color": "#4CAF50",
+      "command": "voice_assistant"
+    },
+    {
+      "id": "obstacle",
+      "label": "避障",
+      "color": "#F44336",
+      "command": "start_obstacle_avoidance"
+    },
+    {
+      "id": "preview",
+      "label": "预览路线",
+      "color": "#2196F3",
+      "command": "preview_route"
+    },
+    {
+      "id": "stop_nav",
+      "label": "停止导航",
+      "color": "#FF9800",
+      "command": "stop_navigation"
+    },
+    {
+      "id": "more",
+      "label": "更多",
+      "color": "#9E9E9E",
+      "children": [
+        {"id": "history", "label": "历史", "color": "#795548", "command": "show_history"},
+        {"id": "settings", "label": "设置", "color": "#607D8B", "command": "show_settings"},
+        {"id": "collect", "label": "数据采集", "color": "#009688", "command": "data_collection"}
+      ]
+    }
+  ]
+}

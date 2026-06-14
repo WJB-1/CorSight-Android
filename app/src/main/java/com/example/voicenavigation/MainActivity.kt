@@ -63,7 +63,9 @@ import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.voice.LLMFunctionCaller
 import com.example.voicenavigation.ui.ringmenu.RingMenuView
 import com.example.voicenavigation.ui.ringmenu.RingMenuItem
-import com.example.voicenavigation.ui.ringmenu.MenuAction
+import com.example.voicenavigation.command.AppCommandHandler
+import com.example.voicenavigation.command.CommandRouter
+import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -1247,9 +1249,15 @@ class MainActivity : AppCompatActivity(),
         return result.replace(Regex("[。 ，、！；：,.!?;:]*$"), "").trim()
     }
 
-    // ==================== 环形菜单 ====================
+    // ==================== 环形菜单（数据来自 menu_config.json） ====================
+
+    private lateinit var commandRouter: CommandRouter
+    private lateinit var menuConfig: MenuConfig
 
     private fun setupRingMenu() {
+        commandRouter = CommandRouter(AppCommandHandler(navigationManager, voiceInteractionManager, tripPreviewService))
+        menuConfig = MenuConfig(this)
+
         ringMenuContainer = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -1258,7 +1266,6 @@ class MainActivity : AppCompatActivity(),
             visibility = View.GONE
         }
 
-        // Add as overlay on top of everything
         val rootLayout = findViewById<ViewGroup>(android.R.id.content)
         rootLayout.addView(ringMenuContainer)
 
@@ -1267,70 +1274,17 @@ class MainActivity : AppCompatActivity(),
                 FrameLayout.LayoutParams.MATCH_PARENT,
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
-            setMenuItems(listOf(
-                RingMenuItem("voice", "语音助手", color = 0xFF4CAF50.toInt(), action = MenuAction.Navigate),
-                RingMenuItem("obstacle", "避障", color = 0xFFF44336.toInt(), action = MenuAction.ObstacleAvoid),
-                RingMenuItem("preview", "预览路线", color = 0xFF2196F3.toInt(), action = MenuAction.PreviewRoute),
-                RingMenuItem("stop_nav", "停止导航", color = 0xFFFF9800.toInt(), action = MenuAction.StopNavigation),
-                RingMenuItem("more", "更多", color = 0xFF9E9E9E.toInt(), children = listOf(
-                    RingMenuItem("history", "历史", color = 0xFF795548.toInt(), action = MenuAction.History),
-                    RingMenuItem("settings", "设置", color = 0xFF607D8B.toInt(), action = MenuAction.Settings),
-                    RingMenuItem("collect", "数据采集", color = 0xFF009688.toInt(), action = MenuAction.DataCollection)
-                ))
-            ))
+            setMenuItems(menuConfig.getItems())
 
             onItemExecuted = { item ->
-                executeRingMenuItem(item)
+                hideRingMenu()
+                commandRouter.execute(item.command)
             }
             onCenterClicked = {
                 hideRingMenu()
             }
         }
         ringMenuContainer.addView(ringMenuView)
-    }
-
-    private fun executeRingMenuItem(item: RingMenuItem) {
-        hideRingMenu()
-        when (item.action) {
-            is MenuAction.Navigate -> {
-                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
-                Toast.makeText(this, "语音助手已就绪，请说话", Toast.LENGTH_SHORT).show()
-            }
-            is MenuAction.ObstacleAvoid -> {
-                startActivity(Intent(this, VisionTestActivity::class.java))
-            }
-            is MenuAction.PreviewRoute -> {
-                sendTripPreview()
-            }
-            is MenuAction.StopNavigation -> {
-                if (navigationManager.isNavigating()) {
-                    navigationManager.stopNavigation()
-                    btnStartNavigation.text = getString(R.string.start_navigation)
-                    clearRouteDisplay()
-                } else {
-                    Toast.makeText(this, "当前没有导航", Toast.LENGTH_SHORT).show()
-                }
-            }
-            is MenuAction.History -> {
-                switchTab(1)
-                containerPages.visibility = View.VISIBLE
-                bottomControls.visibility = View.GONE
-                searchBarContainer.visibility = View.GONE
-            }
-            is MenuAction.Settings -> {
-                switchTab(2)
-                containerPages.visibility = View.VISIBLE
-                bottomControls.visibility = View.GONE
-                searchBarContainer.visibility = View.GONE
-            }
-            is MenuAction.DataCollection -> {
-                startActivity(Intent(this, com.example.voicenavigation.collection.DataCollectionActivity::class.java))
-            }
-            is MenuAction.CloseMenu -> {
-                hideRingMenu()
-            }
-            else -> {}
-        }
     }
 
     private fun showRingMenu(centerX: Float, centerY: Float) {

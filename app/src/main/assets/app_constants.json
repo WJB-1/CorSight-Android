@@ -1,0 +1,67 @@
+{
+  "voice": {
+    "auto_stop_timeout_ms": 8000,
+    "watchdog_timeout_ms": 8000,
+    "toast_duration_ms": 1200,
+    "button_restore_delay_ms": 5000,
+    "button_restore_delay_short_ms": 2000,
+    "min_search_text_length": 2,
+    "tail_frame_fallback_delay_ms": 300
+  },
+  "gesture": {
+    "long_press_duration_ms": 500,
+    "move_cancel_threshold_px": 50,
+    "vibrate_duration_ms": 100
+  },
+  "navigation": {
+    "update_interval_ms": 3000,
+    "arrival_distance_m": 20,
+    "off_route_threshold_m": 50,
+    "route_search_backward": 5,
+    "route_search_forward": 50,
+    "map_zoom_default": 15,
+    "map_zoom_detail": 16,
+    "poi_page_size": 10,
+    "distance_format_near_m": 50,
+    "distance_format_km_threshold": 1000,
+    "duration_format_min_threshold_s": 60,
+    "duration_format_hour_threshold_min": 60
+  },
+  "obstacle": {
+    "local_frame_interval_ms": 120,
+    "model_input_size": 640,
+    "iou_threshold": 0.35,
+    "risk_area_ratio": 0.30,
+    "risk_width_ratio": 0.60,
+    "urgency_high_threshold": 0.70,
+    "urgency_medium_threshold": 0.50,
+    "urgency_low_threshold": 0.30,
+    "smooth_history_frames": 4,
+    "max_history_frames": 5,
+    "jpeg_quality": 80,
+    "blur_skip": true
+  },
+  "tts": {
+    "language": "zh",
+    "person": 0,
+    "speed": 5,
+    "pitch": 5,
+    "volume": 15,
+    "cache_filename": "baidu_tts_temp.mp3"
+  },
+  "network": {
+    "connect_timeout_s": 15,
+    "read_timeout_s": 15,
+    "llm_connect_timeout_s": 10,
+    "llm_read_timeout_s": 20,
+    "llm_temperature": 0.1,
+    "llm_max_tokens": 256,
+    "cloud_detect_connect_timeout_s": 8,
+    "cloud_detect_read_timeout_s": 15,
+    "udp_discovery_port": 8888,
+    "udp_discovery_timeout_ms": 5000,
+    "udp_socket_timeout_ms": 1000,
+    "udp_buffer_size": 512,
+    "default_stream_port": 8080
+  }
+}

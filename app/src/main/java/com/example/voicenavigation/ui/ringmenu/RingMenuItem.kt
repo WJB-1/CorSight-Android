@@ -4,6 +4,9 @@ import androidx.annotation.DrawableRes
 
 /**
  * 环形菜单项。支持无限级嵌套（children 即为子菜单）。
+ *
+ * [command] 字段对应 CommandRouter 中的 command_id。
+ * 新增菜单项只需在 assets/menu_config.json 中添加，不改代码。
  */
 data class RingMenuItem(
     val id: String,
@@ -11,19 +14,7 @@ data class RingMenuItem(
     @DrawableRes val iconResId: Int? = null,
     val color: Int = 0xFF6200EE.toInt(),
     val children: List<RingMenuItem>? = null,
-    val action: MenuAction? = null
+    val command: String = ""
 ) {
     val hasChildren: Boolean get() = !children.isNullOrEmpty()
-}
-
-sealed class MenuAction {
-    object Navigate : MenuAction()
-    object ObstacleAvoid : MenuAction()
-    object History : MenuAction()
-    object Settings : MenuAction()
-    object DataCollection : MenuAction()
-    object PreviewRoute : MenuAction()
-    object StopNavigation : MenuAction()
-    object CloseMenu : MenuAction()
-    data class Custom(val tag: String) : MenuAction()
 }
