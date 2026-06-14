@@ -66,10 +66,13 @@ import com.example.voicenavigation.ui.ringmenu.RingMenuItem
 import com.example.voicenavigation.command.AppCommandHandler
 import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.menu.MenuConfig
+import com.example.voicenavigation.ui.dialog.TripPreviewDialog
 import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
+import com.example.voicenavigation.config.AppConfigProvider
+import com.example.voicenavigation.util.FormatUtils
+import com.example.voicenavigation.util.SecurityUtils
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import java.security.MessageDigest
 import org.json.JSONObject
 import org.json.JSONArray
 import org.json.JSONException
@@ -155,6 +158,8 @@ class MainActivity : AppCompatActivity(),
     private var ringMenuView: RingMenuView? = null
     private lateinit var ringMenuContainer: FrameLayout
 
+    private val appConfigProvider by lazy { AppConfigProvider(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -211,29 +216,11 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun hasValidAmapKey(): Boolean {
-        return BuildConfig.AMAP_API_KEY != null && BuildConfig.AMAP_API_KEY.trim().isNotEmpty()
+        return SecurityUtils.hasValidAmapKey()
     }
 
     private fun getAppSignatureSha1(): String {
-        return try {
-            val packageInfo = packageManager
-                .getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
-            if (packageInfo.signatures.isNullOrEmpty()) {
-                return "unknown"
-            }
-            val digest = MessageDigest.getInstance("SHA1")
-            val signatures = packageInfo.signatures!!
-            val sha1 = digest.digest(signatures[0].toByteArray())
-            val builder = StringBuilder()
-            for (i in sha1.indices) {
-                if (i > 0) builder.append(":")
-                builder.append(String.format("%02X", sha1[i]))
-            }
-            builder.toString()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to read app signature SHA1", e)
-            "unknown"
-        }
+        return SecurityUtils.getAppSignatureSha1(this)
     }
 
     private fun initViews() {
@@ -459,42 +446,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun loadHistory() {
-        Thread {
-            try {
-                val records = appDatabase.voiceRecordDao().getAllRecords()
-                val totalCount = appDatabase.voiceRecordDao().getCount()
-                var destCount = 0
-                if (records != null) {
-                    for (record in records) {
-                        val dest = record.destination
-                        if (!dest.isNullOrEmpty()) {
-                            destCount++
-                        }
-                    }
-                }
-                val finalDestCount = destCount
-                runOnUiThread {
-                    tvHistoryCount.text = totalCount.toString()
-                    tvHistoryDestCount.text = finalDestCount.toString()
-                    if (records.isNullOrEmpty()) {
-                        layoutHistoryEmpty.visibility = View.VISIBLE
-                        rvHistory.visibility = View.GONE
-                    } else {
-                        layoutHistoryEmpty.visibility = View.GONE
-                        rvHistory.visibility = View.VISIBLE
-                        if (historyAdapter == null) {
-                            historyAdapter = VoiceRecordAdapter(records.toMutableList())
-                            setupHistoryAdapterListener()
-                            rvHistory.adapter = historyAdapter
-                        } else {
-                            historyAdapter!!.updateData(records)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load history", e)
-            }
-        }.start()
+        // TODO: History page logic moved to HistoryFragment.
     }
 
     private fun setupHistoryAdapterListener() {
@@ -524,114 +476,8 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun loadSettings() {
-        val tvAmapKey: TextView = findViewById(R.id.tv_amap_key)
-        tvAmapKey.text = BuildConfig.AMAP_API_KEY
-
-        val etServerUrl: EditText = pageSettingsView.findViewById(R.id.et_server_url)
-        val btnSaveUrl: Button = pageSettingsView.findViewById(R.id.btn_save_url)
-        val etDetectionServerUrl: EditText = pageSettingsView.findViewById(R.id.et_detection_server_url)
-        val btnSaveDetectionUrl: Button = pageSettingsView.findViewById(R.id.btn_save_detection_url)
-
-        val prefs: SharedPreferences = AppConfig.prefs(this)
-        val savedUrl = AppConfig.normalizeBaseUrl(
-            prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
-        )
-        val savedDetectionUrl = prefs.getString(AppConfig.KEY_DETECTION_SERVER_BASE_URL, "")
-        etServerUrl.setText(savedUrl)
-        etDetectionServerUrl.setText(savedDetectionUrl)
-
-        btnSaveUrl.setOnClickListener {
-            val url = AppConfig.normalizeBaseUrl(etServerUrl.text.toString())
-            if (url.isEmpty()) {
-                Toast.makeText(this, "请输入地图服务地址", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            prefs.edit().putString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, url).apply()
-            tripPreviewService.baseUrl = url
-            Toast.makeText(this, "地图服务地址已保存", Toast.LENGTH_SHORT).show()
-        }
-
-        btnSaveDetectionUrl.setOnClickListener {
-            val url = AppConfig.normalizeBaseUrl(etDetectionServerUrl.text.toString())
-            if (url.isEmpty()) {
-                Toast.makeText(this, "请输入检测服务地址", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            prefs.edit().putString(AppConfig.KEY_DETECTION_SERVER_BASE_URL, url).apply()
-            Toast.makeText(this, "检测服务地址已保存", Toast.LENGTH_SHORT).show()
-        }
-
-        val btnResetUrl: Button = pageSettingsView.findViewById(R.id.btn_reset_url)
-        btnResetUrl.setOnClickListener {
-            val defaultUrl = TripPreviewService.DEFAULT_BASE_URL
-            prefs.edit().putString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, defaultUrl).apply()
-            etServerUrl.setText(defaultUrl)
-            tripPreviewService.baseUrl = defaultUrl
-            Toast.makeText(this, "已恢复默认地址", Toast.LENGTH_SHORT).show()
-        }
-
-        val switchExternal: SwitchCompat = pageSettingsView.findViewById(R.id.switch_use_external_device)
-        val useExternal = prefs.getBoolean("use_external_device", false)
-        switchExternal.isChecked = useExternal
-        switchExternal.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("use_external_device", isChecked).apply()
-            Toast.makeText(
-                this,
-                if (isChecked) "已开启外部设备优先" else "已关闭外部设备优先",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        // ===== LLM Function Calling 配置 =====
-        val etLlmBaseUrl: EditText = pageSettingsView.findViewById(R.id.et_llm_base_url)
-        val etLlmApiKey: EditText = pageSettingsView.findViewById(R.id.et_llm_api_key)
-        val etLlmModel: EditText = pageSettingsView.findViewById(R.id.et_llm_model)
-        val btnSaveLlm: Button = pageSettingsView.findViewById(R.id.btn_save_llm)
-        val tvLlmStatus: TextView = pageSettingsView.findViewById(R.id.tv_llm_status)
-
-        val savedLlmUrl = AppConfig.normalizeBaseUrl(
-            prefs.getString(AppConfig.KEY_LLM_BASE_URL, "")
-        )
-        val savedLlmKey = prefs.getString(AppConfig.KEY_LLM_API_KEY, "")
-        val savedLlmModel = prefs.getString(AppConfig.KEY_LLM_MODEL, "deepseek-chat")
-        etLlmBaseUrl.setText(savedLlmUrl)
-        etLlmApiKey.setText(savedLlmKey)
-        etLlmModel.setText(savedLlmModel)
-
-        // 显示 LLM 配置状态
-        var llmStatus = "状态："
-        llmStatus += if (!savedLlmUrl.isNullOrEmpty() && !savedLlmKey.isNullOrEmpty()) {
-            "已配置（本地不匹配时自动调用云端）"
-        } else if (!savedLlmUrl.isNullOrEmpty() || !savedLlmKey.isNullOrEmpty()) {
-            "配置不完整"
-        } else {
-            "未配置（仅用本地关键词匹配）"
-        }
-        tvLlmStatus.text = llmStatus
-
-        btnSaveLlm.setOnClickListener {
-            val url = AppConfig.normalizeBaseUrl(etLlmBaseUrl.text.toString())
-            val key = etLlmApiKey.text.toString().trim()
-            val model = etLlmModel.text.toString().trim()
-            prefs.edit()
-                .putString(AppConfig.KEY_LLM_BASE_URL, url)
-                .putString(AppConfig.KEY_LLM_API_KEY, key)
-                .putString(AppConfig.KEY_LLM_MODEL, model.ifEmpty { "deepseek-chat" })
-                .apply()
-            var statusText = "状态："
-            statusText += if (url.isNotEmpty() && key.isNotEmpty()) {
-                "已配置（本地不匹配时自动调用云端）"
-            } else {
-                if (url.isNotEmpty() || key.isNotEmpty()) "配置不完整" else "未配置（仅用本地关键词匹配）"
-            }
-            tvLlmStatus.text = statusText
-            Toast.makeText(this, "LLM 配置已保存", Toast.LENGTH_SHORT).show()
-        }
-
-        val btnDataCollection: Button = pageSettingsView.findViewById(R.id.btn_data_collection)
-        btnDataCollection.setOnClickListener {
-            startActivity(Intent(this, com.example.voicenavigation.collection.DataCollectionActivity::class.java))
-        }
+        // TODO: Settings page logic moved to SettingsFragment.
+        // Will be fully replaced when Navigation Component is integrated.
     }
 
     private fun hideKeyboard() {
@@ -1021,63 +867,9 @@ class MainActivity : AppCompatActivity(),
         routeSummary: JSONObject?,
         keyNodes: JSONArray?
     ) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_preview_result, null)
-        val tvPreviewText: TextView = dialogView.findViewById(R.id.tv_preview_text)
-        val tvPreviewSummary: TextView = dialogView.findViewById(R.id.tv_preview_summary)
-        val layoutKeyNodes: LinearLayout = dialogView.findViewById(R.id.layout_key_nodes)
-        val btnSpeak: Button = dialogView.findViewById(R.id.btn_preview_speak)
-        val btnClose: Button = dialogView.findViewById(R.id.btn_preview_close)
-
-        tvPreviewText.text = if (broadcastText.isEmpty()) "暂无播报文案" else broadcastText
-        var summaryText = ""
-        if (routeSummary != null) {
-            summaryText = "总距离：" + routeSummary.optString("total_distance", "未知") +
-                    "\n预计时间：" + routeSummary.optString("total_duration", "未知") +
-                    "\n关键节点数：" + routeSummary.optInt("key_node_count", 0)
+        TripPreviewDialog.show(this, broadcastText, routeSummary, keyNodes) { text ->
+            speakForce(text)
         }
-        tvPreviewSummary.text = if (summaryText.isEmpty()) "暂无概要" else summaryText
-
-        layoutKeyNodes.removeAllViews()
-        if (keyNodes != null && keyNodes.length() > 0) {
-            for (i in 0 until keyNodes.length()) {
-                val node = keyNodes.optJSONObject(i) ?: continue
-                val tvNode = TextView(this)
-                tvNode.textSize = 14f
-                tvNode.setTextColor(resources.getColor(android.R.color.black))
-                tvNode.setPadding(0, 8, 0, 8)
-                val sb = StringBuilder()
-                sb.append("节点 ").append(i + 1).append("：")
-                sb.append(node.optString("relative_direction", ""))
-                sb.append(node.optString("action", ""))
-                if (node.has("assistant_action")) {
-                    sb.append("（").append(node.optString("assistant_action")).append("）")
-                }
-                val instruction = node.optString("instruction", "")
-                if (instruction.isNotEmpty()) {
-                    sb.append("\n").append(instruction)
-                }
-                tvNode.text = sb.toString()
-                layoutKeyNodes.addView(tvNode)
-                if (i < keyNodes.length() - 1) {
-                    val divider = View(this)
-                    divider.layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 1
-                    )
-                    divider.setBackgroundColor(0xFFE0E0E0.toInt())
-                    layoutKeyNodes.addView(divider)
-                }
-            }
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setCancelable(true)
-            .create()
-        btnSpeak.setOnClickListener {
-            if (broadcastText.isNotEmpty()) speakForce("行前预览：$broadcastText")
-        }
-        btnClose.setOnClickListener { dialog.dismiss() }
-        dialog.show()
     }
 
     private fun drawRoute(points: List<LatLng>?) {
@@ -1244,9 +1036,8 @@ class MainActivity : AppCompatActivity(),
         return null
     }
 
-    private fun cleanSpeechText(result: String?): String {
-        if (result == null) return ""
-        return result.replace(Regex("[。 ，、！；：,.!?;:]*$"), "").trim()
+    private fun cleanSpeechText(text: String?): String {
+        return com.example.voicenavigation.util.TextUtils.cleanSpeechText(text)
     }
 
     // ==================== 环形菜单（数据来自 menu_config.json） ====================
@@ -1384,16 +1175,11 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun formatDistance(meters: Float): String {
-        if (meters < 50) return "即将到达"
-        if (meters < 1000) return meters.toInt().toString() + "m"
-        return String.format("%.1fkm", meters / 1000)
+        return FormatUtils.formatDistance(meters, appConfigProvider)
     }
 
     private fun formatDuration(seconds: Float): String {
-        if (seconds < 60) return "1分钟"
-        val minutes = (seconds / 60).toInt()
-        if (minutes < 60) return minutes.toString() + "分钟"
-        return (minutes / 60).toString() + "小时" + (minutes % 60) + "分钟"
+        return FormatUtils.formatDuration(seconds, appConfigProvider)
     }
 
     override fun onResume() {
