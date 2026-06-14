@@ -23,7 +23,7 @@ class TripPreviewService(
 
     companion object {
         private const val TAG = "TripPreviewService"
-        const val DEFAULT_BASE_URL = "http://114.132.86.138:5000"
+        val DEFAULT_BASE_URL: String = com.example.voicenavigation.BuildConfig.PREVIEW_BASE_URL
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
     }
 
@@ -57,7 +57,7 @@ class TripPreviewService(
         httpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "Preview request failed", e)
-                mainHandler.post { previewCallback.onError("网络请求失败: ${e.message}") }
+                mainHandler.post { previewCallback.onError("网络请求失败: ${e.message}") } // TODO: migrate to strings.xml when Context is available via DI
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -67,7 +67,7 @@ class TripPreviewService(
                     mainHandler.post { previewCallback.onSuccess(responseBody) }
                 } else {
                     Log.e(TAG, "Preview request error, code=${response.code}, body=$responseBody")
-                    mainHandler.post { previewCallback.onError("服务器错误 (${response.code}): $responseBody") }
+                    mainHandler.post { previewCallback.onError("服务器错误 (${response.code}): $responseBody") } // TODO: migrate to strings.xml when Context is available via DI
                 }
             }
         })
@@ -94,7 +94,7 @@ class TripPreviewService(
         httpClient.newCall(request).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG, "Fixed preview request failed", e)
-                mainHandler.post { previewCallback.onError("网络请求失败: ${e.message}") }
+                mainHandler.post { previewCallback.onError("网络请求失败: ${e.message}") } // TODO: migrate to strings.xml when Context is available via DI
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -104,7 +104,7 @@ class TripPreviewService(
                     mainHandler.post { previewCallback.onSuccess(responseBody) }
                 } else {
                     Log.e(TAG, "Fixed preview error, code=${response.code}, body=$responseBody")
-                    mainHandler.post { previewCallback.onError("服务器错误 (${response.code}): $responseBody") }
+                    mainHandler.post { previewCallback.onError("服务器错误 (${response.code}): $responseBody") } // TODO: migrate to strings.xml when Context is available via DI
                 }
             }
         })

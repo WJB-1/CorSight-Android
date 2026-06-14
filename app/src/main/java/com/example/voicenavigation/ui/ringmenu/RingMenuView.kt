@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import com.example.voicenavigation.R
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.min
@@ -254,7 +255,7 @@ class RingMenuView @JvmOverloads constructor(
 
         // 绘制中心圆
         canvas.drawCircle(centerX, centerY, innerRadius, paintCenter)
-        val centerLabel = if (activeParentIndex >= 0) "返回" else "关闭"
+        val centerLabel = if (activeParentIndex >= 0) context.getString(R.string.menu_back) else context.getString(R.string.menu_close)
         canvas.drawText(centerLabel, centerX,
             centerY + paintCenterText.textSize / 3, paintCenterText)
     }

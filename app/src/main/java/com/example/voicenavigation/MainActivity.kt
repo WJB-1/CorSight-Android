@@ -63,7 +63,6 @@ import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.voice.LLMFunctionCaller
 import com.example.voicenavigation.ui.ringmenu.RingMenuView
 import com.example.voicenavigation.ui.ringmenu.RingMenuItem
-import com.example.voicenavigation.command.AppCommandHandler
 import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.dialog.TripPreviewDialog
@@ -73,10 +72,13 @@ import com.example.voicenavigation.util.FormatUtils
 import com.example.voicenavigation.util.SecurityUtils
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import dagger.hilt.android.AndroidEntryPoint
 import org.json.JSONObject
 import org.json.JSONArray
 import org.json.JSONException
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(),
     NavigationManager.NavigationCallback,
     PoiSearch.OnPoiSearchListener,
@@ -157,6 +159,8 @@ class MainActivity : AppCompatActivity(),
     // 环形菜单
     private var ringMenuView: RingMenuView? = null
     private lateinit var ringMenuContainer: FrameLayout
+
+    @Inject lateinit var commandRouter: CommandRouter
 
     private val appConfigProvider by lazy { AppConfigProvider(this) }
 
@@ -1033,11 +1037,9 @@ class MainActivity : AppCompatActivity(),
 
     // ==================== 环形菜单（数据来自 menu_config.json） ====================
 
-    private lateinit var commandRouter: CommandRouter
     private lateinit var menuConfig: MenuConfig
 
     private fun setupRingMenu() {
-        commandRouter = CommandRouter(AppCommandHandler(navigationManager, voiceInteractionManager, tripPreviewService))
         menuConfig = MenuConfig(this)
 
         ringMenuContainer = FrameLayout(this).apply {

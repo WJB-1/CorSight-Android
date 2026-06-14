@@ -15,7 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.voicenavigation.BuildConfig
 import com.example.voicenavigation.R
-import com.example.voicenavigation.collection.DataCollectionActivity
+import com.example.voicenavigation.collection.ui.hub.CaptureHubActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -99,7 +99,7 @@ class SettingsFragment : Fragment() {
             )
         }
         btnDataCollection.setOnClickListener {
-            startActivity(Intent(requireContext(), DataCollectionActivity::class.java))
+            startActivity(Intent(requireContext(), CaptureHubActivity::class.java))
         }
     }
 }

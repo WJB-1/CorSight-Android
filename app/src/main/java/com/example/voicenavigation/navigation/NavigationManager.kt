@@ -3,6 +3,7 @@ package com.example.voicenavigation.navigation
 import android.content.Context
 import android.location.Location
 import android.util.Log
+import com.example.voicenavigation.R
 import com.amap.api.location.AMapLocation
 import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
@@ -122,7 +123,7 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
 
                 navigationCallback?.onLocationUpdated(location, address)
             } else {
-                val error = "定位失败：${aMapLocation.errorInfo}"
+                val error = context.getString(R.string.nav_location_failed, aMapLocation.errorInfo)
                 Log.e(TAG, "$error, code=${aMapLocation.errorCode}")
                 if (navigationCallback != null && !isNavigating) {
                     navigationCallback?.onNavigationError(error)
@@ -133,7 +134,7 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
 
     fun requestCurrentLocation() {
         if (locationClient == null) {
-            navigationCallback?.onNavigationError("定位服务未初始化")
+            navigationCallback?.onNavigationError(context.getString(R.string.nav_location_service_not_init))
             return
         }
         locationClient?.startLocation()
@@ -214,7 +215,7 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         destinationName = destName
 
         if (routeSearch == null) {
-            navigationCallback?.onNavigationError("路线规划服务未初始化")
+            navigationCallback?.onNavigationError(context.getString(R.string.nav_route_service_not_init))
             return
         }
 
@@ -229,7 +230,7 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         } catch (e: Exception) {
             Log.e(TAG, "Failed to calculate walk route", e)
             isRerouting = false
-            navigationCallback?.onNavigationError("步行路线规划失败")
+            navigationCallback?.onNavigationError(context.getString(R.string.nav_walk_route_failed))
         }
     }
 
@@ -238,7 +239,7 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         if (rCode == 1000) {
             if (result == null || result.paths == null || result.paths.isEmpty()) {
                 isRerouting = false
-                navigationCallback?.onNavigationError("未找到可行走路线")
+                navigationCallback?.onNavigationError(context.getString(R.string.nav_no_walkable_route))
                 return
             }
 
@@ -290,11 +291,11 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         } else {
             Log.e(TAG, "Walk route search failed, error code: $rCode")
             isRerouting = false
-            var errorMsg = "步行路线规划失败"
+            var errorMsg = context.getString(R.string.nav_walk_route_failed)
             when (rCode) {
-                2001 -> errorMsg = "步行路线规划失败：网络错误"
-                2002 -> errorMsg = "步行路线规划失败：参数错误"
-                2003 -> errorMsg = "步行路线规划失败：无权限"
+                2001 -> errorMsg = context.getString(R.string.nav_walk_route_failed_network)
+                2002 -> errorMsg = context.getString(R.string.nav_walk_route_failed_param)
+                2003 -> errorMsg = context.getString(R.string.nav_walk_route_failed_permission)
             }
             navigationCallback?.onNavigationError(errorMsg)
         }

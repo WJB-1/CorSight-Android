@@ -1,35 +1,42 @@
 package com.example.voicenavigation.command
 
 import android.util.Log
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 统一命令路由器。
+ * Unified command router backed by Hilt multibinding.
  *
- * 所有功能入口（语音命令、环形菜单、手势检测）统一通过 command_id 路由到 [AppCommandHandler]。
- * 新增功能只需：
- * 1. 在 [AppCommandHandler.handle] 加一个 when 分支
- * 2. 在 assets/menu_config.json 加菜单项（如需菜单入口）
- * 3. 在 assets/voice_keywords.json 加关键词（如需语音入口）
+ * All entry points (voice commands, ring menu, gesture detection) route through
+ * [execute] by command ID. New commands only require a new [MenuCommand] class
+ * and a single `@Binds @IntoMap` line in [com.example.voicenavigation.di.CommandModule].
  */
 @Singleton
 class CommandRouter @Inject constructor(
-    private val handler: AppCommandHandler
+    private val commands: Map<String, @JvmSuppressWildcards MenuCommand>
 ) {
 
     companion object {
         private const val TAG = "CommandRouter"
     }
 
-    /**
-     * 执行命令。
-     *
-     * @param commandId 命令标识（如 "navigate_to", "stop_navigation"）
-     * @param params 附带参数（如 destination="天安门"）
-     */
+    private val _events = MutableSharedFlow<CommandEvent>(extraBufferCapacity = 10)
+    val events: SharedFlow<CommandEvent> = _events.asSharedFlow()
+
     fun execute(commandId: String, params: Map<String, String> = emptyMap()) {
         Log.d(TAG, "execute: commandId=$commandId, params=$params")
-        handler.handle(commandId, params)
+        val command = commands[commandId]
+        if (command == null) {
+            Log.w(TAG, "Unknown command: $commandId")
+            _events.tryEmit(CommandEvent.UnknownCommand(commandId))
+            return
+        }
+        val event = command.execute(params)
+        if (event != null) {
+            _events.tryEmit(event)
+        }
     }
 }

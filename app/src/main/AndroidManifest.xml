@@ -54,6 +54,12 @@
             android:exported="false" />
 
         <activity
+            android:name=".collection.ui.hub.CaptureHubActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:exported="false" />
+
+        <activity
             android:name=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:exported="true">

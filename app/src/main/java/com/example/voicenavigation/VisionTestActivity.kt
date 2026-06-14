@@ -460,7 +460,7 @@ class VisionTestActivity : AppCompatActivity() {
                     localInferenceRunning = false
                     binding.tvDetections.text = getString(R.string.vision_local_detection_failed, e.message.orEmpty())
                     binding.overlayView.updateDetections(emptyList())
-                    ObstacleWarningNotifier.dispatch(emptyList())
+                    // ObstacleWarningNotifier removed
                 }
             }
         }
@@ -519,7 +519,7 @@ class VisionTestActivity : AppCompatActivity() {
                     binding.progressConnecting.visibility = View.GONE
                     binding.tvDetections.text = getString(R.string.vision_cloud_detection_failed, e.message.orEmpty())
                     binding.overlayView.updateDetections(emptyList())
-                    ObstacleWarningNotifier.dispatch(emptyList())
+                    // ObstacleWarningNotifier removed
                 }
             }
 
@@ -534,7 +534,7 @@ class VisionTestActivity : AppCompatActivity() {
                     } else {
                         binding.tvDetections.text = getString(R.string.vision_cloud_detection_http_failed, response.code)
                         binding.overlayView.updateDetections(emptyList())
-                        ObstacleWarningNotifier.dispatch(emptyList())
+                        // ObstacleWarningNotifier removed
                     }
                 }
             }
@@ -545,7 +545,7 @@ class VisionTestActivity : AppCompatActivity() {
         smoothedHistory.clear()
         binding.tvDetections.text = getString(R.string.vision_blurred_frame, quality.sharpness.toInt())
         binding.overlayView.updateDetections(emptyList())
-        ObstacleWarningNotifier.dispatch(emptyList())
+        // ObstacleWarningNotifier removed
     }
 
     private fun renderResult(result: ToolResult?, quality: ImageQualityAnalyzer.Result) {
@@ -559,7 +559,7 @@ class VisionTestActivity : AppCompatActivity() {
         val stableItems = stabilizeDetections(items)
         val alerts = ObstacleRiskAnalyzer.analyze(stableItems, lastFrameWidth, lastFrameHeight)
         val speechEvents = obstacleAlertTracker.update(stableItems, alerts)
-        ObstacleWarningNotifier.dispatch(alerts)
+        // ObstacleWarningNotifier removed — alerts handled locally
         dispatchSpeechEvents(speechEvents)
 
         binding.tvDetections.text = when {
@@ -577,7 +577,7 @@ class VisionTestActivity : AppCompatActivity() {
 
     private fun dispatchSpeechEvents(events: List<ObstacleSpeechEvent>) {
         for (event in events) {
-            ObstacleWarningNotifier.dispatchSpeech(event)
+            // ObstacleWarningNotifier removed
             speakObstacleMessage(event.message)
         }
     }

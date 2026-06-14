@@ -10,6 +10,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import com.example.voicenavigation.R
 import java.util.Locale
 
 class SpeechRecognitionService : Service(), RecognitionListener {
@@ -58,10 +59,10 @@ class SpeechRecognitionService : Service(), RecognitionListener {
                 speechRecognizer!!.startListening(recognitionIntent)
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting listening", e)
-                callback?.onError("启动语音识别失败: ${e.message}")
+                callback?.onError(getString(R.string.stt_start_failed, e.message))
             }
         } else {
-            callback?.onError("语音识别不可用")
+            callback?.onError(getString(R.string.stt_recognizer_unavailable))
         }
     }
 
@@ -95,16 +96,16 @@ class SpeechRecognitionService : Service(), RecognitionListener {
 
     override fun onError(error: Int) {
         val errorMessage = when (error) {
-            SpeechRecognizer.ERROR_AUDIO -> "音频错误"
-            SpeechRecognizer.ERROR_CLIENT -> "客户端错误"
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "权限不足"
-            SpeechRecognizer.ERROR_NETWORK -> "网络错误"
-            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "网络超时"
-            SpeechRecognizer.ERROR_NO_MATCH -> "未识别到语音"
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "识别器忙"
-            SpeechRecognizer.ERROR_SERVER -> "服务器错误"
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "语音超时"
-            else -> "未知错误: $error"
+            SpeechRecognizer.ERROR_AUDIO -> getString(R.string.stt_error_audio)
+            SpeechRecognizer.ERROR_CLIENT -> getString(R.string.stt_error_client)
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> getString(R.string.stt_error_insufficient_permissions)
+            SpeechRecognizer.ERROR_NETWORK -> getString(R.string.stt_error_network)
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> getString(R.string.stt_error_network_timeout)
+            SpeechRecognizer.ERROR_NO_MATCH -> getString(R.string.stt_error_no_match)
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> getString(R.string.stt_error_recognizer_busy)
+            SpeechRecognizer.ERROR_SERVER -> getString(R.string.stt_error_server)
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> getString(R.string.stt_error_speech_timeout)
+            else -> getString(R.string.stt_error_unknown_code, error)
         }
         Log.e(TAG, "Speech recognition error: $errorMessage")
         callback?.onError(errorMessage)
@@ -117,7 +118,7 @@ class SpeechRecognitionService : Service(), RecognitionListener {
             Log.d(TAG, "Recognition result: $result")
             callback?.onResult(result)
         } else {
-            callback?.onError("未识别到语音内容")
+            callback?.onError(getString(R.string.stt_no_speech_content))
         }
     }
 

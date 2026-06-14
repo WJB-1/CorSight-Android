@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- CameraX 预览 -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 左上角参数浮层 -->
+    <TextView
+        android:id="@+id/tvDebugOverlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:background="#80000000"
+        android:padding="8dp"
+        android:textColor="#FF00FF00"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:visibility="gone" />
+
+    <!-- 已拍数量指示 -->
+    <TextView
+        android:id="@+id/tvPhotoCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="12dp"
+        android:background="#80000000"
+        android:padding="8dp"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:text="已拍: 0" />
+
+    <!-- 底部快门按钮 -->
+    <View
+        android:id="@+id/shutterBtn"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:background="@android:color/white" />
+
+</FrameLayout>

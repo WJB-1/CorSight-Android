@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_free"
+        android:icon="@android:drawable/ic_menu_camera"
+        android:title="自由采集" />
+    <item
+        android:id="@+id/nav_grid"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="八方向" />
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="后台管理" />
+</menu>

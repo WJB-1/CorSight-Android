@@ -200,4 +200,49 @@
     <string name="collect_camera_permission_message">需要相机权限来拍摄街景照片。请在系统设置中开启权限。</string>
     <string name="collect_go_to_settings">去设置</string>
     <string name="collect_task_list_item">%1$s\n%2$s | %3$s | %4$d/8张</string>
+
+    <!-- ==================== NavigationManager ==================== -->
+    <string name="nav_location_failed">定位失败：%s</string>
+    <string name="nav_location_service_not_init">定位服务未初始化</string>
+    <string name="nav_route_service_not_init">路线规划服务未初始化</string>
+    <string name="nav_walk_route_failed">步行路线规划失败</string>
+    <string name="nav_no_walkable_route">未找到可行走路线</string>
+    <string name="nav_walk_route_failed_network">步行路线规划失败：网络错误</string>
+    <string name="nav_walk_route_failed_param">步行路线规划失败：参数错误</string>
+    <string name="nav_walk_route_failed_permission">步行路线规划失败：无权限</string>
+
+    <!-- ==================== RingMenuView ==================== -->
+    <string name="menu_back">返回</string>
+    <string name="menu_close">关闭</string>
+
+    <!-- ==================== TripPreviewDialog ==================== -->
+    <string name="preview_dialog_no_broadcast">暂无播报文案</string>
+    <string name="preview_dialog_no_summary">暂无概要</string>
+    <string name="preview_dialog_total_distance">总距离：%s</string>
+    <string name="preview_dialog_estimated_time">预计时间：%s</string>
+    <string name="preview_dialog_key_node_count">关键节点数：%d</string>
+    <string name="preview_dialog_unknown">未知</string>
+    <string name="preview_dialog_node_prefix">节点 %d：</string>
+    <string name="preview_dialog_speak_prefix">行前预览：%s</string>
+
+    <!-- ==================== SpeechRecognitionManager ==================== -->
+    <string name="stt_recognizer_service_unavailable">语音识别服务不可用</string>
+    <string name="stt_recognizer_service_unavailable_detail">语音识别服务不可用。请检查：\n1. 设备是否支持语音识别\n2. 是否连接网络\n3. 是否安装了语音识别应用</string>
+    <string name="stt_recognizer_not_initialized">语音识别器未初始化</string>
+    <string name="stt_recognizer_available">可用</string>
+    <string name="stt_mic_permission_denied">录音权限被拒绝，请在设置中开启麦克风权限</string>
+    <string name="stt_start_failed">启动语音识别失败：%s</string>
+    <string name="stt_recognizer_init_failed">语音识别器初始化失败</string>
+    <string name="stt_error_audio">音频错误</string>
+    <string name="stt_error_client">客户端错误</string>
+    <string name="stt_error_insufficient_permissions">权限不足</string>
+    <string name="stt_error_network">网络错误</string>
+    <string name="stt_error_network_timeout_short">网络超时</string>
+    <string name="stt_error_no_match">未识别到语音</string>
+    <string name="stt_error_recognizer_busy">识别器忙</string>
+    <string name="stt_error_server_short">服务器错误</string>
+    <string name="stt_error_speech_timeout">语音超时</string>
+    <string name="stt_error_unknown_code">未知错误：%d</string>
+    <string name="stt_no_speech_content">未识别到语音内容</string>
+    <string name="stt_recognizer_unavailable">语音识别不可用</string>
 </resources>

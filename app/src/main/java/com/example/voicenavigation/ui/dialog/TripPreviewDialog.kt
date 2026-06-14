@@ -39,13 +39,13 @@ object TripPreviewDialog {
         val btnSpeak: Button = dialogView.findViewById(R.id.btn_preview_speak)
         val btnClose: Button = dialogView.findViewById(R.id.btn_preview_close)
 
-        tvPreviewText.text = broadcastText.ifEmpty { "暂无播报文案" }
+        tvPreviewText.text = broadcastText.ifEmpty { context.getString(R.string.preview_dialog_no_broadcast) }
 
         val summaryText = if (routeSummary != null) {
-            "总距离：${routeSummary.optString("total_distance", "未知")}\n" +
-            "预计时间：${routeSummary.optString("total_duration", "未知")}\n" +
-            "关键节点数：${routeSummary.optInt("key_node_count", 0)}"
-        } else "暂无概要"
+            context.getString(R.string.preview_dialog_total_distance, routeSummary.optString("total_distance", context.getString(R.string.preview_dialog_unknown))) + "\n" +
+            context.getString(R.string.preview_dialog_estimated_time, routeSummary.optString("total_duration", context.getString(R.string.preview_dialog_unknown))) + "\n" +
+            context.getString(R.string.preview_dialog_key_node_count, routeSummary.optInt("key_node_count", 0))
+        } else context.getString(R.string.preview_dialog_no_summary)
         tvPreviewSummary.text = summaryText
 
         layoutKeyNodes.removeAllViews()
@@ -56,7 +56,7 @@ object TripPreviewDialog {
                     textSize = 14f
                     setTextColor(context.getColor(android.R.color.black))
                     setPadding(0, 8, 0, 8)
-                    text = buildNodeText(i, node)
+                    text = buildNodeText(context, i, node)
                 }
                 layoutKeyNodes.addView(tvNode)
                 if (i < keyNodes.length() - 1) {
@@ -76,14 +76,14 @@ object TripPreviewDialog {
             .setCancelable(true)
             .create()
 
-        btnSpeak.setOnClickListener { onSpeak("行前预览：$broadcastText") }
+        btnSpeak.setOnClickListener { onSpeak(context.getString(R.string.preview_dialog_speak_prefix, broadcastText)) }
         btnClose.setOnClickListener { dialog.dismiss() }
         dialog.show()
     }
 
-    private fun buildNodeText(index: Int, node: JSONObject): String {
+    private fun buildNodeText(context: Context, index: Int, node: JSONObject): String {
         val sb = StringBuilder()
-        sb.append("节点 ${index + 1}：")
+        sb.append(context.getString(R.string.preview_dialog_node_prefix, index + 1))
         sb.append(node.optString("relative_direction", ""))
         sb.append(node.optString("action", ""))
         if (node.has("assistant_action")) {

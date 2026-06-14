@@ -3,6 +3,7 @@ package com.example.voicenavigation.stt
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import com.example.voicenavigation.R
 import android.os.Handler
 import android.os.Looper
 import android.speech.RecognitionListener
@@ -54,17 +55,17 @@ class SpeechRecognitionManager(private val context: Context) : RecognitionListen
 
     fun getRecognitionStatus(): String {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            return "语音识别服务不可用"
+            return context.getString(R.string.stt_recognizer_service_unavailable)
         }
         if (speechRecognizer == null) {
-            return "语音识别器未初始化"
+            return context.getString(R.string.stt_recognizer_not_initialized)
         }
-        return "可用"
+        return context.getString(R.string.stt_recognizer_available)
     }
 
     fun startListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            val error = "语音识别服务不可用。请检查：\n1. 设备是否支持语音识别\n2. 是否连接网络\n3. 是否安装了语音识别应用"
+            val error = context.getString(R.string.stt_recognizer_service_unavailable_detail)
             Log.e(TAG, error)
             callback?.onError(error)
             return
@@ -75,13 +76,13 @@ class SpeechRecognitionManager(private val context: Context) : RecognitionListen
                 speechRecognizer!!.startListening(recognitionIntent)
             } catch (e: SecurityException) {
                 Log.e(TAG, "Permission denied for speech recognition", e)
-                callback?.onError("录音权限被拒绝，请在设置中开启麦克风权限")
+                callback?.onError(context.getString(R.string.stt_mic_permission_denied))
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting listening", e)
-                callback?.onError("启动语音识别失败: ${e.message}")
+                callback?.onError(context.getString(R.string.stt_start_failed, e.message))
             }
         } else {
-            callback?.onError("语音识别器初始化失败")
+            callback?.onError(context.getString(R.string.stt_recognizer_init_failed))
         }
     }
 
@@ -115,16 +116,16 @@ class SpeechRecognitionManager(private val context: Context) : RecognitionListen
 
     override fun onError(error: Int) {
         val errorMessage = when (error) {
-            SpeechRecognizer.ERROR_AUDIO -> "音频错误"
-            SpeechRecognizer.ERROR_CLIENT -> "客户端错误"
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "权限不足"
-            SpeechRecognizer.ERROR_NETWORK -> "网络错误"
-            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "网络超时"
-            SpeechRecognizer.ERROR_NO_MATCH -> "未识别到语音"
-            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "识别器忙"
-            SpeechRecognizer.ERROR_SERVER -> "服务器错误"
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "语音超时"
-            else -> "未知错误: $error"
+            SpeechRecognizer.ERROR_AUDIO -> context.getString(R.string.stt_error_audio)
+            SpeechRecognizer.ERROR_CLIENT -> context.getString(R.string.stt_error_client)
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> context.getString(R.string.stt_error_insufficient_permissions)
+            SpeechRecognizer.ERROR_NETWORK -> context.getString(R.string.stt_error_network)
+            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> context.getString(R.string.stt_error_network_timeout)
+            SpeechRecognizer.ERROR_NO_MATCH -> context.getString(R.string.stt_error_no_match)
+            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> context.getString(R.string.stt_error_recognizer_busy)
+            SpeechRecognizer.ERROR_SERVER -> context.getString(R.string.stt_error_server)
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> context.getString(R.string.stt_error_speech_timeout)
+            else -> context.getString(R.string.stt_error_unknown_code, error)
         }
         Log.e(TAG, "Speech recognition error: $errorMessage")
         callback?.onError(errorMessage)
@@ -137,7 +138,7 @@ class SpeechRecognitionManager(private val context: Context) : RecognitionListen
             Log.d(TAG, "Recognition result: $result")
             callback?.onResult(result)
         } else {
-            callback?.onError("未识别到语音内容")
+            callback?.onError(context.getString(R.string.stt_no_speech_content))
         }
     }
 

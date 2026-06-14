@@ -3,7 +3,6 @@ package com.example.voicenavigation.ui.main
 import androidx.lifecycle.ViewModel
 import com.amap.api.maps.model.LatLng
 import com.amap.api.services.core.PoiItem
-import com.example.voicenavigation.command.AppCommandHandler
 import com.example.voicenavigation.command.CommandEvent
 import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.data.VoiceRecordRepository
@@ -48,8 +47,7 @@ class MainViewModel @Inject constructor(
     val navigationManager: NavigationManager,
     val tripPreviewService: TripPreviewService,
     val voiceInteractionManager: VoiceInteractionManager,
-    val commandRouter: CommandRouter,
-    val commandHandler: AppCommandHandler
+    val commandRouter: CommandRouter
 ) : ViewModel() {
 
     // ── 位置 ──

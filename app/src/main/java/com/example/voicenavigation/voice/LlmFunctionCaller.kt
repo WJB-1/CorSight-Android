@@ -200,29 +200,14 @@ class LlmFunctionCaller(private val context: Context) {
 
     // ==================== 工具/函数 Schema ====================
 
-    private fun buildSystemPrompt(): String =
-        "你是一个盲人导航避障应用的语音助手。用户的语音输入经过了语音识别，可能会有识别误差。\n\n" +
-                "你的任务：理解用户意图，从以下功能中选择最合适的一个，调用它：\n\n" +
-                "1. navigate_to —— 导航到指定目的地\n" +
-                "   示例：'导航到天安门' → navigate_to(destination='天安门')\n" +
-                "2. start_obstacle_avoidance —— 启动障碍物检测避障\n" +
-                "   示例：'开始避障' '打开避障' '帮我看看前面'\n" +
-                "3. stop_navigation —— 停止当前导航\n" +
-                "   示例：'停止导航' '不导了' '关掉导航'\n" +
-                "4. stop_obstacle_avoidance —— 停止避障\n" +
-                "   示例：'停止避障' '关掉检测'\n" +
-                "5. where_am_i —— 播报当前位置\n" +
-                "   示例：'我在哪里' '这是哪儿'\n" +
-                "6. repeat_last —— 重复上一次播报\n" +
-                "   示例：'再说一遍' '重复' '什么'\n" +
-                "7. preview_route —— 预览当前路线\n" +
-                "   示例：'预览路线' '查看路线'\n" +
-                "8. query_status —— 查询当前导航/避障运行状态\n" +
-                "   示例：'当前状态' '现在什么情况'\n" +
-                "9. text_search —— 搜索地点但不自动导航\n" +
-                "   示例：'附近有什么' '搜索医院'\n\n" +
-                "注意：导航类表达（'去XX' '导航去XX' '带我去XX' 'XX怎么走'）统一用 navigate_to。\n" +
-                "如果用户的话无法匹配任何功能，返回 query_status 作为默认操作。"
+    private fun buildSystemPrompt(): String {
+        return try {
+            context.assets.open("llm_system_prompt.txt").bufferedReader().readText()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load llm_system_prompt.txt", e)
+            "你是一个盲人导航避障应用的语音助手。"
+        }
+    }
 
     private fun buildToolsSchema(): JSONArray {
         val tools = JSONArray()

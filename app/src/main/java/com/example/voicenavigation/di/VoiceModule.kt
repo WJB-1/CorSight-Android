@@ -36,8 +36,8 @@ object VoiceModule {
 
     @Provides
     @Singleton
-    fun provideVoiceCommandInterpreter(): VoiceCommandInterpreter {
-        return VoiceCommandInterpreter()
+    fun provideVoiceCommandInterpreter(@ApplicationContext context: Context): VoiceCommandInterpreter {
+        return VoiceCommandInterpreter(context)
     }
 
     @Provides

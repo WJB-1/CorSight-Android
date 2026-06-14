@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- CameraX 预览 -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 左上角参数浮层 -->
+    <TextView
+        android:id="@+id/tvDebugOverlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:background="#80000000"
+        android:padding="8dp"
+        android:textColor="#FF00FF00"
+        android:textSize="12sp"
+        android:fontFamily="monospace" />
+
+    <!-- 中央方向提示 -->
+    <TextView
+        android:id="@+id/tvDirectionHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="请对准 N"
+        android:textSize="48sp"
+        android:textStyle="bold"
+        android:textColor="#80FFFFFF"
+        android:shadowColor="#000000"
+        android:shadowDx="2"
+        android:shadowDy="2"
+        android:shadowRadius="4" />
+
+    <!-- 八方向进度指示器（顶部水平排列） -->
+    <LinearLayout
+        android:id="@+id/directionProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="50dp"
+        android:gravity="center"
+        android:orientation="horizontal" />
+
+    <!-- 底部快门按钮 -->
+    <View
+        android:id="@+id/shutterBtn"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:background="@android:color/white"
+        android:alpha="0.3" />
+
+</FrameLayout>

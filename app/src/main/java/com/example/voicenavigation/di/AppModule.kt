@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.room.Room
 import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.data.VoiceRecordDao
+import com.example.voicenavigation.config.AppConstants
 import com.example.voicenavigation.network.TripPreviewService
 import dagger.Module
 import dagger.Provides
@@ -23,6 +24,16 @@ object AppModule {
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("corsight_config", Context.MODE_PRIVATE)
+    }
+
+    @Provides
+    @BaseUrl
+    fun provideBaseUrl(prefs: SharedPreferences): String {
+        val stored = prefs.getString(
+            com.example.voicenavigation.AppConfig.KEY_PREVIEW_SERVER_BASE_URL,
+            null
+        )
+        return stored?.takeIf { it.isNotBlank() } ?: AppConstants.PREVIEW_DEFAULT_BASE_URL
     }
 
     @Provides
