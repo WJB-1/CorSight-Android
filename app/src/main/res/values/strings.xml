@@ -245,4 +245,15 @@
     <string name="stt_error_unknown_code">未知错误：%d</string>
     <string name="stt_no_speech_content">未识别到语音内容</string>
     <string name="stt_recognizer_unavailable">语音识别不可用</string>
+
+    <!-- handleCommandEvent strings -->
+    <string name="msg_no_navigation">当前没有导航</string>
+    <string name="tts_currently_at">您当前位于%s</string>
+    <string name="msg_locating">正在定位中，请稍后再试</string>
+    <string name="msg_nothing_to_repeat">暂无可重复播报的内容</string>
+    <string name="status_navigating">当前正在导航中</string>
+    <string name="status_not_navigating">导航未启动</string>
+    <string name="status_obstacle_on">避障模式已开启</string>
+    <string name="status_obstacle_off">避障模式未开启</string>
+    <string name="msg_unknown_command">抱歉，没有听懂</string>
 </resources>

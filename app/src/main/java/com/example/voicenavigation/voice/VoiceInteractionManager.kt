@@ -74,7 +74,7 @@ class VoiceInteractionManager(
 
     // ==================== 内部状态 ====================
 
-    private val interpreter = VoiceCommandInterpreter()
+    private val interpreter = VoiceCommandInterpreter(context)
     private var currentMode = Mode.TEXT_INPUT
     private var textInputListener: TextInputListener? = null
     private var commandExecutor: CommandExecutor? = null

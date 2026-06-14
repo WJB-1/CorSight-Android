@@ -30,6 +30,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -53,7 +55,7 @@ import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
 import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.data.SuggestionAdapter
-import androidx.room.Room
+// Room import removed — AppDatabase is Hilt-injected
 import com.example.voicenavigation.data.VoiceRecord
 import com.example.voicenavigation.data.VoiceRecordAdapter
 import com.example.voicenavigation.navigation.NavigationManager
@@ -97,12 +99,17 @@ class MainActivity : AppCompatActivity(),
         private const val FIXED_ROUTE_ID = "gzdx_stadium"
     }
 
+    // ── Hilt-injected singletons (eliminates dual instance problem) ──
+    @Inject lateinit var navigationManager: NavigationManager
+    @Inject lateinit var speechManager: BaiduSpeechManager
+    @Inject lateinit var baiduTts: BaiduTtsManager
+    @Inject lateinit var voiceInteractionManager: VoiceInteractionManager
+    @Inject lateinit var appDatabase: AppDatabase
+    @Inject lateinit var tripPreviewService: TripPreviewService
+    @Inject lateinit var menuConfig: MenuConfig
+
     private var mMap: AMap? = null
     private lateinit var mapView: MapView
-    private lateinit var speechManager: BaiduSpeechManager
-    private lateinit var navigationManager: NavigationManager
-    private lateinit var appDatabase: AppDatabase
-    private var baiduTts: BaiduTtsManager? = null
     private lateinit var handler: Handler
 
     private lateinit var btnVoiceContainer: FrameLayout
@@ -151,11 +158,9 @@ class MainActivity : AppCompatActivity(),
     private lateinit var tvHistoryCount: TextView
     private lateinit var tvHistoryDestCount: TextView
     private var historyAdapter: VoiceRecordAdapter? = null
-    private lateinit var tripPreviewService: TripPreviewService
     private var isSelectingDestination = false
 
     // ===== 语音交互（Function Calling）状态 =====
-    private lateinit var voiceInteractionManager: VoiceInteractionManager
     private var autoStartNavigationAfterSearch = false
     private var pendingVoiceDestination: String? = null
     private var lastAddress: String? = null
@@ -510,30 +515,29 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun initServices() {
-        // 唯一的语音识别实例，供两种模式共用
-        speechManager = BaiduSpeechManager(this)
-
-        navigationManager = NavigationManager(this)
-        navigationManager.setNavigationCallback(this)
-        appDatabase = Room.databaseBuilder(this, AppDatabase::class.java, "voice_navigation.db")
-            .fallbackToDestructiveMigration()
-            .build()
+        // All singletons are Hilt-injected — only set up callbacks here
         handler = Handler(Looper.getMainLooper())
 
+        // NavigationManager callback
+        navigationManager.setNavigationCallback(this)
+
+        // BaiduTTS init (token fetch)
+        baiduTts.callback = object : BaiduTtsManager.TtsCallback {
+            override fun onTtsReady() { Log.d(TAG, "TTS ready") }
+            override fun onTtsError(error: String) { Log.e(TAG, "TTS error: $error") }
+        }
+        baiduTts.init()
+
+        // Load preview server URL from prefs
         val prefs = AppConfig.prefs(this)
         val savedUrl = AppConfig.normalizeBaseUrl(
             prefs.getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
         )
-        tripPreviewService = TripPreviewService(savedUrl)
-        initTts()
+        tripPreviewService.baseUrl = savedUrl
 
-        // LLM Function Calling 客户端（云端兜底，需要网络）
-        val llmCaller = LLMFunctionCaller(this)
-
-        // 语音交互管理器（双模式：TEXT_INPUT + COMMAND），共用同一个 speechManager
-        voiceInteractionManager = VoiceInteractionManager(this, speechManager, baiduTts, llmCaller)
-        voiceInteractionManager.setTextInputListener(this)      // 蓝色按钮的 STT → 搜索框
-        voiceInteractionManager.setCommandExecutor(this)        // 橙色按钮的 Function Calling
+        // Voice interaction callbacks
+        voiceInteractionManager.setTextInputListener(this)
+        voiceInteractionManager.setCommandExecutor(this)
         voiceInteractionManager.setVoiceEventListener(object : VoiceInteractionManager.VoiceEventListener {
             override fun onListeningStarted() {}
             override fun onListeningStopped() {}
@@ -543,19 +547,6 @@ class MainActivity : AppCompatActivity(),
                 runOnUiThread { tvVoiceCommandHint.text = stage }
             }
         })
-    }
-
-    private fun initTts() {
-        baiduTts = BaiduTtsManager(
-            this,
-            getString(R.string.baidu_speech_api_key),
-            getString(R.string.baidu_speech_secret_key)
-        )
-        baiduTts?.callback = object : BaiduTtsManager.TtsCallback {
-            override fun onTtsReady() { Log.d(TAG, "TTS ready") }
-            override fun onTtsError(error: String) { Log.e(TAG, "TTS error: $error") }
-        }
-        baiduTts?.init()
     }
 
     private fun speak(text: String?) {
@@ -1064,10 +1055,15 @@ class MainActivity : AppCompatActivity(),
 
     // ==================== 环形菜单（数据来自 menu_config.json） ====================
 
-    private lateinit var menuConfig: MenuConfig
-
     private fun setupRingMenu() {
-        menuConfig = MenuConfig(this)
+        // MenuConfig is Hilt-injected (no manual creation needed)
+
+        // Collect CommandRouter events — THIS is what makes ring menu commands actually work
+        lifecycleScope.launch {
+            commandRouter.events.collect { event ->
+                handleCommandEvent(event)
+            }
+        }
 
         ringMenuContainer = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -1105,6 +1101,87 @@ class MainActivity : AppCompatActivity(),
 
     private fun hideRingMenu() {
         ViewTransition.scaleOut(ringMenuContainer, 200)
+    }
+
+    /**
+     * Handle events emitted by CommandRouter (from ring menu, voice commands, or gestures).
+     * This is the central dispatch point that connects commands to UI actions.
+     */
+    private fun handleCommandEvent(event: com.example.voicenavigation.command.CommandEvent) {
+        when (event) {
+            is com.example.voicenavigation.command.CommandEvent.NavigateTo -> {
+                autoStartNavigationAfterSearch = true
+                pendingVoiceDestination = event.destination
+                searchDestination(event.destination)
+            }
+            is com.example.voicenavigation.command.CommandEvent.StopNavigation -> {
+                if (navigationManager.isNavigating()) {
+                    navigationManager.stopNavigation()
+                    btnStartNavigation.text = getString(R.string.start_navigation)
+                    clearRouteDisplay()
+                } else {
+                    Toast.makeText(this, getString(R.string.msg_no_navigation), Toast.LENGTH_SHORT).show()
+                }
+            }
+            is com.example.voicenavigation.command.CommandEvent.OpenObstacleAvoidance -> {
+                startActivity(Intent(this, VisionTestActivity::class.java))
+            }
+            is com.example.voicenavigation.command.CommandEvent.StopObstacleAvoidance -> {
+                val intent = Intent(com.example.voicenavigation.config.AppConstants.BROADCAST_ACTION_STOP_OBSTACLE)
+                sendBroadcast(intent)
+            }
+            is com.example.voicenavigation.command.CommandEvent.PreviewRoute -> {
+                sendTripPreview()
+            }
+            is com.example.voicenavigation.command.CommandEvent.AnnounceLocation -> {
+                val locDesc = lastAddress ?: currentLocation?.let { "${it.latitude}, ${it.longitude}" }
+                if (!locDesc.isNullOrEmpty()) {
+                    speakForce(getString(R.string.tts_currently_at, locDesc))
+                } else {
+                    speakForce(getString(R.string.msg_locating))
+                }
+            }
+            is com.example.voicenavigation.command.CommandEvent.RepeatLast -> {
+                val lastText = lastSpokenInstruction
+                if (!lastText.isNullOrEmpty()) {
+                    speakForce(lastText)
+                } else {
+                    speakForce(getString(R.string.msg_nothing_to_repeat))
+                }
+            }
+            is com.example.voicenavigation.command.CommandEvent.AnnounceStatus -> {
+                val nav = navigationManager.isNavigating()
+                val obs = isObstacleRunning
+                val status = (if (nav) getString(R.string.status_navigating) else getString(R.string.status_not_navigating)) +
+                        "，" + (if (obs) getString(R.string.status_obstacle_on) else getString(R.string.status_obstacle_off))
+                speakForce(status)
+            }
+            is com.example.voicenavigation.command.CommandEvent.SearchDestination -> {
+                val cleaned = com.example.voicenavigation.util.TextUtils.cleanSpeechText(event.keyword)
+                if (cleaned.isNotEmpty()) {
+                    etDestination.setText(cleaned)
+                    searchDestination(cleaned)
+                }
+            }
+            is com.example.voicenavigation.command.CommandEvent.ShowHistory -> {
+                switchTab(1)
+            }
+            is com.example.voicenavigation.command.CommandEvent.ShowSettings -> {
+                switchTab(2)
+            }
+            is com.example.voicenavigation.command.CommandEvent.OpenDataCollection -> {
+                startActivity(Intent(this, com.example.voicenavigation.collection.ui.hub.CaptureHubActivity::class.java))
+            }
+            is com.example.voicenavigation.command.CommandEvent.StartVoiceAssistant -> {
+                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
+            }
+            is com.example.voicenavigation.command.CommandEvent.UnknownCommand -> {
+                speakForce(getString(R.string.msg_unknown_command))
+                executeUnknown(event.rawText)
+            }
+            is com.example.voicenavigation.command.CommandEvent.QueryResult -> { /* display result */ }
+        }
     }
 
     // ==================== GestureVoiceLauncher.GestureCallback ====================
@@ -1229,8 +1306,7 @@ class MainActivity : AppCompatActivity(),
         voiceCommandPulseAnim?.cancel()
         voiceCommandPulseAnim = null
         super.onDestroy()
-        baiduTts?.destroy()
-        baiduTts = null
+        baiduTts.destroy()
         speechManager.destroyRecognizer()
         navigationManager.stopNavigation()
         navigationManager.destroyLocationClient()
