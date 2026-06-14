@@ -22,6 +22,9 @@ import kotlin.math.sqrt
  *
  * 手指长按屏幕后在按住位置弹出，手指不抬起直接滑向某个扇形区域，
  * 松手即执行对应功能。支持二级子菜单（滑到有子菜单的项自动展开）。
+ *
+ * 动画策略：View 本身不包含任何动画逻辑，仅暴露可被动画层驱动的属性。
+ * 动画由 animation 包中的 CanvasAnimDelegate / Animations 统一管理和分发。
  */
 class RingMenuView @JvmOverloads constructor(
     context: Context,
@@ -44,6 +47,68 @@ class RingMenuView @JvmOverloads constructor(
     private var activeParentIndex = -1
     private var centerX = 0f
     private var centerY = 0f
+
+    // ==================== 可动画化属性（供动画层读写） ====================
+
+    /**
+     * 菜单整体缩放比例（0f ~ 1f）。
+     * 动画层通过 CanvasAnimDelegate 驱动此属性实现弹出/收起动画。
+     */
+    var menuScale: Float = 1f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 遮罩层 alpha（0x00 ~ 0xFF）。
+     * 动画层驱动此属性实现遮罩淡入/淡出。
+     */
+    var overlayAlpha: Int = 0x80
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 选中扇形的外扩量（像素）。
+     * 动画层驱动此属性实现选中高亮的平滑过渡。
+     */
+    var selectionExpansion: Float = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 子菜单环的展开比例（0f ~ 1f）。
+     * 动画层驱动此属性实现二级菜单的展开动画。
+     */
+    var subMenuScale: Float = 1f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 中心按钮的呼吸缩放（1f ~ 1.08f 左右）。
+     * 动画层通过 Ambient.breathingScale 驱动。
+     */
+    var centerButtonScale: Float = 1f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /**
+     * 选中扇形的高亮色 alpha 通道（呼吸发光用）。
+     * 动画层通过 Selection.breathingGlow 驱动。
+     */
+    var glowAlpha: Int = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     // ==================== 绘制工具 ====================
     private val paintSector = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -69,6 +134,20 @@ class RingMenuView @JvmOverloads constructor(
     var onItemSelected: ((RingMenuItem) -> Unit)? = null
     var onItemExecuted: ((RingMenuItem) -> Unit)? = null
     var onCenterClicked: (() -> Unit)? = null
+
+    // ==================== 选择状态查询（供动画层读取） ====================
+
+    /** 当前选中的主菜单索引，-1 表示无选中 */
+    fun getSelectedIndex(): Int = selectedIndex
+
+    /** 当前选中的子菜单索引，-1 表示无选中 */
+    fun getSelectedChildIndex(): Int = selectedChildIndex
+
+    /** 当前展开的父菜单索引，-1 表示无子菜单展开 */
+    fun getActiveParentIndex(): Int = activeParentIndex
+
+    /** 菜单项列表 */
+    fun getItems(): List<RingMenuItem> = items
 
     // ==================== 数据驱动 API ====================
 
@@ -218,8 +297,15 @@ class RingMenuView @JvmOverloads constructor(
         super.onDraw(canvas)
         if (items.isEmpty()) return
 
-        // 半透明遮罩
-        canvas.drawColor(0x80000000.toInt())
+        // 应用菜单整体缩放
+        val scale = menuScale
+        if (scale <= 0.01f) return
+        canvas.save()
+        canvas.scale(scale, scale, centerX, centerY)
+
+        // 半透明遮罩（使用可动画化的 overlayAlpha）
+        paintOverlay.alpha = overlayAlpha
+        canvas.drawPaint(paintOverlay)
 
         val anglePerItem = 360f / items.size
 
@@ -228,11 +314,12 @@ class RingMenuView @JvmOverloads constructor(
             val startAngle = index * anglePerItem + gapAngle / 2
             val sweepAngle = anglePerItem - gapAngle
             val isSelected = (index == selectedIndex && activeParentIndex != index)
+            val expansion = if (isSelected) selectionExpansion else 0f
             drawSector(canvas, startAngle, sweepAngle,
-                innerRadius + 10f, innerRadius + 10f + ringWidth,
+                innerRadius + 10f, innerRadius + 10f + ringWidth + expansion,
                 item.color, isSelected)
             drawLabel(canvas, item.label, startAngle + sweepAngle / 2,
-                innerRadius + 10f + ringWidth / 2)
+                innerRadius + 10f + (ringWidth + expansion) / 2)
         }
 
         // 绘制二级菜单环
@@ -240,31 +327,44 @@ class RingMenuView @JvmOverloads constructor(
             val children = items[activeParentIndex].children!!
             val childAnglePerItem = 360f / children.size
             val parentStartAngle = activeParentIndex * anglePerItem
-            children.forEachIndexed { cIndex, child ->
-                val startAngle = parentStartAngle + cIndex * childAnglePerItem + gapAngle / 2
-                val sweepAngle = childAnglePerItem - gapAngle
-                val isSelected = (cIndex == selectedChildIndex)
-                val subInner = innerRadius + ringWidth + 10f
-                drawSector(canvas, startAngle, sweepAngle,
-                    subInner, subInner + subRingWidth,
-                    child.color, isSelected)
-                drawLabel(canvas, child.label, startAngle + sweepAngle / 2,
-                    subInner + subRingWidth / 2)
+            val subScale = subMenuScale
+            if (subScale > 0.01f) {
+                canvas.save()
+                canvas.scale(subScale, subScale, centerX, centerY)
+                children.forEachIndexed { cIndex, child ->
+                    val startAngle = parentStartAngle + cIndex * childAnglePerItem + gapAngle / 2
+                    val sweepAngle = childAnglePerItem - gapAngle
+                    val isSelected = (cIndex == selectedChildIndex)
+                    val expansion = if (isSelected) selectionExpansion else 0f
+                    val subInner = innerRadius + ringWidth + 10f
+                    drawSector(canvas, startAngle, sweepAngle,
+                        subInner, subInner + subRingWidth + expansion,
+                        child.color, isSelected)
+                    drawLabel(canvas, child.label, startAngle + sweepAngle / 2,
+                        subInner + (subRingWidth + expansion) / 2)
+                }
+                canvas.restore()
             }
         }
 
-        // 绘制中心圆
+        // 绘制中心圆（应用呼吸缩放）
+        val cScale = centerButtonScale
+        canvas.save()
+        canvas.scale(cScale, cScale, centerX, centerY)
         canvas.drawCircle(centerX, centerY, innerRadius, paintCenter)
         val centerLabel = if (activeParentIndex >= 0) context.getString(R.string.menu_back) else context.getString(R.string.menu_close)
         canvas.drawText(centerLabel, centerX,
             centerY + paintCenterText.textSize / 3, paintCenterText)
+        canvas.restore()
+
+        canvas.restore()
     }
 
     private fun drawSector(
         canvas: Canvas, startAngle: Float, sweepAngle: Float,
         innerR: Float, outerR: Float, color: Int, isSelected: Boolean
     ) {
-        paintSector.color = if (isSelected) brighten(color) else color
+        paintSector.color = if (isSelected) brighten(color, glowAlpha) else color
         val path = Path()
         val rectInner = RectF(centerX - innerR, centerY - innerR, centerX + innerR, centerY + innerR)
         val rectOuter = RectF(centerX - outerR, centerY - outerR, centerX + outerR, centerY + outerR)
@@ -283,10 +383,17 @@ class RingMenuView @JvmOverloads constructor(
         canvas.drawText(label, x, y + paintText.textSize / 3, paintText)
     }
 
-    private fun brighten(color: Int): Int {
+    /**
+     * 提亮颜色。
+     *
+     * @param color   原始颜色
+     * @param glowAlpha 额外的发光 alpha（0 表示无额外发光），由动画层驱动
+     */
+    private fun brighten(color: Int, glowAlpha: Int = 0): Int {
         val r = ((color shr 16 and 0xFF) * 1.3f).toInt().coerceAtMost(255)
         val g = ((color shr 8 and 0xFF) * 1.3f).toInt().coerceAtMost(255)
         val b = ((color and 0xFF) * 1.3f).toInt().coerceAtMost(255)
-        return Color.argb(255, r, g, b)
+        val a = (0xFF + glowAlpha).coerceAtMost(0xFF)
+        return Color.argb(a, r, g, b)
     }
 }

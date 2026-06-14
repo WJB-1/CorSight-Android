@@ -68,6 +68,11 @@ import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.dialog.TripPreviewDialog
 import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
 import com.example.voicenavigation.config.AppConfigProvider
+import com.example.voicenavigation.animation.Animations
+import com.example.voicenavigation.animation.AnimatorUtils
+import com.example.voicenavigation.animation.AnimatorUtils.cancelAndClear
+import com.example.voicenavigation.animation.AnimatorUtils.onEnd
+import com.example.voicenavigation.animation.ViewTransition
 import com.example.voicenavigation.util.FormatUtils
 import com.example.voicenavigation.util.SecurityUtils
 import com.example.voicenavigation.voice.VoiceInteractionManager
@@ -159,6 +164,10 @@ class MainActivity : AppCompatActivity(),
     // 环形菜单
     private var ringMenuView: RingMenuView? = null
     private lateinit var ringMenuContainer: FrameLayout
+
+    // 动画：语音按钮脉冲效果
+    private var voicePulseAnim: android.animation.ValueAnimator? = null
+    private var voiceCommandPulseAnim: android.animation.ValueAnimator? = null
 
     @Inject lateinit var commandRouter: CommandRouter
 
@@ -305,7 +314,7 @@ class MainActivity : AppCompatActivity(),
         btnMyLocation.setOnClickListener { locateMe() }
         btnStopTts.setOnClickListener {
             baiduTts?.stopPlayback()
-            btnStopTts.visibility = View.GONE
+            ViewTransition.scaleOut(btnStopTts, 150)
         }
     }
 
@@ -325,13 +334,22 @@ class MainActivity : AppCompatActivity(),
                     }
                     vibrate(50)
                     tvVoiceHint.text = getString(R.string.ui_release_to_stop)
-                    voiceRipple.visibility = View.VISIBLE
+                    // 动画：涟漪淡入 + 呼吸脉冲
+                    ViewTransition.fadeIn(voiceRipple, 150)
+                    voicePulseAnim?.cancel()
+                    voicePulseAnim = Animations.Ambient.breathingScale(voiceRipple, 1f, 1.15f, 600)
+                    voicePulseAnim?.start()
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.TEXT_INPUT)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     tvVoiceHint.text = getString(R.string.ui_recognizing)
-                    voiceRipple.visibility = View.GONE
+                    // 动画：停止脉冲 + 涟漪淡出
+                    voicePulseAnim?.cancel()
+                    voicePulseAnim = null
+                    voiceRipple.scaleX = 1f
+                    voiceRipple.scaleY = 1f
+                    ViewTransition.fadeOut(voiceRipple, 150)
                     // 立即停止（不延迟），百度引擎用 VAD Endpoint Timeout 自行采集尾音
                     voiceInteractionManager.stopListening()
                     true
@@ -356,14 +374,23 @@ class MainActivity : AppCompatActivity(),
                     }
                     vibrate(50)
                     tvVoiceCommandHint.text = getString(R.string.ui_recognizing_active)
-                    voiceCommandRipple.visibility = View.VISIBLE
+                    // 动画：涟漪淡入 + 呼吸脉冲
+                    ViewTransition.fadeIn(voiceCommandRipple, 150)
+                    voiceCommandPulseAnim?.cancel()
+                    voiceCommandPulseAnim = Animations.Ambient.breathingScale(voiceCommandRipple, 1f, 1.15f, 600)
+                    voiceCommandPulseAnim?.start()
                     Toast.makeText(this, getString(R.string.msg_listening_start), Toast.LENGTH_SHORT).show()
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     tvVoiceCommandHint.text = getString(R.string.ui_recognizing)
-                    voiceCommandRipple.visibility = View.GONE
+                    // 动画：停止脉冲 + 涟漪淡出
+                    voiceCommandPulseAnim?.cancel()
+                    voiceCommandPulseAnim = null
+                    voiceCommandRipple.scaleX = 1f
+                    voiceCommandRipple.scaleY = 1f
+                    ViewTransition.fadeOut(voiceCommandRipple, 150)
                     voiceInteractionManager.stopListening()
                     true
                 }
@@ -422,13 +449,13 @@ class MainActivity : AppCompatActivity(),
         // Retained for bottomNav compatibility; will be fully replaced
         // when Navigation Component is integrated.
         if (index == 0) {
-            containerPages?.visibility = View.GONE
-            btnMyLocation?.visibility = View.VISIBLE
+            containerPages?.let { ViewTransition.fadeOut(it, 200) }
+            btnMyLocation?.let { ViewTransition.fadeIn(it, 200) }
         }
     }
 
     private fun hideSuggestions() {
-        cardSuggestions.visibility = View.GONE
+        ViewTransition.fadeOut(cardSuggestions, 150)
     }
 
     private fun showSuggestions(items: List<PoiItem>?) {
@@ -437,7 +464,7 @@ class MainActivity : AppCompatActivity(),
             return
         }
         suggestionAdapter.updateData(items)
-        cardSuggestions.visibility = View.VISIBLE
+        ViewTransition.slideUp(cardSuggestions, 200)
     }
 
     private fun loadHistory() {
@@ -550,7 +577,7 @@ class MainActivity : AppCompatActivity(),
 
     private fun showStopTtsButton() {
         runOnUiThread {
-            btnStopTts.visibility = View.VISIBLE
+            ViewTransition.scaleIn(btnStopTts, 250)
         }
     }
 
@@ -730,7 +757,7 @@ class MainActivity : AppCompatActivity(),
                     // TTS 播报队列自动顺序播放，无需延迟
                     val loc = currentLocation
                     if (loc != null) {
-                        layoutNavInfo.visibility = View.VISIBLE
+                        ViewTransition.slideUp(layoutNavInfo, 250)
                         navigationManager.planRoute(loc, selectedDestLatLng!!, selectedDestName)
                     } else {
                         locateMe()
@@ -793,7 +820,7 @@ class MainActivity : AppCompatActivity(),
             Toast.makeText(this, getString(R.string.msg_getting_location_wait), Toast.LENGTH_SHORT).show()
             return
         }
-        layoutNavInfo.visibility = View.VISIBLE
+        ViewTransition.slideUp(layoutNavInfo, 250)
         saveVoiceRecord(selectedDestName)
         navigationManager.planRoute(currentLocation!!, selectedDestLatLng!!, selectedDestName)
     }
@@ -878,7 +905,7 @@ class MainActivity : AppCompatActivity(),
     private fun clearRouteDisplay() {
         routePolyline?.remove()
         routePolyline = null
-        layoutNavInfo.visibility = View.GONE
+        ViewTransition.slideDown(layoutNavInfo, 200)
         clearMarkers()
     }
 
@@ -1072,12 +1099,12 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun showRingMenu(centerX: Float, centerY: Float) {
-        ringMenuContainer.visibility = View.VISIBLE
+        ViewTransition.scaleInFrom(ringMenuContainer, centerX, centerY, 350)
         ringMenuView?.invalidate()
     }
 
     private fun hideRingMenu() {
-        ringMenuContainer.visibility = View.GONE
+        ViewTransition.scaleOut(ringMenuContainer, 200)
     }
 
     // ==================== GestureVoiceLauncher.GestureCallback ====================
@@ -1164,7 +1191,7 @@ class MainActivity : AppCompatActivity(),
 
     override fun onNavigationError(error: String) {
         Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
-        layoutNavInfo.visibility = View.GONE
+        ViewTransition.fadeOut(layoutNavInfo, 200)
     }
 
     private fun formatDistance(meters: Float): String {
@@ -1197,6 +1224,10 @@ class MainActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         GestureVoiceLauncher.detach()
+        voicePulseAnim?.cancel()
+        voicePulseAnim = null
+        voiceCommandPulseAnim?.cancel()
+        voiceCommandPulseAnim = null
         super.onDestroy()
         baiduTts?.destroy()
         baiduTts = null
