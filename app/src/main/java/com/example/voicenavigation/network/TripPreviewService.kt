@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit
 /**
  * 行前预览服务：向后端发送用户当前定位和目的地，获取行前预览信息。
  */
-class TripPreviewService @JvmOverloads constructor(
-    baseUrl: String = DEFAULT_BASE_URL
+class TripPreviewService(
+    var baseUrl: String = DEFAULT_BASE_URL
 ) {
 
     companion object {
@@ -32,8 +32,6 @@ class TripPreviewService @JvmOverloads constructor(
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
     private val mainHandler = Handler(Looper.getMainLooper())
-    var baseUrl: String = baseUrl
-        set(value) { field = value }
 
     fun sendPreviewRequest(
         originLat: Double, originLng: Double,

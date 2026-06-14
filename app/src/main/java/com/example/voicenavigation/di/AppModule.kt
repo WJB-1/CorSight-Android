@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.room.Room
 import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.data.VoiceRecordDao
+import com.example.voicenavigation.network.TripPreviewService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -44,5 +45,11 @@ object AppModule {
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTripPreviewService(): TripPreviewService {
+        return TripPreviewService()
     }
 }
