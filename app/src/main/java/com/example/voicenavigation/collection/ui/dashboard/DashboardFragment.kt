@@ -7,8 +7,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -31,7 +31,12 @@ import kotlinx.coroutines.launch
 /**
  * 后台管理 Fragment。
  *
- * 功能：查看采集结果（缩略图预览）、补拍（含定位锁）、上传管理（进度条+单图重传）。
+ * 功能：
+ * - 查看采样任务列表 + 缩略图网格
+ * - 多选模式：勾选照片后批量串行上传（适合弱网）
+ * - 单张预览：全屏可滑动
+ * - 单张重传 / 补拍替换
+ * - 全部上传（低频操作）
  */
 @AndroidEntryPoint
 class DashboardFragment : Fragment() {
@@ -40,8 +45,14 @@ class DashboardFragment : Fragment() {
 
     private lateinit var rvTasks: RecyclerView
     private lateinit var tvEmpty: TextView
+    private lateinit var btnSelectMode: Button
+    private lateinit var btnUploadSelected: Button
     private lateinit var btnUploadAll: Button
     private lateinit var btnClearDone: Button
+
+    // 多选模式
+    private var isSelectionMode = false
+    private val selectedPhotoKeys = mutableSetOf<String>() // 格式: "taskId::photoId"
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return inflater.inflate(R.layout.fragment_dashboard, container, false)
@@ -52,14 +63,23 @@ class DashboardFragment : Fragment() {
 
         rvTasks = view.findViewById(R.id.rvTasks)
         tvEmpty = view.findViewById(R.id.tvEmpty)
+        btnSelectMode = view.findViewById(R.id.btnSelectMode)
+        btnUploadSelected = view.findViewById(R.id.btnUploadSelected)
         btnUploadAll = view.findViewById(R.id.btnUploadAll)
         btnClearDone = view.findViewById(R.id.btnClearDone)
 
         rvTasks.layoutManager = LinearLayoutManager(requireContext())
 
+        btnSelectMode.setOnClickListener { toggleSelectionMode() }
+        btnUploadSelected.setOnClickListener { uploadSelected() }
+
         btnUploadAll.setOnClickListener {
-            Toast.makeText(requireContext(), "开始上传所有待上传任务...", Toast.LENGTH_SHORT).show()
-            viewModel.uploadAll()
+            AlertDialog.Builder(requireContext())
+                .setTitle("全部上传")
+                .setMessage("确定上传所有待上传的任务？")
+                .setPositiveButton("确定") { _, _ -> viewModel.uploadAll() }
+                .setNegativeButton("取消", null)
+                .show()
         }
 
         btnClearDone.setOnClickListener {
@@ -78,6 +98,32 @@ class DashboardFragment : Fragment() {
                 rvTasks.adapter = TaskAdapter(tasks)
             }
         }
+    }
+
+    // ===== 多选模式 =====
+
+    private fun toggleSelectionMode() {
+        isSelectionMode = !isSelectionMode
+        selectedPhotoKeys.clear()
+        btnSelectMode.text = if (isSelectionMode) "取消" else "选择"
+        btnUploadSelected.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
+        btnUploadAll.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
+        // 刷新
+        (rvTasks.adapter as? TaskAdapter)?.notifyDataSetChanged()
+    }
+
+    private fun uploadSelected() {
+        if (selectedPhotoKeys.isEmpty()) {
+            Toast.makeText(requireContext(), "请先选择照片", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val pairs = selectedPhotoKeys.map { key ->
+            val (taskId, photoId) = key.split("::")
+            taskId to photoId
+        }
+        viewModel.uploadSelectedPhotos(pairs)
+        toggleSelectionMode()
+        Toast.makeText(requireContext(), "开始串行上传 ${pairs.size} 张照片", Toast.LENGTH_SHORT).show()
     }
 
     // ===== Task 适配器 =====
@@ -107,7 +153,6 @@ class DashboardFragment : Fragment() {
             holder.tvMode.text = "[${task.mode}]"
             holder.tvCoords.text = "${String.format("%.6f", task.latitude)}, ${String.format("%.6f", task.longitude)}"
 
-            // 状态颜色
             val (statusText, statusColor) = when (task.status) {
                 TaskStatus.PENDING -> "待上传" to Color.GRAY
                 TaskStatus.UPLOADING -> "上传中" to Color.BLUE
@@ -117,9 +162,10 @@ class DashboardFragment : Fragment() {
             holder.tvStatus.text = statusText
             holder.tvStatus.setTextColor(statusColor)
 
-            // 照片网格
-            holder.rvPhotos.layoutManager = GridLayoutManager(requireContext(), 4)
+            // 照片网格（96dp × 96dp，3 列）
+            holder.rvPhotos.layoutManager = GridLayoutManager(requireContext(), 3)
             holder.rvPhotos.adapter = PhotoAdapter(task, task.photos)
+            holder.rvPhotos.isNestedScrollingEnabled = false
 
             holder.btnDeleteTask.setOnClickListener {
                 AlertDialog.Builder(requireContext())
@@ -145,6 +191,8 @@ class DashboardFragment : Fragment() {
             val ivThumb: ImageView = root.findViewById(R.id.ivThumbnail)
             val tvLabel: TextView = root.findViewById(R.id.tvLabel)
             val tvBadge: TextView = root.findViewById(R.id.tvStatusBadge)
+            val cbSelect: CheckBox = root.findViewById(R.id.cbSelect)
+            val selectedOverlay: View = root.findViewById(R.id.selectedOverlay)
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
@@ -155,6 +203,7 @@ class DashboardFragment : Fragment() {
 
         override fun onBindViewHolder(holder: VH, position: Int) {
             val photo = photos[position]
+            val photoKey = "${task.pointId}::${photo.id}"
 
             // 缩略图
             try {
@@ -164,10 +213,8 @@ class DashboardFragment : Fragment() {
                 holder.ivThumb.setImageResource(android.R.drawable.ic_menu_gallery)
             }
 
-            // 标签：方向或场景类型
             holder.tvLabel.text = photo.direction ?: photo.label
 
-            // 上传状态角标
             val (badge, badgeColor) = when (photo.uploadStatus) {
                 UploadStatus.PENDING -> "⏳" to Color.GRAY
                 UploadStatus.UPLOADING -> "↑" to Color.BLUE
@@ -177,32 +224,52 @@ class DashboardFragment : Fragment() {
             holder.tvBadge.text = badge
             holder.tvBadge.setTextColor(badgeColor)
 
-            // 点击：预览 / 补拍 / 重传
-            holder.root.setOnClickListener { showPhotoActions(task, photo) }
+            // 多选模式
+            if (isSelectionMode) {
+                holder.cbSelect.visibility = View.VISIBLE
+                holder.cbSelect.setOnCheckedChangeListener(null) // 先清掉再设，防复用污染
+                holder.cbSelect.isChecked = selectedPhotoKeys.contains(photoKey)
+                holder.cbSelect.setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) selectedPhotoKeys.add(photoKey)
+                    else selectedPhotoKeys.remove(photoKey)
+                }
+                holder.selectedOverlay.visibility =
+                    if (selectedPhotoKeys.contains(photoKey)) View.VISIBLE else View.GONE
+                holder.root.setOnClickListener {
+                    holder.cbSelect.isChecked = !holder.cbSelect.isChecked
+                }
+            } else {
+                holder.cbSelect.visibility = View.GONE
+                holder.selectedOverlay.visibility = View.GONE
+                holder.cbSelect.setOnCheckedChangeListener(null)
+                // 非选择模式：点击弹出操作菜单
+                holder.root.setOnClickListener { showPhotoActions(task, photo) }
+            }
+
+            // 进度条（上传中时覆盖缩略图）
+            val progress = viewModel.photoProgress.value[photo.id]
+            if (photo.uploadStatus == UploadStatus.UPLOADING && progress != null) {
+                holder.tvBadge.text = "↑${progress}%"
+            }
         }
 
         override fun getItemCount() = photos.size
     }
 
-    // ===== 照片操作对话框 =====
+    // ===== 照片操作 =====
 
     private fun showPhotoActions(task: CaptureTask, photo: PhotoRecord) {
         val options = mutableListOf<String>()
         val actions = mutableListOf<() -> Unit>()
 
-        // 预览
-        options.add("预览大图")
-        actions.add { showPhotoPreview(photo) }
+        options.add("全屏预览")
+        actions.add { showFullscreenPreview(task, photo) }
 
-        // 重传（如果失败或待上传）
         if (photo.uploadStatus == UploadStatus.FAILED || photo.uploadStatus == UploadStatus.PENDING) {
-            if (task.uploadSessionId != null) {
-                options.add("重新上传")
-                actions.add { viewModel.retryPhoto(task.pointId, photo.id) }
-            }
+            options.add("上传此张")
+            actions.add { viewModel.retryPhoto(task.pointId, photo.id) }
         }
 
-        // 补拍
         options.add("补拍替换")
         actions.add { startRetake(task.pointId, photo) }
 
@@ -212,25 +279,23 @@ class DashboardFragment : Fragment() {
             .show()
     }
 
-    private fun showPhotoPreview(photo: PhotoRecord) {
-        val ctx = requireContext()
-        val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_photo_preview, null)
-        val iv = dialogView.findViewById<ImageView>(R.id.ivFullPreview)
-        try {
-            val bitmap = BitmapFactory.decodeFile(photo.filePath)
-            iv.setImageBitmap(bitmap)
-        } catch (_: Exception) {
-            iv.setImageResource(android.R.drawable.ic_menu_gallery)
+    private fun showFullscreenPreview(task: CaptureTask, clickedPhoto: PhotoRecord) {
+        val startIndex = task.photos.indexOfFirst { it.id == clickedPhoto.id }.coerceAtLeast(0)
+        val dialog = FullscreenPreviewDialog.newInstance(task.pointId, task.photos, startIndex)
+
+        dialog.onUploadPhoto = { taskId, photo ->
+            viewModel.retryPhoto(taskId, photo.id)
+            Toast.makeText(requireContext(), "开始上传 ${photo.direction ?: photo.label}", Toast.LENGTH_SHORT).show()
         }
-        AlertDialog.Builder(ctx)
-            .setTitle("${photo.direction ?: photo.label} — ${String.format("%.1f", photo.bearing)}°")
-            .setView(dialogView)
-            .setPositiveButton("关闭", null)
-            .show()
+        dialog.onDeletePhoto = { taskId, photoId ->
+            viewModel.deletePhoto(taskId, photoId)
+            dialog.dismiss()
+        }
+
+        dialog.show(parentFragmentManager, "fullscreen_preview")
     }
 
     private fun startRetake(taskId: String, originalPhoto: PhotoRecord) {
-        // 启动补拍 Fragment（覆盖 ViewPager2）
         parentFragmentManager.beginTransaction()
             .replace(R.id.viewPager, RetakeFragment.newInstance(taskId, originalPhoto.id, originalPhoto.bearing))
             .addToBackStack(null)

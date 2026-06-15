@@ -108,6 +108,44 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    /**
+     * 串行上传选中的照片（逐张，适合弱网环境）。
+     * @param selectedPhotos (taskId, photoId) 列表
+     */
+    fun uploadSelectedPhotos(selectedPhotos: List<Pair<String, String>>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isUploading.value = true
+            val service = UploadService(baseUrl, taskStorage)
+
+            for ((taskId, photoId) in selectedPhotos) {
+                val task = taskStorage.getTask(taskId) ?: continue
+                val photo = task.photos.find { it.id == photoId } ?: continue
+                if (photo.uploadStatus == UploadStatus.UPLOADED) continue
+
+                service.uploadSinglePhoto(task, photo) { pct ->
+                    _photoProgress.value = _photoProgress.value.toMutableMap().apply {
+                        put(photoId, pct)
+                    }
+                }
+                refreshTasks()
+            }
+
+            _isUploading.value = false
+        }
+    }
+
+    /**
+     * 删除单张照片。
+     */
+    fun deletePhoto(taskId: String, photoId: String) {
+        val task = taskStorage.getTask(taskId) ?: return
+        val photo = task.photos.find { it.id == photoId }
+        photo?.filePath?.let { File(it).delete() }
+        task.photos.removeAll { it.id == photoId }
+        taskStorage.saveTask(task)
+        refreshTasks()
+    }
+
     // ===== 定位锁 =====
 
     /**
