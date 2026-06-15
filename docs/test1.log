@@ -1,0 +1,182 @@
+2026-06-15 22:44:31.041 16273-16459 SystemApiWrapper        com.example.voicenavigation          W  getwifiAccess null
+2026-06-15 22:44:32.575 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638550966, downTime=638550966, phoneEventTime=1781534672570 } moveCount:0
+2026-06-15 22:44:32.578 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:32.578 16273-16273 RingMenuCoordinator     com.example.voicenavigation          D  State: IDLE -> PRESSING
+2026-06-15 22:44:32.654 16273-16544 ProfileInstaller        com.example.voicenavigation          D  Installing profile for com.example.voicenavigation
+2026-06-15 22:44:32.690 16273-16542 PowerHalMgrImpl         com.example.voicenavigation          I  perfLockAcq is supported. 
+2026-06-15 22:44:33.078 16273-16273 RingMenuCoordinator     com.example.voicenavigation          D  State: PRESSING -> RING_MENU
+2026-06-15 22:44:33.084 16273-16273 RingMenuCoordinator     com.example.voicenavigation          D  State: RING_MENU -> SELECTING
+2026-06-15 22:44:33.566 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:33.566 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Speak queued: [语音助手] queue size=1
+2026-06-15 22:44:33.566 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Processing: [语音助手], remaining=0
+2026-06-15 22:44:33.773 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=true
+2026-06-15 22:44:33.773 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Speak queued: [更多] queue size=1
+2026-06-15 22:44:33.773 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Processing: [更多], remaining=0
+2026-06-15 22:44:33.862 16273-16549 BaiduTtsManager         com.example.voicenavigation          D  TTS response code: 200, contentType: audio/mp3
+2026-06-15 22:44:33.862 16273-16549 BaiduTtsManager         com.example.voicenavigation          D  TTS audio: 10944 bytes for [语音助手]
+2026-06-15 22:44:33.867 16273-16549 MediaPlayer             com.example.voicenavigation          W  Use of stream types is deprecated for operations other than volume control
+2026-06-15 22:44:33.867 16273-16549 MediaPlayer             com.example.voicenavigation          W  See the documentation of setAudioStreamType() for what to use instead with android.media.AudioAttributes to qualify your playback use case
+2026-06-15 22:44:33.867 16273-16549 AudioSystem             com.example.voicenavigation          D  onNewService: media.audio_policy service obtained 0xb40000732d8e45e0
+2026-06-15 22:44:33.868 16273-16549 AudioSystem             com.example.voicenavigation          D  getService: checking for service media.audio_policy: 0xb40000732d8e45e0
+2026-06-15 22:44:33.872  2090-2625  HyperSentinel           system_server                        E  ->pid:16273,processName:"com.example.voicenavigation",Rss Memory Size Change 404208kb -> 516028kb
+2026-06-15 22:44:33.890 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=true
+2026-06-15 22:44:33.890 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Speak queued: [设置] queue size=1
+2026-06-15 22:44:33.890 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Processing: [设置], remaining=0
+2026-06-15 22:44:34.133 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer prepared, starting playback
+2026-06-15 22:44:34.158 16273-16563 BaiduTtsManager         com.example.voicenavigation          D  TTS response code: 200, contentType: audio/mp3
+2026-06-15 22:44:34.175 16273-16563 BaiduTtsManager         com.example.voicenavigation          D  TTS audio: 8064 bytes for [设置]
+2026-06-15 22:44:34.176 16273-16563 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:34.176 16273-16563 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:34.176 16273-16563 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:34.178 16273-16554 BaiduTtsManager         com.example.voicenavigation          D  TTS response code: 200, contentType: audio/mp3
+2026-06-15 22:44:34.180 16273-16554 BaiduTtsManager         com.example.voicenavigation          D  TTS audio: 7776 bytes for [更多]
+2026-06-15 22:44:34.180 16273-16554 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:34.180 16273-16554 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:34.180 16273-16554 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:34.180 16273-16554 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:34.182 16273-16554 MediaPlayer             com.example.voicenavigation          W  Use of stream types is deprecated for operations other than volume control
+2026-06-15 22:44:34.182 16273-16554 MediaPlayer             com.example.voicenavigation          W  See the documentation of setAudioStreamType() for what to use instead with android.media.AudioAttributes to qualify your playback use case
+2026-06-15 22:44:34.217 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer prepared, starting playback
+2026-06-15 22:44:34.313 16273-16563 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:34.318 16273-16563 MediaPlayer             com.example.voicenavigation          W  Use of stream types is deprecated for operations other than volume control
+2026-06-15 22:44:34.318 16273-16563 MediaPlayer             com.example.voicenavigation          W  See the documentation of setAudioStreamType() for what to use instead with android.media.AudioAttributes to qualify your playback use case
+2026-06-15 22:44:34.345 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer prepared, starting playback
+2026-06-15 22:44:34.454  2090-2430  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:34.454  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:34.521  2090-2625  HyperSentinel           system_server                        E  ->pid:16273,processName:"com.example.voicenavigation",Rss Memory Size Change 516028kb -> 690320kb
+2026-06-15 22:44:34.560 16273-16273 MiInputConsumer         com.example.voicenavigation          I  optimized resample latency: 2883489 ns
+2026-06-15 22:44:34.621 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=true
+2026-06-15 22:44:35.077  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.078  2090-3153  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.079  2090-3257  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.081  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.086 16273-16273 BpBinder                com.example.voicenavigation          W  PerfMonitor binderTransact: time=463ms interface=android.media.IMediaPlayer code=43
+2026-06-15 22:44:35.086 16273-16273 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:35.086 16273-16273 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:35.086 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:35.086 16273-16461 voicenavigation         com.example.voicenavigation          W  PerfMonitor async binderTransact :  time=464ms interface=android.media.IMediaPlayerClient code=1
+2026-06-15 22:44:35.100 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:35.100 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Speak queued: [数据采集] queue size=1
+2026-06-15 22:44:35.100 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Processing: [数据采集], remaining=0
+2026-06-15 22:44:35.105 16273-16273 Choreographer           com.example.voicenavigation          I  Skipped 57 frames!  The application may be doing too much work on its main thread.
+2026-06-15 22:44:35.383 16273-16658 BaiduTtsManager         com.example.voicenavigation          D  TTS response code: 200, contentType: audio/mp3
+2026-06-15 22:44:35.383 16273-16658 BaiduTtsManager         com.example.voicenavigation          D  TTS audio: 12672 bytes for [数据采集]
+2026-06-15 22:44:35.387 16273-16658 MediaPlayer             com.example.voicenavigation          W  Use of stream types is deprecated for operations other than volume control
+2026-06-15 22:44:35.387 16273-16658 MediaPlayer             com.example.voicenavigation          W  See the documentation of setAudioStreamType() for what to use instead with android.media.AudioAttributes to qualify your playback use case
+2026-06-15 22:44:35.420 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer prepared, starting playback
+2026-06-15 22:44:35.517  2090-3257  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.518  2090-3153  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.546  2090-3153  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:35.547  2090-3257  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.022 16273-16361 RenderInspector         com.example.voicenavigation          W  QueueBuffer time out on com.example.voicenavigation/com.example.voicenavigation.MainActivity, count=1, avg=10 ms, max=10 ms.
+2026-06-15 22:44:36.311 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=true
+2026-06-15 22:44:36.314  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.315  2090-3153  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.318 16273-16273 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:36.318 16273-16273 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:36.318 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:36.326 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:36.326 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Speak queued: [避障] queue size=1
+2026-06-15 22:44:36.326 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Processing: [避障], remaining=0
+2026-06-15 22:44:36.330 16273-16273 MediaPlayer             com.example.voicenavigation          W  mediaplayer went away with unhandled events
+2026-06-15 22:44:36.333 16273-16273 MediaPlayer             com.example.voicenavigation          W  mediaplayer went away with unhandled events
+2026-06-15 22:44:36.336 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer completed
+2026-06-15 22:44:36.336 16273-16273 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:36.336 16273-16273 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:36.336 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:36.345 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:36.346 16273-16273 MediaPlayer             com.example.voicenavigation          W  mediaplayer went away with unhandled events
+2026-06-15 22:44:36.610 16273-16684 BaiduTtsManager         com.example.voicenavigation          D  TTS response code: 200, contentType: audio/mp3
+2026-06-15 22:44:36.611 16273-16684 BaiduTtsManager         com.example.voicenavigation          D  TTS audio: 7776 bytes for [避障]
+2026-06-15 22:44:36.613 16273-16684 MediaPlayer             com.example.voicenavigation          W  Use of stream types is deprecated for operations other than volume control
+2026-06-15 22:44:36.613 16273-16684 MediaPlayer             com.example.voicenavigation          W  See the documentation of setAudioStreamType() for what to use instead with android.media.AudioAttributes to qualify your playback use case
+2026-06-15 22:44:36.633 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  MediaPlayer prepared, starting playback
+2026-06-15 22:44:36.702  2090-3263  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.703  2090-2430  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.857 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638555252, downTime=638550966, phoneEventTime=1781534676855 } moveCount:321
+2026-06-15 22:44:36.859 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:36.860  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.861  2090-3075  AppOps                  system_server                        E  attributionTag  not declared in manifest of com.example.voicenavigation
+2026-06-15 22:44:36.873 16273-16273 MediaPlayer             com.example.voicenavigation          V  resetDrmState:  mDrmInfo=null mDrmProvisioningThread=null mPrepareDrmInProgress=false mActiveDrmScheme=false
+2026-06-15 22:44:36.873 16273-16273 MediaPlayer             com.example.voicenavigation          V  cleanDrmObj: mDrmObj=null mDrmSessionId=null
+2026-06-15 22:44:36.873 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native called
+2026-06-15 22:44:36.882 16273-16273 MediaPlayer             com.example.voicenavigation          D  _release native finished
+2026-06-15 22:44:36.883 16273-16273 MediaPlayer             com.example.voicenavigation          W  mediaplayer went away with unhandled events
+2026-06-15 22:44:36.885 16273-16273 MediaPlayer             com.example.voicenavigation          W  mediaplayer went away with unhandled events
+2026-06-15 22:44:37.079 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:37.087 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:38.959 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638557352, downTime=638557352, phoneEventTime=1781534678955 } moveCount:0
+2026-06-15 22:44:38.960 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:41.226  2090-2625  HyperSentinel           system_server                        E  ->pid:16273,processName:"com.example.voicenavigation",Rss Memory Size Change 690320kb -> 921440kb
+2026-06-15 22:44:41.289 16273-16299 voicenavigation         com.example.voicenavigation          I  This is non sticky GC, maxfree is 33554432 minfree is 8388608
+2026-06-15 22:44:41.313 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize called
+2026-06-15 22:44:41.313 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize finished
+2026-06-15 22:44:41.314 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize called
+2026-06-15 22:44:41.314 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize finished
+2026-06-15 22:44:41.315 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize called
+2026-06-15 22:44:41.315 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize finished
+2026-06-15 22:44:41.316 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize called
+2026-06-15 22:44:41.316 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize finished
+2026-06-15 22:44:41.317 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize called
+2026-06-15 22:44:41.317 16273-16302 MediaPlayer             com.example.voicenavigation          D  finalize() native_finalize finished
+2026-06-15 22:44:43.534 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638561927, downTime=638557352, phoneEventTime=1781534683531 } moveCount:12
+2026-06-15 22:44:43.539 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:43.748 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:43.756 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:44.387 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638562781, downTime=638562781, phoneEventTime=1781534684385 } moveCount:0
+2026-06-15 22:44:44.388 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:46.024 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638564419, downTime=638562781, phoneEventTime=1781534686022 } moveCount:12
+2026-06-15 22:44:46.027 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:46.232 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:46.239 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:47.358 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638565748, downTime=638565748, phoneEventTime=1781534687352 } moveCount:0
+2026-06-15 22:44:47.358 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:49.734  2090-2625  HyperSentinel           system_server                        E  ->pid:16273,processName:"com.example.voicenavigation",Rss Memory Size Change 921440kb -> 448616kb
+2026-06-15 22:44:50.214 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638568606, downTime=638565748, phoneEventTime=1781534690210 } moveCount:106
+2026-06-15 22:44:50.217 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:50.426 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:51.366 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638569759, downTime=638569759, phoneEventTime=1781534691363 } moveCount:0
+2026-06-15 22:44:51.367 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:53.180 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638571574, downTime=638569759, phoneEventTime=1781534693177 } moveCount:8
+2026-06-15 22:44:53.183 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:53.392 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:53.941 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638572334, downTime=638572334, phoneEventTime=1781534693937 } moveCount:0
+2026-06-15 22:44:53.942 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:55.275 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638573668, downTime=638572334, phoneEventTime=1781534695272 } moveCount:31
+2026-06-15 22:44:55.276 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:55.475 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:55.484 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:55.690 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=638574084, downTime=638574084, phoneEventTime=1781534695687 } moveCount:0
+2026-06-15 22:44:55.691 16273-16273 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  java.lang.NoSuchMethodException: android.view.accessibility.AccessibilityManager.isHighTextContrastEnabled []
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at java.lang.Class.getMethod(Class.java:2940)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at java.lang.Class.getDeclaredMethod(Class.java:2919)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.ReflectUtil.invoke(ReflectUtil.java:88)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.loadGlyphRaster(GlyphLoader.java:117)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.getGlyphRaster(GlyphLoader.java:338)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.nativeRenderAMap(Native Method)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.renderAMap(GLMapEngine.java:1624)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.drawFrame(AMapDelegateImp.java:2557)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.drawSingleFrame(GLMapRender.java:164)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.onDrawFrame(GLMapRender.java:179)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1610)
+2026-06-15 22:44:56.464 16273-16428 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1301)
+2026-06-15 22:44:56.464 16273-16428 HighText                com.example.voicenavigation          E  highText exception:java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  java.lang.NoSuchMethodException: android.view.accessibility.AccessibilityManager.isHighTextContrastEnabled []
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at java.lang.Class.getMethod(Class.java:2940)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at java.lang.Class.getDeclaredMethod(Class.java:2919)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.ReflectUtil.invoke(ReflectUtil.java:88)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.loadGlyphRaster(GlyphLoader.java:117)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.getGlyphRaster(GlyphLoader.java:338)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.nativeRenderAMap(Native Method)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.renderAMap(GLMapEngine.java:1624)
+2026-06-15 22:44:56.467 16273-16428 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.drawFrame(AMapDelegateImp.java:2557)
+2026-06-15 22:44:56.468 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.drawSingleFrame(GLMapRender.java:164)
+2026-06-15 22:44:56.468 16273-16428 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.onDrawFrame(GLMapRender.java:179)
+2026-06-15 22:44:56.468 16273-16428 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1610)
+2026-06-15 22:44:56.468 16273-16428 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1301)
+2026-06-15 22:44:56.468 16273-16428 HighText                com.example.voicenavigation          E  highText exception:java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+2026-06-15 22:44:56.832 16273-16273 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.MainActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=638575226, downTime=638574084, phoneEventTime=1781534696830 } moveCount:24
+2026-06-15 22:44:56.835 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:57.045 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false
+2026-06-15 22:44:57.052 16273-16273 BaiduTtsManager         com.example.voicenavigation          D  Flushing TTS queue: size=0 synthesizing=false

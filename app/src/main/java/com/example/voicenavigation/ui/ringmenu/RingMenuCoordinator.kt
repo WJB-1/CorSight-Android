@@ -410,9 +410,11 @@ class RingMenuCoordinator(
         // Nothing selected -- center tap
         val activeParent = ringMenuView.getActiveParentIndex()
         if (activeParent >= 0) {
-            // Sub-menu is active, center acts as "back"
+            // Sub-menu is active, center acts as "back" to parent menu
             emit(InteractionEvent.SubMenuBack)
-            // Stay in SELECTING state (view handles the back action)
+            // Reset sub-menu state in the view, stay in SELECTING for parent
+            ringMenuView.cancelSelection()
+            ringMenuView.setMenuItems(ringMenuView.getItems())  // re-render without sub-menu
         } else {
             emit(InteractionEvent.CenterTapped)
             animateDismiss {
@@ -455,6 +457,7 @@ class RingMenuCoordinator(
 
         val dismissAnim = RingMenuAnimations.dismiss(ringMenuView, 200L) {
             ringMenuContainer.visibility = View.GONE
+            resetToIdle()  // 必须重置状态，否则后续长按不响应
             onComplete?.invoke()
         }
         dismissAnimator = dismissAnim
@@ -577,6 +580,7 @@ class RingMenuCoordinator(
         cancelLongPress()
         cancelAllAnimations()
         lastHighlightedItem = null
+        ringMenuView.resetCenter()
         state = State.IDLE
     }
 }

@@ -42,6 +42,8 @@ class RingMenuView @JvmOverloads constructor(
     private var activeParentIndex = -1
     private var centerX = 0f
     private var centerY = 0f
+    /** 是否由外部指定了中心点（setCenter），onSizeChanged 不再覆盖 */
+    private var centerOverridden = false
 
     // ==================== 可动画化属性 ====================
     var menuScale: Float = 1f
@@ -102,6 +104,14 @@ class RingMenuView @JvmOverloads constructor(
     }
 
     /**
+     * 重置中心点为屏幕中心。菜单关闭时调用。
+     */
+    fun resetCenter() {
+        centerOverridden = false
+        // 下次 onSizeChanged 时会重新计算为屏幕中心
+    }
+
+    /**
      * 设置菜单绘制中心点。用于菜单跟随触摸点显示。
      *
      * 调用后所有扇形绘制和角度计算都以此为中心。
@@ -110,6 +120,7 @@ class RingMenuView @JvmOverloads constructor(
     fun setCenter(x: Float, y: Float) {
         centerX = x
         centerY = y
+        centerOverridden = true
     }
 
     /**
@@ -226,7 +237,9 @@ class RingMenuView @JvmOverloads constructor(
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        centerX = w / 2f; centerY = h / 2f
+        if (!centerOverridden) {
+            centerX = w / 2f; centerY = h / 2f
+        }
         val minDim = minOf(w, h)
         innerRadius = minDim * 0.08f
         ringWidth = minDim * 0.16f
