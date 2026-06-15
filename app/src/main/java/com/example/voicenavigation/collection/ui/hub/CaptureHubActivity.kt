@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
 import com.example.voicenavigation.R
+import com.example.voicenavigation.animation.PageIndicatorAnimations
 import com.example.voicenavigation.core.compass.CompassProvider
 import com.example.voicenavigation.core.location.LocationProvider
 import dagger.hilt.android.AndroidEntryPoint
@@ -125,40 +126,20 @@ class CaptureHubActivity : AppCompatActivity() {
     }
 
     private fun updateDots(position: Int) {
-        dotViews.forEachIndexed { index, dot ->
-            val isSelected = index == position
-            dot.alpha = if (isSelected) 1f else 0.35f
-            dot.animate()
-                .scaleX(if (isSelected) 1.3f else 1f)
-                .scaleY(if (isSelected) 1.3f else 1f)
-                .setDuration(150)
-                .start()
-        }
+        PageIndicatorAnimations.onPageChanged(dotViews, position)
     }
 
     private fun onDotClicked(position: Int) {
+        // 圆点点击心跳反馈
+        dotViews.getOrNull(position)?.let { PageIndicatorAnimations.onDotClicked(it) }
         if (position != currentPage) {
             viewPager.setCurrentItem(position, true)
         }
-        // 显示页面名称（动画组负责显示/隐藏动画，这里只做基础触发）
-        showPageLabel(CapturePagerAdapter.PAGE_TITLES.getOrElse(position) { "" })
-    }
-
-    private fun showPageLabel(text: String) {
-        tvPageLabel.text = text
-        tvPageLabel.visibility = View.VISIBLE
-        // 基础淡出：1 秒后隐藏。动画组替换时删掉此段即可。
-        tvPageLabel.animate()
-            .alpha(1f)
-            .setDuration(0)
-            .start()
-        tvPageLabel.postDelayed({
-            tvPageLabel.animate()
-                .alpha(0f)
-                .setDuration(300)
-                .withEndAction { tvPageLabel.visibility = View.GONE }
-                .start()
-        }, 1000)
+        // 页面名称弹出动画（放大弹入 → 停留 → 淡出）
+        PageIndicatorAnimations.showLabel(
+            tvPageLabel,
+            CapturePagerAdapter.PAGE_TITLES.getOrElse(position) { "" }
+        )
     }
 
     // ===== 权限 =====

@@ -1,5 +1,6 @@
 package com.example.voicenavigation
 
+import androidx.activity.enableEdgeToEdge
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -180,6 +181,12 @@ class MainActivity : AppCompatActivity(),
     private val appConfigProvider by lazy { AppConfigProvider(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Edge-to-Edge：内容延伸到状态栏/导航栏下方
+        enableEdgeToEdge()
+        // 状态栏图标设为白色（深色背景适配）
+        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = false
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -1103,21 +1110,43 @@ class MainActivity : AppCompatActivity(),
      */
     private fun handleInteractionEvent(event: InteractionEvent) {
         when (event) {
+            is InteractionEvent.ShowMenu -> {
+                // 菜单弹出：锁定地图手势
+                lockMapGestures(false)
+            }
             is InteractionEvent.ItemExecuted -> {
+                baiduTts.speak("正在${event.item.label}")
                 commandRouter.execute(event.commandId)
+                lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.LaunchVoiceAssistant -> {
+                lockMapGestures(true)  // 解锁地图
                 voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                 Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
             }
+            is InteractionEvent.ItemHighlighted -> {
+                baiduTts.flushQueue()
+                baiduTts.speak(event.item.label)
+            }
             is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
-                // 菜单已由 Coordinator 关闭
+                baiduTts.flushQueue()
+                lockMapGestures(true)  // 解锁地图
             }
-            is InteractionEvent.Cancelled -> {
-                // 菜单已由 Coordinator 关闭
+            is InteractionEvent.Cancelled, is InteractionEvent.DismissMenu -> {
+                baiduTts.flushQueue()
+                lockMapGestures(true)  // 解锁地图
             }
-            else -> { /* ShowMenu, ItemHighlighted, HighlightCleared — 无需处理 */ }
+            else -> { /* HighlightCleared — 无需处理 */ }
         }
+    }
+
+    /**
+     * 锁定/解锁地图手势。菜单弹出时锁定，关闭时解锁。
+     */
+    private fun lockMapGestures(enable: Boolean) {
+        mMap?.uiSettings?.isScrollGesturesEnabled = enable
+        mMap?.uiSettings?.isZoomGesturesEnabled = enable
+        mMap?.uiSettings?.isRotateGesturesEnabled = enable
     }
 
     // showRingMenu / hideRingMenu 现在由 RingMenuCoordinator 内部管理
@@ -1299,6 +1328,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun onDestroy() {
+        lockMapGestures(true)  // 确保地图手势恢复
         ringMenuCoordinator?.destroy()
         ringMenuCoordinator = null
         voicePulseAnim?.cancel()

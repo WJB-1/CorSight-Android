@@ -360,6 +360,8 @@ class RingMenuCoordinator(
     // ==================== Selection Confirmation ====================
 
     private fun confirmCurrentSelection() {
+        // 确认振动
+        vibrateShort(50)
         val selectedIndex = ringMenuView.getSelectedIndex()
         val selectedChildIndex = ringMenuView.getSelectedChildIndex()
         val activeParentIndex = ringMenuView.getActiveParentIndex()
@@ -542,6 +544,8 @@ class RingMenuCoordinator(
         if (currentItem != null && currentItem != lastHighlightedItem) {
             lastHighlightedItem = currentItem
             animateSelectionExpand()
+            // 短振动反馈：滑到新扇区
+            vibrateShort(20)
             emit(InteractionEvent.ItemHighlighted(currentItem))
         } else if (currentItem == null && lastHighlightedItem != null) {
             lastHighlightedItem = null
@@ -553,6 +557,20 @@ class RingMenuCoordinator(
 
     private fun emit(event: InteractionEvent) {
         _events.tryEmit(event)
+    }
+
+    private fun vibrateShort(durationMs: Long) {
+        if (!hapticEnabled) return
+        vibrator?.let { v ->
+            if (v.hasVibrator()) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    v.vibrate(VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    v.vibrate(durationMs)
+                }
+            }
+        }
     }
 
     private fun resetToIdle() {

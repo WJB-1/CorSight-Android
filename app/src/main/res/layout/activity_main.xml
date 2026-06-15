@@ -16,19 +16,24 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- ═══ 2. 左上角水印 ═══ -->
+    <!-- ═══ 2. 左下角品牌水印（极淡 + 阴影） ═══ -->
     <TextView
+        android:id="@+id/tv_brand"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="60dp"
         android:text="瞳心引航"
-        android:textSize="16sp"
+        android:textSize="13sp"
         android:textStyle="bold"
-        android:textColor="#60FFFFFF"
+        android:textColor="#15FFFFFF"
+        android:shadowColor="#000000"
+        android:shadowDx="1"
+        android:shadowDy="1"
+        android:shadowRadius="3"
         android:elevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
     <!-- ═══ 3. 导航信息浮层（地图上方，仅导航时显示） ═══ -->
     <LinearLayout
