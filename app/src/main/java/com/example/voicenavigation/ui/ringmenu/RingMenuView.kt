@@ -11,20 +11,13 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.example.voicenavigation.R
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.sin
-import kotlin.math.sqrt
+import com.example.voicenavigation.util.RadialGeometry
 
 /**
  * 环形菜单自定义 View。
  *
- * 职责：绘制扇形菜单 + 处理触摸选择 + 执行命令。
- * 角度坐标系：12 点钟方向 = 0°，顺时针递增（与绘制对齐）。
- *
- * 外部可通过 [updateFinger] / [confirmSelection] / [cancelSelection]
- * 驱动选中状态（供 Coordinator 模式使用）。
+ * 所有角度计算委托给 [RadialGeometry] 工具类，
+ * 绘制和触摸共用同一套坐标系（Canvas 标准：0° 在 3 点钟，顺时针）。
  */
 class RingMenuView @JvmOverloads constructor(
     context: Context,
@@ -32,15 +25,15 @@ class RingMenuView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // ==================== 尺寸参数（onSizeChanged 中按屏幕比例计算） ====================
+    // ==================== 尺寸参数 ====================
     private var innerRadius = 80f
     private var ringWidth = 140f
     private var subRingWidth = 120f
     private var gapAngle = 4f
     private var textSize = 26f
     private var centerTextSize = 22f
-    private var gap = 10f        // 内环与主环间距（按屏幕比例）
-    private var subGap = 10f     // 主环与子环间距
+    private var gap = 10f
+    private var subGap = 10f
 
     // ==================== 状态 ====================
     private var items: List<RingMenuItem> = emptyList()
@@ -64,10 +57,7 @@ class RingMenuView @JvmOverloads constructor(
     var glowIntensity: Float = 0f
         set(value) { field = value; invalidate() }
 
-    /**
-     * 兼容属性：旧动画层通过 glowAlpha (Int 0-255) 驱动，
-     * 内部映射到 glowIntensity (Float 0-1)。
-     */
+    /** 兼容旧动画层通过 Int alpha 驱动 */
     var glowAlpha: Int
         get() = (glowIntensity * 255).toInt()
         set(value) { glowIntensity = value.coerceIn(0, 255) / 255f }
@@ -111,21 +101,14 @@ class RingMenuView @JvmOverloads constructor(
         invalidate()
     }
 
-    // ==================== 外部驱动 API（供 Coordinator 使用） ====================
+    // ==================== 外部驱动 API ====================
 
     /**
-     * 外部手指位置更新。由 Coordinator 或 onTouchEvent 调用。
-     * 统一使用 12 点钟为 0° 的坐标系。
+     * 外部手指位置更新。
+     * 角度计算全部委托 [RadialGeometry]，保证与绘制完全一致。
      */
     fun updateFinger(x: Float, y: Float) {
-        val dx = x - centerX
-        val dy = y - centerY
-        val distance = sqrt(dx * dx + dy * dy)
-
-        // ── 统一角度计算：12 点钟 = 0°，顺时针 ──
-        // atan2 的 0° 在 3 点钟方向，需要 +90° 对齐到 12 点钟
-        val rawAngle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
-        val angle = normalizeAngle(rawAngle + 90f)
+        val distance = RadialGeometry.distance(x, y, centerX, centerY)
 
         // 中心区域：取消高亮
         if (distance < innerRadius) {
@@ -140,17 +123,14 @@ class RingMenuView @JvmOverloads constructor(
         if (activeParentIndex >= 0 && items.getOrNull(activeParentIndex)?.hasChildren == true) {
             val subInner = innerRadius + ringWidth + subGap
             val subOuter = subInner + subRingWidth
-            if (distance in subInner..subOuter) {
+            if (RadialGeometry.isInRing(x, y, centerX, centerY, subInner, subOuter)) {
                 val children = items[activeParentIndex].children ?: emptyList()
                 if (children.isNotEmpty()) {
-                    // ── B6 修复：子菜单以父扇区中心为基准展开 ──
-                    val parentAnglePerItem = 360f / items.size
-                    val parentCenter = activeParentIndex * parentAnglePerItem + parentAnglePerItem / 2
-                    val childAnglePerItem = 360f / children.size
-                    val childTotalAngle = childAnglePerItem * children.size
-                    val childStartAngle = normalizeAngle(parentCenter - childTotalAngle / 2)
-                    val relativeAngle = normalizeAngle(angle - childStartAngle)
-                    val idx = ((relativeAngle + childAnglePerItem / 2) / childAnglePerItem).toInt() % children.size
+                    val idx = RadialGeometry.touchToChildIndex(
+                        x, y, centerX, centerY,
+                        activeParentIndex, items.size,
+                        children.size
+                    )
                     if (idx != selectedChildIndex) {
                         selectedChildIndex = idx
                         selectedIndex = -1
@@ -165,9 +145,8 @@ class RingMenuView @JvmOverloads constructor(
         // 主菜单环
         val mainInner = innerRadius + gap
         val mainOuter = mainInner + ringWidth
-        if (distance in mainInner..mainOuter) {
-            val anglePerItem = 360f / items.size
-            val idx = ((angle + anglePerItem / 2) / anglePerItem).toInt() % items.size
+        if (RadialGeometry.isInRing(x, y, centerX, centerY, mainInner, mainOuter)) {
+            val idx = RadialGeometry.touchToSectorIndex(x, y, centerX, centerY, items.size)
             if (idx != selectedIndex) {
                 selectedIndex = idx
                 selectedChildIndex = -1
@@ -178,24 +157,11 @@ class RingMenuView @JvmOverloads constructor(
         }
     }
 
-    /**
-     * 外部确认选择（手指抬起）。供 Coordinator 调用。
-     */
-    fun confirmSelection() {
-        handleUp()
-    }
+    fun confirmSelection() { handleUp() }
+    fun cancelSelection() { resetSelection(); invalidate() }
 
-    /**
-     * 外部取消选择。供 Coordinator 调用。
-     */
-    fun cancelSelection() {
-        resetSelection()
-        invalidate()
-    }
+    // ==================== 触摸处理 ====================
 
-    // ==================== 触摸处理（自身也处理，Coordinator 模式下可禁用） ====================
-
-    /** 是否由自身处理触摸事件。设为 false 时由 Coordinator 驱动。 */
     var selfTouchEnabled = true
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -205,14 +171,8 @@ class RingMenuView @JvmOverloads constructor(
                 updateFinger(event.x, event.y)
                 return true
             }
-            MotionEvent.ACTION_UP -> {
-                confirmSelection()
-                return true
-            }
-            MotionEvent.ACTION_CANCEL -> {
-                cancelSelection()
-                return true
-            }
+            MotionEvent.ACTION_UP -> { confirmSelection(); return true }
+            MotionEvent.ACTION_CANCEL -> { cancelSelection(); return true }
         }
         return super.onTouchEvent(event)
     }
@@ -220,60 +180,41 @@ class RingMenuView @JvmOverloads constructor(
     // ==================== 选中执行 ====================
 
     private fun handleUp() {
-        // 二级菜单执行
         if (activeParentIndex >= 0 && selectedChildIndex >= 0) {
             val parent = items[activeParentIndex]
             parent.children?.getOrNull(selectedChildIndex)?.let { onItemExecuted?.invoke(it) }
-            resetSelection()
-            invalidate()
+            resetSelection(); invalidate()
             return
         }
-
-        // 主菜单执行
         if (selectedIndex >= 0) {
             val item = items[selectedIndex]
             if (item.hasChildren) {
-                // 有子菜单：展开，不执行
                 activeParentIndex = selectedIndex
                 invalidate()
             } else {
                 onItemExecuted?.invoke(item)
-                resetSelection()
-                invalidate()
+                resetSelection(); invalidate()
             }
             return
         }
-
-        // 无选中：点击中心 → 关闭
         onCenterClicked?.invoke()
     }
 
     private fun resetSelection() {
-        selectedIndex = -1
-        selectedChildIndex = -1
-        activeParentIndex = -1
-    }
-
-    private fun normalizeAngle(angle: Float): Float {
-        var a = angle
-        while (a < 0) a += 360f
-        while (a >= 360f) a -= 360f
-        return a
+        selectedIndex = -1; selectedChildIndex = -1; activeParentIndex = -1
     }
 
     // ==================== 绘制 ====================
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        centerX = w / 2f
-        centerY = h / 2f
-        val minDim = min(w, h)
+        centerX = w / 2f; centerY = h / 2f
+        val minDim = minOf(w, h)
         innerRadius = minDim * 0.08f
         ringWidth = minDim * 0.16f
         subRingWidth = minDim * 0.13f
         textSize = minDim * 0.028f
         centerTextSize = minDim * 0.024f
-        // ── B8 修复：间距按屏幕比例 ──
         gap = minDim * 0.012f
         subGap = minDim * 0.012f
     }
@@ -281,9 +222,9 @@ class RingMenuView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (items.isEmpty()) return
-
         val scale = menuScale
         if (scale <= 0.01f) return
+
         canvas.save()
         canvas.scale(scale, scale, centerX, centerY)
 
@@ -291,59 +232,55 @@ class RingMenuView @JvmOverloads constructor(
         paintOverlay.alpha = overlayAlpha
         canvas.drawPaint(paintOverlay)
 
-        val anglePerItem = 360f / items.size
-
-        // 绘制主菜单环
+        // ── 主菜单环（绘制角度由 RadialGeometry 计算） ──
         items.forEachIndexed { index, item ->
-            val startAngle = index * anglePerItem + gapAngle / 2
-            val sweepAngle = anglePerItem - gapAngle
+            val startAngle = RadialGeometry.sectorStartAngle(index, items.size) + gapAngle / 2
+            val sweepAngle = RadialGeometry.sectorSweepAngle(items.size, gapAngle)
             val isSelected = (index == selectedIndex && activeParentIndex != index)
             val expansion = if (isSelected) selectionExpansion else 0f
             drawSector(canvas, startAngle, sweepAngle,
                 innerRadius + gap, innerRadius + gap + ringWidth + expansion,
                 item.color, isSelected)
-            drawLabel(canvas, item.label, startAngle + sweepAngle / 2,
-                innerRadius + gap + (ringWidth + expansion) / 2)
+            val centerAngle = RadialGeometry.sectorCenterAngle(index, items.size, gapAngle)
+            val (labelX, labelY) = RadialGeometry.polarToCartesian(
+                centerX, centerY, innerRadius + gap + (ringWidth + expansion) / 2, centerAngle)
+            drawLabel(canvas, item.label, labelX, labelY)
         }
 
-        // 绘制二级菜单环
+        // ── 二级菜单环（绘制角度由 RadialGeometry 计算） ──
         if (activeParentIndex >= 0 && items[activeParentIndex].hasChildren) {
             val children = items[activeParentIndex].children!!
-            val childAnglePerItem = 360f / children.size
-            // ── B6 修复：子菜单以父扇区中心为基准 ──
-            val parentCenter = activeParentIndex * anglePerItem + anglePerItem / 2
-            val childTotalAngle = childAnglePerItem * children.size
-            val childStartAngle = parentCenter - childTotalAngle / 2
-
             val subScale = subMenuScale
             if (subScale > 0.01f) {
                 canvas.save()
                 canvas.scale(subScale, subScale, centerX, centerY)
                 children.forEachIndexed { cIndex, child ->
-                    val startAngle = childStartAngle + cIndex * childAnglePerItem + gapAngle / 2
-                    val sweepAngle = childAnglePerItem - gapAngle
+                    val startAngle = RadialGeometry.childSectorStartAngle(
+                        cIndex, activeParentIndex, items.size, children.size, gapAngle)
+                    val sweepAngle = RadialGeometry.sectorSweepAngle(children.size, gapAngle)
                     val isSelected = (cIndex == selectedChildIndex)
                     val expansion = if (isSelected) selectionExpansion else 0f
                     val subInner = innerRadius + ringWidth + subGap
                     drawSector(canvas, startAngle, sweepAngle,
                         subInner, subInner + subRingWidth + expansion,
                         child.color, isSelected)
-                    drawLabel(canvas, child.label, startAngle + sweepAngle / 2,
-                        subInner + (subRingWidth + expansion) / 2)
+                    val centerAngle = RadialGeometry.childSectorCenterAngle(
+                        cIndex, activeParentIndex, items.size, children.size, gapAngle)
+                    val (labelX, labelY) = RadialGeometry.polarToCartesian(
+                        centerX, centerY, subInner + (subRingWidth + expansion) / 2, centerAngle)
+                    drawLabel(canvas, child.label, labelX, labelY)
                 }
                 canvas.restore()
             }
         }
 
         // 中心圆
-        val cScale = centerButtonScale
         canvas.save()
-        canvas.scale(cScale, cScale, centerX, centerY)
+        canvas.scale(centerButtonScale, centerButtonScale, centerX, centerY)
         canvas.drawCircle(centerX, centerY, innerRadius, paintCenter)
         val centerLabel = if (activeParentIndex >= 0) context.getString(R.string.menu_back)
             else context.getString(R.string.menu_close)
-        canvas.drawText(centerLabel, centerX,
-            centerY + paintCenterText.textSize / 3, paintCenterText)
+        canvas.drawText(centerLabel, centerX, centerY + paintCenterText.textSize / 3, paintCenterText)
         canvas.restore()
 
         canvas.restore()
@@ -353,7 +290,6 @@ class RingMenuView @JvmOverloads constructor(
         canvas: Canvas, startAngle: Float, sweepAngle: Float,
         innerR: Float, outerR: Float, color: Int, isSelected: Boolean
     ) {
-        // ── B5 修复：glowIntensity 控制 RGB 提亮，而非 alpha ──
         paintSector.color = if (isSelected) brighten(color) else color
         val path = Path()
         val rectInner = RectF(centerX - innerR, centerY - innerR, centerX + innerR, centerY + innerR)
@@ -365,19 +301,13 @@ class RingMenuView @JvmOverloads constructor(
         canvas.drawPath(path, paintStroke)
     }
 
-    private fun drawLabel(canvas: Canvas, label: String, angle: Float, radius: Float) {
-        val rad = Math.toRadians(angle.toDouble())
-        val x = centerX + (radius * cos(rad)).toFloat()
-        val y = centerY + (radius * sin(rad)).toFloat()
+    private fun drawLabel(canvas: Canvas, label: String, x: Float, y: Float) {
         paintText.textSize = textSize
         canvas.drawText(label, x, y + paintText.textSize / 3, paintText)
     }
 
-    /**
-     * B5 修复：用 glowIntensity 控制提亮程度（0=原色，1=最大提亮）。
-     */
     private fun brighten(color: Int): Int {
-        val boost = 1.0f + glowIntensity * 0.3f  // glowIntensity 0..1 → boost 1.0..1.3
+        val boost = 1.0f + glowIntensity * 0.3f
         val r = ((color shr 16 and 0xFF) * boost).toInt().coerceAtMost(255)
         val g = ((color shr 8 and 0xFF) * boost).toInt().coerceAtMost(255)
         val b = ((color and 0xFF) * boost).toInt().coerceAtMost(255)
