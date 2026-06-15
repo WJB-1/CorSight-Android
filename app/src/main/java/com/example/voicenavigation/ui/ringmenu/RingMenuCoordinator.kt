@@ -13,6 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import com.example.voicenavigation.animation.RingMenuAnimations
+import com.example.voicenavigation.util.RadialGeometry
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -86,8 +87,8 @@ class RingMenuCoordinator(
 
     // ==================== Public configuration ====================
 
-    /** Current menu position mode. Default: [MenuPositionMode.CENTER]. */
-    var menuPositionMode: MenuPositionMode = MenuPositionMode.CENTER
+    /** Current menu position mode. Default: [MenuPositionMode.TOUCH_POINT]. */
+    var menuPositionMode: MenuPositionMode = MenuPositionMode.TOUCH_POINT
 
     /** Whether vibration feedback is enabled on long-press. */
     var hapticEnabled: Boolean = true
@@ -328,20 +329,29 @@ class RingMenuCoordinator(
         }
 
         // Determine menu center based on positioning mode
+        val screenW = ringMenuContainer.width.toFloat().takeIf { it > 0f }
+            ?: ringMenuContainer.context.resources.displayMetrics.widthPixels.toFloat()
+        val screenH = ringMenuContainer.height.toFloat().takeIf { it > 0f }
+            ?: ringMenuContainer.context.resources.displayMetrics.heightPixels.toFloat()
+
         when (menuPositionMode) {
             MenuPositionMode.CENTER -> {
-                val containerW = ringMenuContainer.width.toFloat().takeIf { it > 0f }
-                    ?: ringMenuContainer.context.resources.displayMetrics.widthPixels.toFloat()
-                val containerH = ringMenuContainer.height.toFloat().takeIf { it > 0f }
-                    ?: ringMenuContainer.context.resources.displayMetrics.heightPixels.toFloat()
-                menuCenterX = containerW / 2f
-                menuCenterY = containerH / 2f
+                menuCenterX = screenW / 2f
+                menuCenterY = screenH / 2f
             }
             MenuPositionMode.TOUCH_POINT -> {
-                menuCenterX = downX
-                menuCenterY = downY
+                // 方案 A：边缘钳位 — 菜单跟随触摸点，超出屏幕时平移
+                val outerRadius = ringMenuView.getOuterRadius()
+                val (cx, cy) = RadialGeometry.clampCenter(
+                    downX, downY, outerRadius, screenW, screenH, padding = 8f
+                )
+                menuCenterX = cx
+                menuCenterY = cy
             }
         }
+
+        // 同步菜单绘制中心
+        ringMenuView.setCenter(menuCenterX, menuCenterY)
 
         emit(InteractionEvent.ShowMenu(menuCenterX, menuCenterY))
         animateShow()

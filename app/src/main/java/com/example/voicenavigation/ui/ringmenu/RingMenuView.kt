@@ -101,6 +101,24 @@ class RingMenuView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * 设置菜单绘制中心点。用于菜单跟随触摸点显示。
+     *
+     * 调用后所有扇形绘制和角度计算都以此为中心。
+     * 默认是屏幕中心（onSizeChanged 中设置）。
+     */
+    fun setCenter(x: Float, y: Float) {
+        centerX = x
+        centerY = y
+    }
+
+    /**
+     * 获取菜单最外层半径（用于边缘钳位计算）。
+     */
+    fun getOuterRadius(): Float {
+        return innerRadius + ringWidth + gap
+    }
+
     // ==================== 外部驱动 API ====================
 
     /**

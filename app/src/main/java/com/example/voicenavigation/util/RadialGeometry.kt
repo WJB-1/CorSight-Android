@@ -253,4 +253,37 @@ object RadialGeometry {
         val y = centerY + (radius * kotlin.math.sin(rad)).toFloat()
         return Pair(x, y)
     }
+
+    // ═══════════════════════════════════════════════════
+    // 边缘钳位（方案 A：平移钳位）
+    // ═══════════════════════════════════════════════════
+
+    /**
+     * 将环形菜单的中心点钳位到屏幕范围内，保证整个菜单不超出屏幕。
+     *
+     * 当触摸点靠近屏幕边缘时，中心点向屏幕内部平移，
+     * 使菜单外环刚好贴着屏幕边缘。
+     *
+     * @param touchX 触摸点 X
+     * @param touchY 触摸点 Y
+     * @param outerRadius 菜单最外层半径（innerRadius + ringWidth + gap）
+     * @param screenW 屏幕宽度
+     * @param screenH 屏幕高度
+     * @param padding 边距（像素），默认 0
+     * @return Pair(clampedX, clampedY)
+     */
+    fun clampCenter(
+        touchX: Float, touchY: Float,
+        outerRadius: Float,
+        screenW: Float, screenH: Float,
+        padding: Float = 0f
+    ): Pair<Float, Float> {
+        val minX = outerRadius + padding
+        val minY = outerRadius + padding
+        val maxX = screenW - outerRadius - padding
+        val maxY = screenH - outerRadius - padding
+        val cx = touchX.coerceIn(minX, maxOf(minX, maxX))
+        val cy = touchY.coerceIn(minY, maxOf(minY, maxY))
+        return Pair(cx, cy)
+    }
 }
