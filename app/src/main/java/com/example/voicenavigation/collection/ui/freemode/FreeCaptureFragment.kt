@@ -61,6 +61,7 @@ class FreeCaptureFragment : Fragment() {
     private lateinit var previewView: PreviewView
     private lateinit var tvDebugOverlay: TextView
     private lateinit var tvPhotoCount: TextView
+    private lateinit var btnSaveTask: View
     private lateinit var shutterBtn: View
     private lateinit var shutterFlashOverlay: View
 
@@ -94,6 +95,7 @@ class FreeCaptureFragment : Fragment() {
         previewView = view.findViewById(R.id.previewView)
         tvDebugOverlay = view.findViewById(R.id.tvDebugOverlay)
         tvPhotoCount = view.findViewById(R.id.tvPhotoCount)
+        btnSaveTask = view.findViewById(R.id.btnSaveTask)
         shutterBtn = view.findViewById(R.id.shutterBtn)
         shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
 
@@ -103,11 +105,14 @@ class FreeCaptureFragment : Fragment() {
             ShutterAnimations.onTouchEvent(v, event)
             false
         }
+        btnSaveTask.setOnClickListener { showSaveDialog() }
         setupGestures()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.photos.collectLatest { photos ->
                 tvPhotoCount.text = "已拍: ${photos.size}"
+                // 拍了至少 1 张才显示"完成采集"按钮
+                btnSaveTask.visibility = if (photos.isNotEmpty()) View.VISIBLE else View.GONE
             }
         }
 
@@ -320,6 +325,44 @@ class FreeCaptureFragment : Fragment() {
                 File(photo.filePath).delete()
             }
             .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * 保存任务对话框 — 将当前已拍照片打包为 CaptureTask 写入 TaskStorage。
+     * 之后在后台管理页面可见并可上传。
+     */
+    private fun showSaveDialog() {
+        val ctx = requireContext()
+        val photos = viewModel.photos.value
+        if (photos.isEmpty()) {
+            Toast.makeText(ctx, "还未拍摄任何照片", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_save_task, null)
+        val tvCount = dialogView.findViewById<TextView>(R.id.tvPhotoCount)
+        val tvCoords = dialogView.findViewById<TextView>(R.id.tvCoords)
+        val etDesc = dialogView.findViewById<EditText>(R.id.etSceneDesc)
+
+        tvCount.text = "已采集 ${photos.size} 张照片"
+        tvCoords.text = "坐标: ${String.format("%.6f", currentLat)}, ${String.format("%.6f", currentLng)}"
+
+        AlertDialog.Builder(ctx)
+            .setTitle("保存采样点")
+            .setView(dialogView)
+            .setPositiveButton("确认保存") { _, _ ->
+                val desc = etDesc.text.toString().trim().ifEmpty { "未描述" }
+                viewModel.saveTask(currentLat, currentLng, desc)
+                Toast.makeText(ctx, "已保存采样点（${photos.size} 张）", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("放弃全部") { _, _ ->
+                photos.forEach { File(it.filePath).delete() }
+                viewModel.clearPhotos()
+                Toast.makeText(ctx, "已放弃 ${photos.size} 张照片", Toast.LENGTH_SHORT).show()
+            }
+            .setNeutralButton("继续拍摄", null)
+            .setCancelable(true)
             .show()
     }
 

@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.voicenavigation.R
+import com.example.voicenavigation.animation.ShutterAnimations
 import com.example.voicenavigation.core.camera.CaptureMetadata
 import com.example.voicenavigation.core.compass.CompassProvider
 import com.example.voicenavigation.core.location.LocationProvider
@@ -69,6 +70,7 @@ class RetakeFragment : Fragment() {
     private lateinit var tvRetakeInfo: TextView
     private lateinit var tvLocationCheck: TextView
     private lateinit var shutterBtn: View
+    private lateinit var shutterFlashOverlay: View
 
     private var imageCapture: ImageCapture? = null
     private var currentBearing: Float = 0f
@@ -105,10 +107,16 @@ class RetakeFragment : Fragment() {
         tvRetakeInfo = view.findViewById(R.id.tvRetakeInfo)
         tvLocationCheck = view.findViewById(R.id.tvLocationCheck)
         shutterBtn = view.findViewById(R.id.shutterBtn)
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
 
         tvRetakeInfo.text = "补拍 — 原方位角: ${String.format("%.1f", origBearing)}°"
         shutterBtn.setOnClickListener {
             if (canCapture) takePhoto()
+        }
+        // 快门按压反馈动画
+        shutterBtn.setOnTouchListener { v, event ->
+            ShutterAnimations.onTouchEvent(v, event)
+            false
         }
         setShutterEnabled(false)
 
@@ -206,14 +214,17 @@ class RetakeFragment : Fragment() {
     }
 
     private fun setShutterEnabled(enabled: Boolean) {
-        shutterBtn.alpha = if (enabled) 1.0f else 0.3f
-        shutterBtn.isClickable = enabled
+        ShutterAnimations.setEnabled(shutterBtn, enabled)
     }
 
     private fun takePhoto() {
         val ic = imageCapture ?: return
         val file = File(requireContext().filesDir, "retake_${photoId}_${System.currentTimeMillis()}.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
+
+        // 拍照反馈动画：心跳 + 闪光
+        ShutterAnimations.onCapture(shutterBtn)
+        ShutterAnimations.flashOverlay(shutterFlashOverlay)
 
         ic.takePicture(options, ContextCompat.getMainExecutor(requireContext()),
             object : ImageCapture.OnImageSavedCallback {

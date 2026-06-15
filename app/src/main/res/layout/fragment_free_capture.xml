@@ -18,49 +18,49 @@
         android:layout_margin="12dp"
         android:background="#80000000"
         android:padding="8dp"
-        android:textColor="#FF00FF00"
+        android:textColor="#FFFF9800"
+        android:text="⏳ 正在定位..."
         android:textSize="12sp"
-        android:fontFamily="monospace"
-        android:visibility="gone" />
+        android:fontFamily="monospace" />
 
-    <!-- 已拍数量指示 -->
-    <TextView
-        android:id="@+id/tvPhotoCount"
+    <!-- 右上角：已拍数量 + 完成按钮 -->
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|end"
         android:layout_margin="12dp"
-        android:background="#80000000"
-        android:padding="8dp"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        android:text="已拍: 0" />
+        android:orientation="vertical"
+        android:gravity="end">
 
-    <!-- 底部快门按钮（经典相机造型：外圈白色圆环 + 内圈白色实心圆） -->
-    <FrameLayout
-        android:id="@+id/shutterBtn"
-        android:layout_width="76dp"
-        android:layout_height="76dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="36dp"
-        android:background="@drawable/bg_shutter_outer"
-        android:elevation="6dp"
-        android:clickable="true"
-        android:focusable="true">
+        <TextView
+            android:id="@+id/tvPhotoCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#80000000"
+            android:padding="8dp"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:text="已拍: 0" />
 
-        <View
-            android:layout_width="58dp"
-            android:layout_height="58dp"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_shutter_inner" />
-    </FrameLayout>
+        <Button
+            android:id="@+id/btnSaveTask"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginTop="8dp"
+            android:text="完成采集"
+            android:textSize="13sp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="#4CAF50"
+            android:visibility="gone" />
+    </LinearLayout>
 
-    <!-- 拍照闪光覆盖层 -->
+    <!-- 底部快门按钮 -->
     <View
-        android:id="@+id/shutterFlashOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#CCFFFFFF"
-        android:visibility="gone" />
+        android:id="@+id/shutterBtn"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:background="@android:color/white" />
 
 </FrameLayout>

@@ -29,6 +29,10 @@ class FreeCaptureViewModel @Inject constructor(
 
     val photoCount: Int get() = _photos.value.size
 
+    fun clearPhotos() {
+        _photos.value = emptyList()
+    }
+
     /**
      * 将当前照片打包为 CaptureTask 并保存到 TaskStorage。
      */
