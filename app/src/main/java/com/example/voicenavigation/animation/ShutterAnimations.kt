@@ -42,24 +42,34 @@ object ShutterAnimations {
      * ```
      *   shutterBtn.setOnTouchListener { v, event ->
      *       ShutterAnimations.onTouchEvent(v, event)
-     *       false  // 不消费事件，让 onClick 仍能触发
      *   }
      * ```
      *
+     * **注意：返回 true 消费事件，手动调用 performClick() 触发 onClick。**
+     * 如果返回 false，ACTION_UP 不会送达，松开弹回动画无法播放。
+     *
      * @param view  快门按钮 View
      * @param event 触摸事件
+     * @return true（始终消费事件）
      */
-    fun onTouchEvent(view: View, event: MotionEvent) {
+    fun onTouchEvent(view: View, event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // 按下：缩小到 0.88，100ms
                 AnimatorUtils.scaleAnimator(view, view.scaleX, 0.88f, 100, AccelerateDecelerateInterpolator()).start()
             }
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+            MotionEvent.ACTION_UP -> {
                 // 松开：弹回 1.0，150ms 带弹性
+                AnimatorUtils.scaleAnimator(view, view.scaleX, 1f, 150, OvershootInterpolator(2f)).start()
+                // 手动触发 click（因为我们消费了事件，系统不会自动触发 onClick）
+                view.performClick()
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                // 取消：弹回 1.0
                 AnimatorUtils.scaleAnimator(view, view.scaleX, 1f, 150, OvershootInterpolator(2f)).start()
             }
         }
+        return true
     }
 
     // ==================== 拍照反馈 ====================

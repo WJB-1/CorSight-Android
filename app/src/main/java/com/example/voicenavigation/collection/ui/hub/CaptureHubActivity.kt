@@ -73,6 +73,12 @@ class CaptureHubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_capture_hub)
 
+        // Edge-to-Edge：状态栏透明，ViewPager 内容避开状态栏
+        com.example.voicenavigation.util.EdgeToEdgeHelper.apply(this)
+        findViewById<View>(R.id.viewPager)?.let {
+            com.example.voicenavigation.util.EdgeToEdgeHelper.padStatusBar(it)
+        }
+
         compassProvider.setScreenRotation(windowManager.defaultDisplay.rotation)
 
         viewPager = findViewById(R.id.viewPager)

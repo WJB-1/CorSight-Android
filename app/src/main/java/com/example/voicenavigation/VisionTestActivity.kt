@@ -109,6 +109,11 @@ class VisionTestActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityVisionTestBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Edge-to-Edge：状态栏透明，headerBar 加状态栏内边距
+        com.example.voicenavigation.util.EdgeToEdgeHelper.apply(this)
+        com.example.voicenavigation.util.EdgeToEdgeHelper.padStatusBar(binding.headerBar)
+
         ToolRegistry.register(GenericDetectionTool())
         initTts()
         setupLongPressVoiceLauncher()

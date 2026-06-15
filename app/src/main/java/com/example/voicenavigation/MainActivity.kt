@@ -181,14 +181,14 @@ class MainActivity : AppCompatActivity(),
     private val appConfigProvider by lazy { AppConfigProvider(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Edge-to-Edge：内容延伸到状态栏/导航栏下方
         enableEdgeToEdge()
-        // 状态栏图标设为白色（深色背景适配）
-        androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
-            .isAppearanceLightStatusBars = false
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // 导航信息浮层避开状态栏（地图不用管，状态栏透明叠在地图上没问题）
+        findViewById<View>(R.id.layout_nav_info)?.let {
+            com.example.voicenavigation.util.EdgeToEdgeHelper.padStatusBar(it)
+        }
 
         initAmapSdk()
 
