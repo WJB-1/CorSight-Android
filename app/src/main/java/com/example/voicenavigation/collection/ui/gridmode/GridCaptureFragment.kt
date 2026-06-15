@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import android.view.Gravity
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -15,6 +16,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -39,6 +41,7 @@ import com.example.voicenavigation.core.location.LocationProvider
 import com.example.voicenavigation.core.location.LocationResult
 import com.example.voicenavigation.collection.data.PhotoRecord
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,10 +51,10 @@ import kotlin.math.abs
 /**
  * 八方向采集模式。
  *
- * 相机内显示方向提示，未对准时禁用快门。
- * 不固定从 N 开始，自动找第一个未拍方向。
- * 拍满 8 张后弹出保存对话框。
+ * 生命周期管理：onResume 订阅传感器 + 绑定相机，onPause 取消订阅 + 解绑相机。
+ * 兼容 ViewPager2：离屏时不占用传感器和相机资源。
  *
+ * 电池式方向状态栏（底部，快门上方）。
  * 手势：单击拍照（需对齐）/ 双击切广角 / 双指缩放
  */
 @AndroidEntryPoint
@@ -60,6 +63,11 @@ class GridCaptureFragment : Fragment() {
     companion object {
         private const val TAG = "GridCaptureFragment"
         private const val ALIGN_TOLERANCE = 12f
+
+        private const val STATE_DONE = 0
+        private const val STATE_ACTIVE = 1
+        private const val STATE_MISALIGNED = 2
+        private const val STATE_PENDING = 3
     }
 
     @Inject lateinit var compassProvider: CompassProvider
@@ -69,11 +77,11 @@ class GridCaptureFragment : Fragment() {
 
     private lateinit var previewView: PreviewView
     private lateinit var tvDebugOverlay: TextView
-    private lateinit var tvDirectionHint: TextView
-    private lateinit var directionProgress: LinearLayout
+    private lateinit var directionBar: LinearLayout
     private lateinit var shutterBtn: View
     private var shutterFlashOverlay: View? = null
 
+    private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var imageCapture: ImageCapture? = null
     private var currentBearing: Float = 0f
@@ -81,6 +89,11 @@ class GridCaptureFragment : Fragment() {
     private var currentLng: Double = 0.0
     private var gpsReady = false
     private var isAligned = false
+
+    private val directionCells = mutableMapOf<String, Pair<View, TextView>>()
+
+    // 传感器订阅 Job
+    private var sensorJob: Job? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -98,40 +111,156 @@ class GridCaptureFragment : Fragment() {
 
         previewView = view.findViewById(R.id.previewView)
         tvDebugOverlay = view.findViewById(R.id.tvDebugOverlay)
-        tvDirectionHint = view.findViewById(R.id.tvDirectionHint)
-        directionProgress = view.findViewById(R.id.directionProgress)
+        directionBar = view.findViewById(R.id.directionBar)
         shutterBtn = view.findViewById(R.id.shutterBtn)
-        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)  // 可能为 null（向后兼容旧布局）
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
 
         shutterBtn.setOnClickListener {
             if (isAligned) takePhoto()
         }
-        // 快门按压反馈动画
         shutterBtn.setOnTouchListener { v, event ->
             ShutterAnimations.onTouchEvent(v, event)
             false
         }
         setShutterEnabled(false)
         setupGestures()
-        buildDirectionIndicators()
+        buildDirectionBar()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.capturedDirections.collectLatest { updateDirectionIndicators(it) }
+            viewModel.capturedDirections.collectLatest { updateDirectionBar() }
         }
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.currentTarget.collectLatest { target ->
-                target?.let { tvDirectionHint.text = "请对准 $it" }
-            }
+            viewModel.currentTarget.collectLatest { updateDirectionBar() }
         }
-
-        startCompass()
-        startLocation()
-
-        if (hasCameraPermission()) startCamera()
-        else permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA))
     }
 
-    // ===== 手势 =====
+    // ===== 生命周期：onResume 订阅 / onPause 取消 =====
+
+    override fun onResume() {
+        super.onResume()
+        startSensors()
+        if (hasCameraPermission()) startCamera()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopSensors()
+        cameraProvider?.unbindAll()
+    }
+
+    private fun startSensors() {
+        sensorJob?.cancel()
+        sensorJob = viewLifecycleOwner.lifecycleScope.launch {
+            launch {
+                compassProvider.observe().collectLatest { heading ->
+                    currentBearing = heading.heading
+                    checkAlignment()
+                    updateDebugOverlay()
+                }
+            }
+            launch {
+                locationProvider.observe().collectLatest { result ->
+                    when (result) {
+                        is LocationResult.Success -> {
+                            currentLat = result.location.latitude
+                            currentLng = result.location.longitude
+                            gpsReady = true
+                            updateDebugOverlay()
+                        }
+                        is LocationResult.Error -> {
+                            gpsReady = false
+                            tvDebugOverlay.visibility = View.VISIBLE
+                            tvDebugOverlay.text = "⚠ GPS 错误: ${result.message}"
+                            tvDebugOverlay.setTextColor(0xFFF44336.toInt())
+                        }
+                    }
+                }
+            }
+        }
+        tvDebugOverlay.visibility = View.VISIBLE
+        tvDebugOverlay.text = "⏳ 正在定位..."
+        tvDebugOverlay.setTextColor(0xFFFF9800.toInt())
+    }
+
+    private fun stopSensors() {
+        sensorJob?.cancel()
+        sensorJob = null
+    }
+
+    // ===== 电池式方向状态栏 =====
+
+    private fun buildDirectionBar() {
+        directionBar.removeAllViews()
+        directionCells.clear()
+
+        val dp = resources.displayMetrics.density
+        val cellWidth = (36 * dp).toInt()
+        val cellHeight = (28 * dp).toInt()
+        val margin = (2 * dp).toInt()
+
+        GridCaptureViewModel.DIRECTIONS.forEach { dir ->
+            val tv = TextView(requireContext()).apply {
+                text = dir
+                textSize = 11f
+                gravity = Gravity.CENTER
+                setTextColor(Color.parseColor("#888888"))
+            }
+
+            val cell = FrameLayout(requireContext()).apply {
+                setBackgroundResource(R.drawable.bg_direction_cell_pending)
+                layoutParams = LinearLayout.LayoutParams(cellWidth, cellHeight).apply {
+                    setMargins(margin, 0, margin, 0)
+                }
+                addView(tv, FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    Gravity.CENTER
+                ))
+            }
+
+            directionCells[dir] = Pair(cell, tv)
+            directionBar.addView(cell)
+        }
+    }
+
+    private fun updateDirectionBar() {
+        val captured = viewModel.capturedDirections.value
+        val target = viewModel.currentTarget.value
+
+        for ((dir, pair) in directionCells) {
+            val (cell, tv) = pair
+            val state = when {
+                dir in captured -> STATE_DONE
+                dir == target && isAligned -> STATE_ACTIVE
+                dir == target -> STATE_MISALIGNED
+                else -> STATE_PENDING
+            }
+
+            val bgRes = when (state) {
+                STATE_DONE -> R.drawable.bg_direction_cell_done
+                STATE_ACTIVE -> R.drawable.bg_direction_cell_active
+                STATE_MISALIGNED -> R.drawable.bg_direction_cell_misaligned
+                else -> R.drawable.bg_direction_cell_pending
+            }
+            cell.setBackgroundResource(bgRes)
+
+            val textColor = when (state) {
+                STATE_DONE -> Color.WHITE
+                STATE_ACTIVE -> Color.BLACK
+                STATE_MISALIGNED -> Color.WHITE
+                else -> Color.parseColor("#888888")
+            }
+            tv.setTextColor(textColor)
+
+            if (state == STATE_MISALIGNED) {
+                // 预留：动画组在此处接入闪烁动画
+            } else {
+                cell.alpha = 1f
+            }
+        }
+    }
+
+    // ===== 手势（兼容 ViewPager2 滑动）=====
 
     private fun setupGestures() {
         val gestureDetector = GestureDetectorCompat(requireContext(),
@@ -157,9 +286,9 @@ class GridCaptureFragment : Fragment() {
             })
 
         previewView.setOnTouchListener { _, event ->
-            gestureDetector.onTouchEvent(event)
             scaleDetector.onTouchEvent(event)
-            true
+            gestureDetector.onTouchEvent(event)
+            scaleDetector.isInProgress
         }
     }
 
@@ -176,36 +305,6 @@ class GridCaptureFragment : Fragment() {
         ).show()
     }
 
-    // ===== 方向指示器 =====
-
-    private fun buildDirectionIndicators() {
-        directionProgress.removeAllViews()
-        GridCaptureViewModel.DIRECTIONS.forEach { dir ->
-            val tv = TextView(requireContext()).apply {
-                text = dir
-                textSize = 12f
-                setPadding(8, 4, 8, 4)
-                tag = dir
-                setBackgroundResource(android.R.drawable.editbox_background)
-            }
-            directionProgress.addView(tv)
-        }
-    }
-
-    private fun updateDirectionIndicators(captured: Set<String>) {
-        for (i in 0 until directionProgress.childCount) {
-            val tv = directionProgress.getChildAt(i) as TextView
-            val dir = tv.tag as String
-            if (dir in captured) {
-                tv.setBackgroundColor(Color.parseColor("#4CAF50"))
-                tv.setTextColor(Color.WHITE)
-            } else {
-                tv.setBackgroundColor(Color.parseColor("#333333"))
-                tv.setTextColor(Color.GRAY)
-            }
-        }
-    }
-
     // ===== 相机 =====
 
     private fun hasCameraPermission(): Boolean {
@@ -217,7 +316,7 @@ class GridCaptureFragment : Fragment() {
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(requireContext())
         future.addListener({
-            val provider = future.get()
+            cameraProvider = future.get()
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
@@ -225,8 +324,8 @@ class GridCaptureFragment : Fragment() {
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
             try {
-                provider.unbindAll()
-                camera = provider.bindToLifecycle(
+                cameraProvider?.unbindAll()
+                camera = cameraProvider?.bindToLifecycle(
                     viewLifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture
                 )
             } catch (e: Exception) {
@@ -235,42 +334,7 @@ class GridCaptureFragment : Fragment() {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
-    // ===== 传感器 =====
-
-    private fun startCompass() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            compassProvider.observe().collectLatest { heading ->
-                currentBearing = heading.heading
-                checkAlignment()
-                updateDebugOverlay()
-            }
-        }
-    }
-
-    private fun startLocation() {
-        tvDebugOverlay.visibility = View.VISIBLE
-        tvDebugOverlay.text = "⏳ 正在定位..."
-        tvDebugOverlay.setTextColor(0xFFFF9800.toInt())
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            locationProvider.observe(3000L).collectLatest { result ->
-                when (result) {
-                    is LocationResult.Success -> {
-                        currentLat = result.location.latitude
-                        currentLng = result.location.longitude
-                        gpsReady = true
-                        updateDebugOverlay()
-                    }
-                    is LocationResult.Error -> {
-                        gpsReady = false
-                        tvDebugOverlay.visibility = View.VISIBLE
-                        tvDebugOverlay.text = "⚠ GPS 错误: ${result.message}"
-                        tvDebugOverlay.setTextColor(0xFFF44336.toInt())
-                    }
-                }
-            }
-        }
-    }
+    // ===== 对齐检测 =====
 
     private fun checkAlignment() {
         val target = viewModel.currentTarget.value ?: return
@@ -282,18 +346,13 @@ class GridCaptureFragment : Fragment() {
         val wasAligned = isAligned
         isAligned = diff <= ALIGN_TOLERANCE
 
-        if (isAligned) {
-            tvDirectionHint.text = "已对准 $target ✓"
-            tvDirectionHint.setTextColor(Color.parseColor("#4CAF50"))
-            setShutterEnabled(true)
-            if (!wasAligned) {
+        if (isAligned != wasAligned) {
+            updateDirectionBar()
+            setShutterEnabled(isAligned)
+            if (isAligned) {
                 val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                 vibrator.vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE))
             }
-        } else {
-            tvDirectionHint.text = "请对准 $target"
-            tvDirectionHint.setTextColor(Color.parseColor("#FF9800"))
-            setShutterEnabled(false)
         }
     }
 
@@ -328,7 +387,6 @@ class GridCaptureFragment : Fragment() {
         val file = File(requireContext().filesDir, "grid_${target}_${System.currentTimeMillis()}.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
 
-        // 拍照反馈动画：心跳 + 闪光
         ShutterAnimations.onCapture(shutterBtn)
         ShutterAnimations.flashOverlay(shutterFlashOverlay)
 

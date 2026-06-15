@@ -6,27 +6,26 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.provider.Settings
-import android.view.Surface
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
+import androidx.viewpager2.widget.ViewPager2
 import com.example.voicenavigation.R
-import com.example.voicenavigation.collection.ui.dashboard.DashboardFragment
-import com.example.voicenavigation.collection.ui.freemode.FreeCaptureFragment
-import com.example.voicenavigation.collection.ui.gridmode.GridCaptureFragment
 import com.example.voicenavigation.core.compass.CompassProvider
 import com.example.voicenavigation.core.location.LocationProvider
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
 /**
  * 采样工具主入口 Activity。
  *
- * 三个 Tab：自由采集 · 八方向 · 后台管理
- * 处理屏幕旋转并将旋转事件转发给 CompassProvider。
+ * ViewPager2 承载三个页面（自由采集 · 八方向 · 后台管理），
+ * 底部小圆点指示器 + 点击显示页面名称。
+ * 处理屏幕旋转并转发给 CompassProvider。
  * 负责统一请求 CAMERA + LOCATION 权限。
  */
 @AndroidEntryPoint
@@ -34,6 +33,13 @@ class CaptureHubActivity : AppCompatActivity() {
 
     @Inject lateinit var compassProvider: CompassProvider
     @Inject lateinit var locationProvider: LocationProvider
+
+    private lateinit var viewPager: ViewPager2
+    private lateinit var dotsContainer: LinearLayout
+    private lateinit var tvPageLabel: TextView
+
+    private val dotViews = mutableListOf<View>()
+    private var currentPage = 0
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -57,7 +63,6 @@ class CaptureHubActivity : AppCompatActivity() {
                 .show()
         }
 
-        // 权限检查完成后，检查 GPS 开关
         if (locationGranted) {
             checkLocationServicesEnabled()
         }
@@ -67,32 +72,93 @@ class CaptureHubActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_capture_hub)
 
-        // 初始化罗盘的屏幕方向
         compassProvider.setScreenRotation(windowManager.defaultDisplay.rotation)
 
-        val nav = findViewById<BottomNavigationView>(R.id.bottomNav)
-        nav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_free -> switchFragment(FreeCaptureFragment())
-                R.id.nav_grid -> switchFragment(GridCaptureFragment())
-                R.id.nav_dashboard -> switchFragment(DashboardFragment())
-                else -> false
+        viewPager = findViewById(R.id.viewPager)
+        dotsContainer = findViewById(R.id.dotsContainer)
+        tvPageLabel = findViewById(R.id.tvPageLabel)
+
+        // ViewPager2 + Adapter
+        val adapter = CapturePagerAdapter(this)
+        viewPager.adapter = adapter
+        viewPager.offscreenPageLimit = 2  // 保持 3 页全部存活
+
+        // 圆点指示器
+        buildDots(adapter.itemCount)
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                currentPage = position
+                updateDots(position)
             }
-        }
+        })
 
-        // 请求所需权限
         requestPermissionsIfNeeded()
-
-        // 默认选中自由采集
-        if (savedInstanceState == null) {
-            nav.selectedItemId = R.id.nav_free
-        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 屏幕旋转时通知罗盘更新坐标系映射
         compassProvider.setScreenRotation(windowManager.defaultDisplay.rotation)
+    }
+
+    // ===== 圆点指示器 =====
+
+    private fun buildDots(count: Int) {
+        dotViews.clear()
+        dotsContainer.removeAllViews()
+        val dp = resources.displayMetrics.density
+        val size = (10 * dp).toInt()
+        val margin = (6 * dp).toInt()
+
+        for (i in 0 until count) {
+            val dot = View(this).apply {
+                setBackgroundResource(R.drawable.bg_dot)
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    setMargins(margin, 0, margin, 0)
+                }
+                tag = i
+                setOnClickListener { onDotClicked(i) }
+            }
+            dotViews.add(dot)
+            dotsContainer.addView(dot)
+        }
+        updateDots(0)
+    }
+
+    private fun updateDots(position: Int) {
+        dotViews.forEachIndexed { index, dot ->
+            val isSelected = index == position
+            dot.alpha = if (isSelected) 1f else 0.35f
+            dot.animate()
+                .scaleX(if (isSelected) 1.3f else 1f)
+                .scaleY(if (isSelected) 1.3f else 1f)
+                .setDuration(150)
+                .start()
+        }
+    }
+
+    private fun onDotClicked(position: Int) {
+        if (position != currentPage) {
+            viewPager.setCurrentItem(position, true)
+        }
+        // 显示页面名称（动画组负责显示/隐藏动画，这里只做基础触发）
+        showPageLabel(CapturePagerAdapter.PAGE_TITLES.getOrElse(position) { "" })
+    }
+
+    private fun showPageLabel(text: String) {
+        tvPageLabel.text = text
+        tvPageLabel.visibility = View.VISIBLE
+        // 基础淡出：1 秒后隐藏。动画组替换时删掉此段即可。
+        tvPageLabel.animate()
+            .alpha(1f)
+            .setDuration(0)
+            .start()
+        tvPageLabel.postDelayed({
+            tvPageLabel.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction { tvPageLabel.visibility = View.GONE }
+                .start()
+        }, 1000)
     }
 
     // ===== 权限 =====
@@ -114,7 +180,6 @@ class CaptureHubActivity : AppCompatActivity() {
         if (needed.isNotEmpty()) {
             permissionLauncher.launch(needed.toTypedArray())
         } else {
-            // 已有全部权限，检查 GPS 开关
             checkLocationServicesEnabled()
         }
     }
@@ -130,14 +195,5 @@ class CaptureHubActivity : AppCompatActivity() {
                 .setNegativeButton("取消", null)
                 .show()
         }
-    }
-
-    // ===== Fragment 切换 =====
-
-    private fun switchFragment(fragment: Fragment): Boolean {
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, fragment)
-            .commit()
-        return true
     }
 }

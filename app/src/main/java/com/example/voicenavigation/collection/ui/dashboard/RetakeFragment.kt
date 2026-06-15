@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
-import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +27,7 @@ import com.example.voicenavigation.core.compass.CompassProvider
 import com.example.voicenavigation.core.location.LocationProvider
 import com.example.voicenavigation.collection.data.PhotoRecord
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -74,6 +74,7 @@ class RetakeFragment : Fragment() {
     private lateinit var shutterBtn: View
     private var shutterFlashOverlay: View? = null
 
+    private var cameraProvider: ProcessCameraProvider? = null
     private var imageCapture: ImageCapture? = null
     private var currentBearing: Float = 0f
     private var currentLat: Double = 0.0
@@ -83,6 +84,7 @@ class RetakeFragment : Fragment() {
     private var photoId: String = ""
     private var origBearing: Float = 0f
     private var canCapture = false
+    private var compassJob: Job? = null
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -122,11 +124,20 @@ class RetakeFragment : Fragment() {
         }
         setShutterEnabled(false)
 
-        startCompass()
         startLocationCheck()
+    }
 
+    override fun onResume() {
+        super.onResume()
+        startCompass()
         if (hasCameraPermission()) startCamera()
-        else permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA))
+    }
+
+    override fun onPause() {
+        super.onPause()
+        compassJob?.cancel()
+        compassJob = null
+        cameraProvider?.unbindAll()
     }
 
     private fun hasCameraPermission(): Boolean {
@@ -138,17 +149,16 @@ class RetakeFragment : Fragment() {
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(requireContext())
         future.addListener({
-            val provider = future.get()
+            cameraProvider = future.get()
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .setTargetResolution(Size(1920, 1080))
                 .build()
             try {
-                provider.unbindAll()
-                provider.bindToLifecycle(
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(
                     viewLifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture
                 )
             } catch (e: Exception) {
@@ -158,7 +168,8 @@ class RetakeFragment : Fragment() {
     }
 
     private fun startCompass() {
-        viewLifecycleOwner.lifecycleScope.launch {
+        compassJob?.cancel()
+        compassJob = viewLifecycleOwner.lifecycleScope.launch {
             compassProvider.observe().collectLatest { heading ->
                 currentBearing = heading.heading
             }

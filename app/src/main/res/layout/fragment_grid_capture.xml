@@ -17,55 +17,51 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:background="#80000000"
+        android:fontFamily="monospace"
         android:padding="8dp"
         android:textColor="#FF00FF00"
-        android:textSize="12sp"
-        android:fontFamily="monospace" />
+        android:textSize="12sp" />
 
-    <!-- 中央方向提示 -->
-    <TextView
-        android:id="@+id/tvDirectionHint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="请对准 N"
-        android:textSize="48sp"
-        android:textStyle="bold"
-        android:textColor="#80FFFFFF"
-        android:shadowColor="#000000"
-        android:shadowDx="2"
-        android:shadowDy="2"
-        android:shadowRadius="4" />
-
-    <!-- 八方向进度指示器（顶部水平排列） -->
+    <!-- 底部区域：电池条 + 快门 -->
     <LinearLayout
-        android:id="@+id/directionProgress"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
-        android:layout_marginTop="50dp"
-        android:gravity="center"
-        android:orientation="horizontal" />
-
-    <!-- 底部快门按钮（经典相机造型） -->
-    <FrameLayout
-        android:id="@+id/shutterBtn"
-        android:layout_width="76dp"
-        android:layout_height="76dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="36dp"
-        android:background="@drawable/bg_shutter_outer"
-        android:elevation="6dp"
-        android:alpha="0.3"
-        android:clickable="true"
-        android:focusable="true">
+        android:layout_marginBottom="28dp"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingHorizontal="12dp">
 
-        <View
-            android:layout_width="58dp"
-            android:layout_height="58dp"
-            android:layout_gravity="center"
-            android:background="@drawable/bg_shutter_inner" />
-    </FrameLayout>
+        <!-- 八方向电池式状态栏 -->
+        <LinearLayout
+            android:id="@+id/directionBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp"
+            android:background="#40000000"
+            android:padding="4dp" />
+
+        <!-- 快门按钮 -->
+        <FrameLayout
+            android:id="@+id/shutterBtn"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:alpha="0.3"
+            android:background="@drawable/bg_shutter_outer"
+            android:clickable="true"
+            android:elevation="6dp"
+            android:focusable="true">
+
+            <View
+                android:layout_width="58dp"
+                android:layout_height="58dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_shutter_inner" />
+        </FrameLayout>
+
+    </LinearLayout>
 
     <!-- 拍照闪光覆盖层 -->
     <View

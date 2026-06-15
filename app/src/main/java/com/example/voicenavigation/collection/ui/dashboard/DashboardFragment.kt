@@ -230,9 +230,9 @@ class DashboardFragment : Fragment() {
     }
 
     private fun startRetake(taskId: String, originalPhoto: PhotoRecord) {
-        // 启动补拍 Fragment
+        // 启动补拍 Fragment（覆盖 ViewPager2）
         parentFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, RetakeFragment.newInstance(taskId, originalPhoto.id, originalPhoto.bearing))
+            .replace(R.id.viewPager, RetakeFragment.newInstance(taskId, originalPhoto.id, originalPhoto.bearing))
             .addToBackStack(null)
             .commit()
     }

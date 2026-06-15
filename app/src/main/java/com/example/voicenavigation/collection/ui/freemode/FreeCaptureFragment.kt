@@ -37,6 +37,7 @@ import com.example.voicenavigation.core.location.LocationProvider
 import com.example.voicenavigation.core.location.LocationResult
 import com.example.voicenavigation.collection.data.PhotoRecord
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
@@ -45,10 +46,11 @@ import javax.inject.Inject
 /**
  * 自由拍照模式。
  *
- * 无方向约束，用户按需拍摄有意义的街景（天桥、复杂路口等）。
- * 拍照后弹出标注对话框，选择场景类型和描述。
+ * 生命周期管理：onResume 订阅传感器 + 绑定相机，onPause 取消订阅 + 解绑相机。
+ * 兼容 ViewPager2：离屏时不占用传感器和相机资源。
  *
  * 手势：单击拍照 / 双击切广角 / 双指缩放
+ * 触摸事件：未消费时返回 false，让 ViewPager2 处理横向滑动。
  */
 @AndroidEntryPoint
 class FreeCaptureFragment : Fragment() {
@@ -65,6 +67,7 @@ class FreeCaptureFragment : Fragment() {
     private lateinit var shutterBtn: View
     private var shutterFlashOverlay: View? = null
 
+    private var cameraProvider: ProcessCameraProvider? = null
     private var camera: Camera? = null
     private var imageCapture: ImageCapture? = null
     private var currentBearing: Float = 0f
@@ -72,6 +75,9 @@ class FreeCaptureFragment : Fragment() {
     private var currentLng: Double = 0.0
     private var currentFovX: Float = 90f
     private var gpsReady = false
+
+    // 传感器订阅 Job
+    private var sensorJob: Job? = null
 
     private val sceneLabels = listOf("天桥", "复杂路口", "斑马线", "公交站台", "隧道/地道", "普通道路", "其他")
 
@@ -97,10 +103,9 @@ class FreeCaptureFragment : Fragment() {
         tvPhotoCount = view.findViewById(R.id.tvPhotoCount)
         btnSaveTask = view.findViewById(R.id.btnSaveTask)
         shutterBtn = view.findViewById(R.id.shutterBtn)
-        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)  // 可能为 null（向后兼容旧布局）
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
 
         shutterBtn.setOnClickListener { takePhoto() }
-        // 快门按压反馈动画
         shutterBtn.setOnTouchListener { v, event ->
             ShutterAnimations.onTouchEvent(v, event)
             false
@@ -111,22 +116,64 @@ class FreeCaptureFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewModel.photos.collectLatest { photos ->
                 tvPhotoCount.text = "已拍: ${photos.size}"
-                // 拍了至少 1 张才显示"完成采集"按钮
                 btnSaveTask.visibility = if (photos.isNotEmpty()) View.VISIBLE else View.GONE
             }
         }
-
-        startCompass()
-        startLocation()
-
-        if (hasCameraPermission()) {
-            startCamera()
-        } else {
-            permissionLauncher.launch(arrayOf(Manifest.permission.CAMERA))
-        }
     }
 
-    // ===== 手势 =====
+    // ===== 生命周期：onResume 订阅 / onPause 取消 =====
+
+    override fun onResume() {
+        super.onResume()
+        startSensors()
+        if (hasCameraPermission()) startCamera()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        stopSensors()
+        cameraProvider?.unbindAll()
+    }
+
+    private fun startSensors() {
+        sensorJob?.cancel()
+        sensorJob = viewLifecycleOwner.lifecycleScope.launch {
+            launch {
+                compassProvider.observe().collectLatest { heading ->
+                    currentBearing = heading.heading
+                    updateDebugOverlay()
+                }
+            }
+            launch {
+                locationProvider.observe().collectLatest { result ->
+                    when (result) {
+                        is LocationResult.Success -> {
+                            currentLat = result.location.latitude
+                            currentLng = result.location.longitude
+                            gpsReady = true
+                            updateDebugOverlay()
+                        }
+                        is LocationResult.Error -> {
+                            gpsReady = false
+                            tvDebugOverlay.visibility = View.VISIBLE
+                            tvDebugOverlay.text = "⚠ GPS 错误: ${result.message}"
+                            tvDebugOverlay.setTextColor(0xFFF44336.toInt())
+                        }
+                    }
+                }
+            }
+        }
+        tvDebugOverlay.visibility = View.VISIBLE
+        tvDebugOverlay.text = "⏳ 正在定位..."
+        tvDebugOverlay.setTextColor(0xFFFF9800.toInt())
+    }
+
+    private fun stopSensors() {
+        sensorJob?.cancel()
+        sensorJob = null
+    }
+
+    // ===== 手势（兼容 ViewPager2 滑动）=====
 
     private fun setupGestures() {
         val gestureDetector = GestureDetectorCompat(requireContext(),
@@ -152,9 +199,10 @@ class FreeCaptureFragment : Fragment() {
             })
 
         previewView.setOnTouchListener { _, event ->
-            gestureDetector.onTouchEvent(event)
             scaleDetector.onTouchEvent(event)
-            true
+            gestureDetector.onTouchEvent(event)
+            // 双指缩放进行中时拦截，否则让 ViewPager2 处理横向滑动
+            scaleDetector.isInProgress
         }
     }
 
@@ -182,7 +230,7 @@ class FreeCaptureFragment : Fragment() {
     private fun startCamera() {
         val future = ProcessCameraProvider.getInstance(requireContext())
         future.addListener({
-            val provider = future.get()
+            cameraProvider = future.get()
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
@@ -191,8 +239,8 @@ class FreeCaptureFragment : Fragment() {
                 .build()
 
             try {
-                provider.unbindAll()
-                camera = provider.bindToLifecycle(
+                cameraProvider?.unbindAll()
+                camera = cameraProvider?.bindToLifecycle(
                     viewLifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, imageCapture
                 )
                 currentFovX = 90f
@@ -202,41 +250,7 @@ class FreeCaptureFragment : Fragment() {
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
-    // ===== 传感器 =====
-
-    private fun startCompass() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            compassProvider.observe().collectLatest { heading ->
-                currentBearing = heading.heading
-                updateDebugOverlay()
-            }
-        }
-    }
-
-    private fun startLocation() {
-        tvDebugOverlay.visibility = View.VISIBLE
-        tvDebugOverlay.text = "⏳ 正在定位..."
-        tvDebugOverlay.setTextColor(0xFFFF9800.toInt())
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            locationProvider.observe(3000L).collectLatest { result ->
-                when (result) {
-                    is LocationResult.Success -> {
-                        currentLat = result.location.latitude
-                        currentLng = result.location.longitude
-                        gpsReady = true
-                        updateDebugOverlay()
-                    }
-                    is LocationResult.Error -> {
-                        gpsReady = false
-                        tvDebugOverlay.visibility = View.VISIBLE
-                        tvDebugOverlay.text = "⚠ GPS 错误: ${result.message}"
-                        tvDebugOverlay.setTextColor(0xFFF44336.toInt())
-                    }
-                }
-            }
-        }
-    }
+    // ===== UI 更新 =====
 
     private fun updateDebugOverlay() {
         if (!gpsReady) return
@@ -251,6 +265,8 @@ class FreeCaptureFragment : Fragment() {
         )
     }
 
+    // ===== 拍照 =====
+
     private fun takePhoto() {
         val ic = imageCapture ?: return
         if (!gpsReady) {
@@ -260,11 +276,9 @@ class FreeCaptureFragment : Fragment() {
         val file = File(requireContext().filesDir, "free_${System.currentTimeMillis()}.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
 
-        // 拍照前记录当前 zoom
         val currentZoom = camera?.cameraInfo?.zoomState?.value?.zoomRatio ?: 1f
         val isWide = currentZoom < 0.9f
 
-        // 拍照反馈动画：心跳 + 闪光
         ShutterAnimations.onCapture(shutterBtn)
         ShutterAnimations.flashOverlay(shutterFlashOverlay)
 
@@ -298,6 +312,8 @@ class FreeCaptureFragment : Fragment() {
         )
     }
 
+    // ===== 对话框 =====
+
     private fun showLabelDialog(photo: PhotoRecord) {
         val ctx = requireContext()
         val dialogView = LayoutInflater.from(ctx).inflate(R.layout.dialog_photo_label, null)
@@ -328,10 +344,6 @@ class FreeCaptureFragment : Fragment() {
             .show()
     }
 
-    /**
-     * 保存任务对话框 — 将当前已拍照片打包为 CaptureTask 写入 TaskStorage。
-     * 之后在后台管理页面可见并可上传。
-     */
     private fun showSaveDialog() {
         val ctx = requireContext()
         val photos = viewModel.photos.value

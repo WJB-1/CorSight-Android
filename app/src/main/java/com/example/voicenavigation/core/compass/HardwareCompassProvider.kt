@@ -7,9 +7,14 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.view.Surface
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.shareIn
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.abs
@@ -17,8 +22,10 @@ import kotlin.math.abs
 /**
  * 基于加速度计 + 磁力计的罗盘实现。
  *
+ * 单例，返回共享流（shareIn），多个订阅者共用同一个传感器会话。
+ * 平滑状态为 flow 内部局部变量，多订阅者不会互相覆盖。
+ *
  * 职责：读取传感器 → 坐标系重映射（横屏兼容） → 航向平滑 → 输出 [HeadingData]。
- * 不包含任何八方向对齐逻辑（那是 UI 层职责）。
  */
 @Singleton
 class HardwareCompassProvider @Inject constructor(
@@ -26,34 +33,34 @@ class HardwareCompassProvider @Inject constructor(
 ) : CompassProvider {
 
     companion object {
-        private const val SMOOTHING_FACTOR = 0.1f   // EMA 平滑因子
-        private const val JUMP_REJECT_DEG = 120f    // 跳变拒绝阈值（°）
+        private const val SMOOTHING_FACTOR = 0.1f
+        private const val JUMP_REJECT_DEG = 120f
     }
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
 
-    // 传感器原始数据
-    private val accelValues = FloatArray(3)
-    private val magnetValues = FloatArray(3)
-    private val rotationMatrix = FloatArray(9)
-    private val remappedMatrix = FloatArray(9)
-    private val orientation = FloatArray(3)
-
-    // 平滑状态
-    private var smoothedHeading: Float? = null
-    private var lastRawHeading: Float? = null
-
-    // 当前屏幕旋转方向，由外部 Activity 通过 setScreenRotation 更新
     @Volatile
     private var screenRotation: Int = Surface.ROTATION_0
 
-    private var currentAccuracy: Int = SensorManager.SENSOR_STATUS_ACCURACY_LOW
+    /**
+     * 共享罗盘流。底层只注册一次传感器监听，多个 Fragment 订阅时共享数据。
+     * - replay = 1：新订阅者立即拿到最后一次航向
+     * - WhileSubscribed(1000)：最后一个订阅者取消后 1 秒注销传感器
+     */
+    private val sharedCompassFlow = callbackFlow {
+        // 传感器原始数据（局部，不共享）
+        val accelValues = FloatArray(3)
+        val magnetValues = FloatArray(3)
+        val rotationMatrix = FloatArray(9)
+        val remappedMatrix = FloatArray(9)
+        val orientation = FloatArray(3)
 
-    override fun observe(): Flow<HeadingData> = callbackFlow {
-        smoothedHeading = null
-        lastRawHeading = null
+        // 平滑状态（局部，每个 flow 实例独立）
+        var smoothedHeading: Float? = null
+        var lastRawHeading: Float? = null
+        var currentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_LOW
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
@@ -64,7 +71,7 @@ class HardwareCompassProvider @Inject constructor(
 
                 if (!SensorManager.getRotationMatrix(rotationMatrix, null, accelValues, magnetValues)) return
 
-                // 根据屏幕旋转方向重映射坐标系，使 heading 指向屏幕顶部（= 相机镜头方向）
+                // 根据屏幕旋转方向重映射坐标系
                 val orientedMatrix = when (screenRotation) {
                     Surface.ROTATION_90 -> {
                         SensorManager.remapCoordinateSystem(
@@ -84,14 +91,14 @@ class HardwareCompassProvider @Inject constructor(
                         )
                         remappedMatrix
                     }
-                    else -> rotationMatrix // ROTATION_0 竖屏，无需 remap
+                    else -> rotationMatrix
                 }
 
                 SensorManager.getOrientation(orientedMatrix, orientation)
                 var heading = Math.toDegrees(orientation[0].toDouble()).toFloat()
                 if (heading < 0) heading += 360f
 
-                // 跳变拒绝：罗盘突变 > 120° 视为干扰，丢弃
+                // 跳变拒绝
                 lastRawHeading?.let { last ->
                     var diff = abs(heading - last)
                     if (diff > 180) diff = 360 - diff
@@ -135,12 +142,16 @@ class HardwareCompassProvider @Inject constructor(
         awaitClose {
             sensorManager.unregisterListener(listener)
         }
-    }
+    }.shareIn(
+        scope = CoroutineScope(Dispatchers.Main + SupervisorJob()),
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 1000L),
+        replay = 1
+    )
+
+    override fun observe(): Flow<HeadingData> = sharedCompassFlow
 
     override fun stop() {
-        // Flow collector cancellation triggers awaitClose which unregisters listeners.
-        // This method exists for explicit lifecycle control but is typically a no-op
-        // since the Flow is the primary lifecycle-bound consumer.
+        // shareIn 的 WhileSubscribed 会自动管理传感器生命周期
     }
 
     override fun setScreenRotation(rotation: Int) {
