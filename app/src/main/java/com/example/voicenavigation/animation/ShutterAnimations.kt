@@ -56,17 +56,29 @@ object ShutterAnimations {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 // 按下：缩小到 0.88，100ms
-                AnimatorUtils.scaleAnimator(view, view.scaleX, 0.88f, 100, AccelerateDecelerateInterpolator()).start()
+                // 使用 view.animate()（ViewPropertyAnimator），方便后续 onCapture 中取消
+                view.animate()
+                    .scaleX(0.88f).scaleY(0.88f)
+                    .setDuration(100)
+                    .setInterpolator(AccelerateDecelerateInterpolator())
+                    .start()
             }
             MotionEvent.ACTION_UP -> {
                 // 松开：弹回 1.0，150ms 带弹性
-                AnimatorUtils.scaleAnimator(view, view.scaleX, 1f, 150, OvershootInterpolator(2f)).start()
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(150)
+                    .setInterpolator(OvershootInterpolator(2f))
+                    .start()
                 // 手动触发 click（因为我们消费了事件，系统不会自动触发 onClick）
                 view.performClick()
             }
             MotionEvent.ACTION_CANCEL -> {
                 // 取消：弹回 1.0
-                AnimatorUtils.scaleAnimator(view, view.scaleX, 1f, 150, OvershootInterpolator(2f)).start()
+                view.animate()
+                    .scaleX(1f).scaleY(1f)
+                    .setDuration(150)
+                    .start()
             }
         }
         return true
@@ -83,7 +95,9 @@ object ShutterAnimations {
      * @return AnimatorSet（可监听结束）
      */
     fun onCapture(view: View): AnimatorSet {
-        // 心跳：1 → 1.2 → 0.95 → 1
+        // 先取消可能还在播放的弹回动画，避免 scaleX/Y 竞争
+        view.animate().cancel()
+        // 心跳：当前值 → 1.2 → 0.95 → 1
         val heartbeat = Animations.Feedback.heartbeat(view, 300)
         return AnimatorSet().apply {
             playTogether(heartbeat)
@@ -124,11 +138,20 @@ object ShutterAnimations {
      */
     fun flashOverlay(flashView: View?, duration: Long = 150L) {
         flashView ?: return
-        flashView.alpha = 0.8f
         flashView.visibility = View.VISIBLE
-        AnimatorUtils.alphaAnimator(flashView, 0.8f, 0f, duration).apply {
-            onEnd { flashView.visibility = View.GONE }
-            start()
-        }
+        // 使用 view.animate() 确保属性变更在同一帧内正确排队：
+        // 1. 先设为不透明（白色闪烁）
+        // 2. 然后淡出到透明
+        // 3. 完成后隐藏
+        flashView.animate().cancel()
+        flashView.alpha = 0.8f
+        flashView.animate()
+            .alpha(0f)
+            .setDuration(duration)
+            .withEndAction {
+                flashView.visibility = View.GONE
+                flashView.alpha = 0f
+            }
+            .start()
     }
 }

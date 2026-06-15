@@ -31,6 +31,9 @@ import com.corsight.vision.ToolResult
 import com.corsight.vision.tools.GenericDetectionTool
 import com.example.voicenavigation.databinding.ActivityVisionTestBinding
 import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 import kotlinx.coroutines.*
 import okhttp3.Call
 import okhttp3.Callback
@@ -54,7 +57,10 @@ import java.util.LinkedList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+@AndroidEntryPoint
 class VisionTestActivity : AppCompatActivity() {
+
+    @Inject lateinit var unifiedTts: UnifiedTtsManager
 
     private lateinit var binding: ActivityVisionTestBinding
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
@@ -74,7 +80,7 @@ class VisionTestActivity : AppCompatActivity() {
     private var lastFrameWidth = 1
     private var lastFrameHeight = 1
     private var lastInferenceAt = 0L
-    private var baiduTts: BaiduTtsManager? = null
+    // baiduTts removed — using injected unifiedTts instead
     @Volatile private var ttsReady = false
     private val pendingSpeechMessages = LinkedList<String>()
     private val obstacleAlertTracker = ObstacleAlertTracker()
@@ -110,12 +116,21 @@ class VisionTestActivity : AppCompatActivity() {
         binding = ActivityVisionTestBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Edge-to-Edge：状态栏透明，headerBar 加状态栏内边距
-        com.example.voicenavigation.util.EdgeToEdgeHelper.apply(this)
-        com.example.voicenavigation.util.EdgeToEdgeHelper.padStatusBar(binding.headerBar)
+            // VisionTestActivity 使用 AppTheme.FullScreen 全屏隐藏状态栏
 
         ToolRegistry.register(GenericDetectionTool())
-        initTts()
+        // UnifiedTtsManager 通过 Hilt 注入，无需手动 init
+        unifiedTts.callback = object : UnifiedTtsManager.TtsCallback {
+            override fun onTtsReady() {
+                ttsReady = true
+                flushPendingSpeechMessages()
+                Log.d(TAG, "Obstacle TTS ready")
+            }
+            override fun onTtsError(error: String) {
+                Log.e(TAG, "Obstacle TTS error: $error")
+            }
+        }
+        unifiedTts.init()
         setupLongPressVoiceLauncher()
         setupUI()
         registerStopObstacleReceiver()
@@ -133,26 +148,6 @@ class VisionTestActivity : AppCompatActivity() {
             })
         } else {
             startCameraOrRequestPermission()
-        }
-    }
-
-    private fun initTts() {
-        baiduTts = BaiduTtsManager(
-            this,
-            getString(R.string.baidu_speech_api_key),
-            getString(R.string.baidu_speech_secret_key)
-        ).apply {
-            callback = object : BaiduTtsManager.TtsCallback {
-                override fun onTtsReady() {
-                    ttsReady = true
-                    flushPendingSpeechMessages()
-                    Log.d(TAG, "Obstacle TTS ready")
-                }
-                override fun onTtsError(error: String) {
-                    Log.e(TAG, "Obstacle TTS error: $error")
-                }
-            }
-            init()
         }
     }
 
@@ -588,18 +583,16 @@ class VisionTestActivity : AppCompatActivity() {
     }
 
     private fun speakObstacleMessage(message: String) {
-        val tts = baiduTts
-        if (ttsReady && tts != null) {
-            tts.speak(message)
+        if (ttsReady) {
+            unifiedTts.speak(message)
         } else {
             pendingSpeechMessages.add(message)
         }
     }
 
     private fun flushPendingSpeechMessages() {
-        val tts = baiduTts ?: return
         while (pendingSpeechMessages.isNotEmpty()) {
-            tts.speak(pendingSpeechMessages.removeFirst())
+            unifiedTts.speak(pendingSpeechMessages.removeFirst())
         }
     }
 
@@ -768,8 +761,7 @@ class VisionTestActivity : AppCompatActivity() {
         currentSource = null
         ttsReady = false
         pendingSpeechMessages.clear()
-        baiduTts?.destroy()
-        baiduTts = null
+        unifiedTts.destroy()
         scope.cancel()
         cameraExecutor.shutdownNow()
         inferenceExecutor.shutdownNow()

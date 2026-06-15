@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.voicenavigation.data.VoiceRecord
 import com.example.voicenavigation.data.VoiceRecordRepository
-import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +60,7 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    fun playRecord(record: VoiceRecord, tts: BaiduTtsManager?) {
+    fun playRecord(record: VoiceRecord, tts: UnifiedTtsManager?) {
         tts?.speak(record.content ?: return)
     }
 }

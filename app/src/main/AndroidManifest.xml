@@ -45,7 +45,7 @@
 
         <activity
             android:name=".VisionTestActivity"
-            android:theme="@style/AppTheme.NoActionBar"
+            android:theme="@style/AppTheme.FullScreen"
             android:exported="false" />
 
         <activity

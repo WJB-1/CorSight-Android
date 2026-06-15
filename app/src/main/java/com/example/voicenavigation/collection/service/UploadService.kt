@@ -121,8 +121,9 @@ class UploadService(
     }
 
     /**
-     * 单张重传（补拍场景或手动重试）。
-     * 需要已有 uploadSessionId。
+     * 上传单张照片。
+     * 若 Task 尚无 uploadSessionId，会自动先提交元数据获取 session_id。
+     * 支持单张重传、多选上传、补拍后上传等所有场景。
      */
     suspend fun uploadSinglePhoto(
         task: CaptureTask,
@@ -130,10 +131,18 @@ class UploadService(
         onProgress: (Int) -> Unit = {}
     ): Boolean {
         lastError = ""
-        val sessionId = task.uploadSessionId
+
+        // 自动获取 session_id（如果 Task 还没有）
+        var sessionId = task.uploadSessionId
         if (sessionId == null) {
-            lastError = "无 session_id，请先上传整个任务"
-            return false
+            taskStorage.updateTaskStatus(task.pointId, TaskStatus.UPLOADING)
+            sessionId = submitMetadata(task)
+            if (sessionId == null) {
+                lastError = "元数据提交失败: $lastError"
+                taskStorage.updateTaskStatus(task.pointId, TaskStatus.FAILED)
+                return false
+            }
+            taskStorage.updateUploadSessionId(task.pointId, sessionId)
         }
 
         taskStorage.updatePhotoUploadStatus(task.pointId, photo.id, UploadStatus.UPLOADING)

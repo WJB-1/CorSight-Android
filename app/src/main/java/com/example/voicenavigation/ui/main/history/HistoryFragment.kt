@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.voicenavigation.R
 import com.example.voicenavigation.data.VoiceRecordAdapter
-import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,7 +24,7 @@ class HistoryFragment : Fragment() {
 
     private val viewModel: HistoryViewModel by viewModels()
 
-    @Inject lateinit var baiduTts: BaiduTtsManager
+    @Inject lateinit var unifiedTts: UnifiedTtsManager
 
     private var historyAdapter: VoiceRecordAdapter? = null
 
@@ -73,7 +73,7 @@ class HistoryFragment : Fragment() {
     private fun setupAdapterListener(adapter: VoiceRecordAdapter) {
         adapter.setOnItemActionListener(object : VoiceRecordAdapter.OnItemActionListener {
             override fun onPlay(record: com.example.voicenavigation.data.VoiceRecord, position: Int) {
-                viewModel.playRecord(record, baiduTts)
+                viewModel.playRecord(record, unifiedTts)
             }
             override fun onDelete(record: com.example.voicenavigation.data.VoiceRecord, position: Int) {
                 AlertDialog.Builder(requireContext())

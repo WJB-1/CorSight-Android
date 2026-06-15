@@ -65,9 +65,9 @@ object VoiceModule {
     fun provideVoiceInteractionManager(
         @ApplicationContext context: Context,
         speechManager: BaiduSpeechManager,
-        ttsManager: BaiduTtsManager,
+        unifiedTtsManager: UnifiedTtsManager,
         llmCaller: LlmFunctionCaller
     ): VoiceInteractionManager {
-        return VoiceInteractionManager(context, speechManager, ttsManager, llmCaller)
+        return VoiceInteractionManager(context, speechManager, unifiedTtsManager, llmCaller)
     }
 }

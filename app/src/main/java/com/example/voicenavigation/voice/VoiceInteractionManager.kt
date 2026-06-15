@@ -7,7 +7,7 @@ import android.util.Log
 import android.widget.Toast
 import com.example.voicenavigation.R
 import com.example.voicenavigation.stt.BaiduSpeechManager
-import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
 import org.json.JSONObject
 
 /**
@@ -27,7 +27,7 @@ import org.json.JSONObject
 class VoiceInteractionManager(
     private val context: Context,
     private val speechManager: BaiduSpeechManager,
-    private val ttsManager: BaiduTtsManager?,
+    private val ttsManager: UnifiedTtsManager?,
     private val llmCaller: LlmFunctionCaller?
 ) : BaiduSpeechManager.STTCallback {
 
@@ -144,7 +144,7 @@ class VoiceInteractionManager(
     }
 
     fun getLastFeedbackText(): String? = lastFeedbackText
-    fun getTtsManager(): BaiduTtsManager? = ttsManager
+    fun getTtsManager(): UnifiedTtsManager? = ttsManager
     fun isLLMAvailable(): Boolean = llmCaller != null && llmCaller.isConfigured()
 
     // ==================== Toast 管理 ====================
