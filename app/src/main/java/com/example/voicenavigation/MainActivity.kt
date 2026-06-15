@@ -63,6 +63,7 @@ import com.example.voicenavigation.navigation.NavigationManager
 import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
 import com.example.voicenavigation.voice.LLMFunctionCaller
 import com.example.voicenavigation.ui.ringmenu.RingMenuView
 import com.example.voicenavigation.ui.ringmenu.RingMenuItem
@@ -104,6 +105,7 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var navigationManager: NavigationManager
     @Inject lateinit var speechManager: BaiduSpeechManager
     @Inject lateinit var baiduTts: BaiduTtsManager
+    @Inject lateinit var unifiedTts: UnifiedTtsManager
     @Inject lateinit var voiceInteractionManager: VoiceInteractionManager
     @Inject lateinit var appDatabase: AppDatabase
     @Inject lateinit var tripPreviewService: TripPreviewService
@@ -528,12 +530,19 @@ class MainActivity : AppCompatActivity(),
         // NavigationManager callback
         navigationManager.setNavigationCallback(this)
 
-        // BaiduTTS init (token fetch)
+        // BaiduTTS init (token fetch) — 用于语音交互系统
         baiduTts.callback = object : BaiduTtsManager.TtsCallback {
-            override fun onTtsReady() { Log.d(TAG, "TTS ready") }
-            override fun onTtsError(error: String) { Log.e(TAG, "TTS error: $error") }
+            override fun onTtsReady() { Log.d(TAG, "Baidu TTS ready") }
+            override fun onTtsError(error: String) { Log.e(TAG, "Baidu TTS error: $error") }
         }
         baiduTts.init()
+
+        // UnifiedTTS init — 系统离线 TTS 优先，用于菜单反馈等低延迟场景
+        unifiedTts.callback = object : UnifiedTtsManager.TtsCallback {
+            override fun onTtsReady() { Log.d(TAG, "Unified TTS ready") }
+            override fun onTtsError(error: String) { Log.e(TAG, "Unified TTS error: $error") }
+        }
+        unifiedTts.init()
 
         // Load preview server URL from prefs
         val prefs = AppConfig.prefs(this)
@@ -1115,25 +1124,28 @@ class MainActivity : AppCompatActivity(),
                 lockMapGestures(false)
             }
             is InteractionEvent.ItemExecuted -> {
-                baiduTts.speak("正在${event.item.label}")
+                // 菜单反馈用系统 TTS（低延迟）
+                unifiedTts.speak("正在${event.item.label}")
                 commandRouter.execute(event.commandId)
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.LaunchVoiceAssistant -> {
                 lockMapGestures(true)  // 解锁地图
+                unifiedTts.speak("语音助手已就绪")
                 voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                 Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
             }
             is InteractionEvent.ItemHighlighted -> {
-                baiduTts.flushQueue()
-                baiduTts.speak(event.item.label)
+                // 菜单项高亮：系统 TTS 打断旧播报，立即读新项名
+                unifiedTts.flushQueue()
+                unifiedTts.speak(event.item.label)
             }
             is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
-                baiduTts.flushQueue()
+                unifiedTts.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.Cancelled, is InteractionEvent.DismissMenu -> {
-                baiduTts.flushQueue()
+                unifiedTts.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             else -> { /* HighlightCleared — 无需处理 */ }
@@ -1337,6 +1349,7 @@ class MainActivity : AppCompatActivity(),
         voiceCommandPulseAnim = null
         super.onDestroy()
         baiduTts.destroy()
+        unifiedTts.destroy()
         speechManager.destroyRecognizer()
         navigationManager.stopNavigation()
         navigationManager.destroyLocationClient()

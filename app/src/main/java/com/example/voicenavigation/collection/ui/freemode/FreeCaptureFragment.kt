@@ -108,7 +108,6 @@ class FreeCaptureFragment : Fragment() {
         shutterBtn.setOnClickListener { takePhoto() }
         shutterBtn.setOnTouchListener { v, event ->
             ShutterAnimations.onTouchEvent(v, event)
-            false
         }
         btnSaveTask.setOnClickListener { showSaveDialog() }
         setupGestures()
@@ -198,11 +197,27 @@ class FreeCaptureFragment : Fragment() {
                 }
             })
 
-        previewView.setOnTouchListener { _, event ->
+        previewView.setOnTouchListener { v, event ->
+            // 先让手势检测器处理
             scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
-            // 双指缩放进行中时拦截，否则让 ViewPager2 处理横向滑动
-            scaleDetector.isInProgress
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    // 手指按下时告诉 ViewPager2 不要拦截，我们先判断
+                    v.parent.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    // 双指缩放进行中 → 拦截
+                    if (scaleDetector.isInProgress) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
+            }
+            true
         }
     }
 
@@ -231,6 +246,9 @@ class FreeCaptureFragment : Fragment() {
         val future = ProcessCameraProvider.getInstance(requireContext())
         future.addListener({
             cameraProvider = future.get()
+            // COMPATIBLE 模式：用 TextureView 代替 SurfaceView，
+            // 避免 ViewPager2 多页面共存时 SurfaceView BufferQueue 残留导致画面错乱
+            previewView.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }

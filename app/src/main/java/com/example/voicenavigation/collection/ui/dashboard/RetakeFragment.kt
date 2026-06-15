@@ -120,7 +120,6 @@ class RetakeFragment : Fragment() {
         // 快门按压反馈动画
         shutterBtn.setOnTouchListener { v, event ->
             ShutterAnimations.onTouchEvent(v, event)
-            false
         }
         setShutterEnabled(false)
 

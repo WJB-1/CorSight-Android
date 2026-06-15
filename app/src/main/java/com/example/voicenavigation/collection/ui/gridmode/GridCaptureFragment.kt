@@ -120,7 +120,6 @@ class GridCaptureFragment : Fragment() {
         }
         shutterBtn.setOnTouchListener { v, event ->
             ShutterAnimations.onTouchEvent(v, event)
-            false
         }
         setShutterEnabled(false)
         setupGestures()
@@ -285,10 +284,24 @@ class GridCaptureFragment : Fragment() {
                 }
             })
 
-        previewView.setOnTouchListener { _, event ->
+        previewView.setOnTouchListener { v, event ->
             scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
-            scaleDetector.isInProgress
+
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    v.parent.requestDisallowInterceptTouchEvent(true)
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    v.parent.requestDisallowInterceptTouchEvent(false)
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (scaleDetector.isInProgress) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
+                }
+            }
+            true
         }
     }
 
@@ -317,6 +330,7 @@ class GridCaptureFragment : Fragment() {
         val future = ProcessCameraProvider.getInstance(requireContext())
         future.addListener({
             cameraProvider = future.get()
+            previewView.implementationMode = PreviewView.ImplementationMode.COMPATIBLE
             val preview = Preview.Builder().build().also {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }

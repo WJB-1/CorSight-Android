@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.voicenavigation.R
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
+import com.example.voicenavigation.stt.UnifiedTtsManager
 import com.example.voicenavigation.voice.LlmFunctionCaller
 import com.example.voicenavigation.voice.VoiceCommandInterpreter
 import com.example.voicenavigation.voice.VoiceInteractionManager
@@ -28,6 +29,19 @@ object VoiceModule {
     @Singleton
     fun provideBaiduTtsManager(@ApplicationContext context: Context): BaiduTtsManager {
         return BaiduTtsManager(
+            context,
+            context.getString(R.string.baidu_speech_api_key),
+            context.getString(R.string.baidu_speech_secret_key)
+        )
+    }
+
+    /**
+     * 统一 TTS：系统离线 TTS 优先（低延迟），百度在线 TTS 备选（高音质）。
+     */
+    @Provides
+    @Singleton
+    fun provideUnifiedTtsManager(@ApplicationContext context: Context): UnifiedTtsManager {
+        return UnifiedTtsManager(
             context,
             context.getString(R.string.baidu_speech_api_key),
             context.getString(R.string.baidu_speech_secret_key)
