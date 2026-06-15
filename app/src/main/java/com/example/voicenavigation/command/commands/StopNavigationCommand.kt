@@ -10,10 +10,8 @@ class StopNavigationCommand @Inject constructor(
 ) : MenuCommand {
     override val id = "stop_navigation"
     override fun execute(params: Map<String, String>): CommandEvent? {
-        if (navigationManager.isNavigating()) {
-            navigationManager.stopNavigation()
-            return CommandEvent.StopNavigation
-        }
-        return null
+        // B4 修复：只返回事件，不直接执行副作用。
+        // 副作用由 handleCommandEvent 统一处理，避免双重执行。
+        return CommandEvent.StopNavigation
     }
 }

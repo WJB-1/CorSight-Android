@@ -1095,6 +1095,8 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun showRingMenu(centerX: Float, centerY: Float) {
+        // B3 修复：先设 VISIBLE 再动画，确保 View 能立即接收触摸事件
+        ringMenuContainer.visibility = View.VISIBLE
         ViewTransition.scaleInFrom(ringMenuContainer, centerX, centerY, 350)
         ringMenuView?.invalidate()
     }

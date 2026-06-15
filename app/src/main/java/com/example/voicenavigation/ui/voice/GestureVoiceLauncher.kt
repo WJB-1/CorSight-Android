@@ -92,12 +92,20 @@ object GestureVoiceLauncher {
 
             MotionEvent.ACTION_UP -> {
                 if (isLongPressing) {
-                    // 长按已触发，松手 → 确认执行菜单项
-                    callback?.onRingMenuConfirm()
+                    // B1 修复：判断手指是否有移动
+                    val dx = event.x - startX
+                    val dy = event.y - startY
+                    val moved = dx * dx + dy * dy > 50 * 50
+                    if (moved) {
+                        // 手指滑动过 → 确认菜单选中项
+                        callback?.onRingMenuConfirm()
+                    } else {
+                        // 手指没有移动 → 启动语音助手
+                        callback?.onVoiceAssistant()
+                    }
                     isLongPressing = false
                     return true
                 } else {
-                    // 还没触发长按就松手了
                     cancelLongPress()
                     return false
                 }

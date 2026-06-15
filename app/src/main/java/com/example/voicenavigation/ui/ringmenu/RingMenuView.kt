@@ -20,11 +20,11 @@ import kotlin.math.sqrt
 /**
  * 环形菜单自定义 View。
  *
- * 手指长按屏幕后在按住位置弹出，手指不抬起直接滑向某个扇形区域，
- * 松手即执行对应功能。支持二级子菜单（滑到有子菜单的项自动展开）。
+ * 职责：绘制扇形菜单 + 处理触摸选择 + 执行命令。
+ * 角度坐标系：12 点钟方向 = 0°，顺时针递增（与绘制对齐）。
  *
- * 动画策略：View 本身不包含任何动画逻辑，仅暴露可被动画层驱动的属性。
- * 动画由 animation 包中的 CanvasAnimDelegate / Animations 统一管理和分发。
+ * 外部可通过 [updateFinger] / [confirmSelection] / [cancelSelection]
+ * 驱动选中状态（供 Coordinator 模式使用）。
  */
 class RingMenuView @JvmOverloads constructor(
     context: Context,
@@ -32,13 +32,15 @@ class RingMenuView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
-    // ==================== 可配置参数 ====================
+    // ==================== 尺寸参数（onSizeChanged 中按屏幕比例计算） ====================
     private var innerRadius = 80f
     private var ringWidth = 140f
     private var subRingWidth = 120f
     private var gapAngle = 4f
     private var textSize = 26f
     private var centerTextSize = 22f
+    private var gap = 10f        // 内环与主环间距（按屏幕比例）
+    private var subGap = 10f     // 主环与子环间距
 
     // ==================== 状态 ====================
     private var items: List<RingMenuItem> = emptyList()
@@ -48,83 +50,43 @@ class RingMenuView @JvmOverloads constructor(
     private var centerX = 0f
     private var centerY = 0f
 
-    // ==================== 可动画化属性（供动画层读写） ====================
-
-    /**
-     * 菜单整体缩放比例（0f ~ 1f）。
-     * 动画层通过 CanvasAnimDelegate 驱动此属性实现弹出/收起动画。
-     */
+    // ==================== 可动画化属性 ====================
     var menuScale: Float = 1f
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
-     * 遮罩层 alpha（0x00 ~ 0xFF）。
-     * 动画层驱动此属性实现遮罩淡入/淡出。
-     */
+        set(value) { field = value; invalidate() }
     var overlayAlpha: Int = 0x80
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
-     * 选中扇形的外扩量（像素）。
-     * 动画层驱动此属性实现选中高亮的平滑过渡。
-     */
+        set(value) { field = value; invalidate() }
     var selectionExpansion: Float = 0f
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
-     * 子菜单环的展开比例（0f ~ 1f）。
-     * 动画层驱动此属性实现二级菜单的展开动画。
-     */
+        set(value) { field = value; invalidate() }
     var subMenuScale: Float = 1f
-        set(value) {
-            field = value
-            invalidate()
-        }
-
-    /**
-     * 中心按钮的呼吸缩放（1f ~ 1.08f 左右）。
-     * 动画层通过 Ambient.breathingScale 驱动。
-     */
+        set(value) { field = value; invalidate() }
     var centerButtonScale: Float = 1f
-        set(value) {
-            field = value
-            invalidate()
-        }
+        set(value) { field = value; invalidate() }
+    var glowIntensity: Float = 0f
+        set(value) { field = value; invalidate() }
 
     /**
-     * 选中扇形的高亮色 alpha 通道（呼吸发光用）。
-     * 动画层通过 Selection.breathingGlow 驱动。
+     * 兼容属性：旧动画层通过 glowAlpha (Int 0-255) 驱动，
+     * 内部映射到 glowIntensity (Float 0-1)。
      */
-    var glowAlpha: Int = 0
-        set(value) {
-            field = value
-            invalidate()
-        }
+    var glowAlpha: Int
+        get() = (glowIntensity * 255).toInt()
+        set(value) { glowIntensity = value.coerceIn(0, 255) / 255f }
 
     // ==================== 绘制工具 ====================
     private val paintSector = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-    private val paintSectorStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val paintStroke = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE; strokeWidth = 3f; color = 0xFFFFFFFF.toInt()
     }
     private val paintText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFFFFFFFF.toInt(); textAlign = Paint.Align.CENTER
-        typeface = Typeface.DEFAULT_BOLD; textSize = this@RingMenuView.textSize
+        typeface = Typeface.DEFAULT_BOLD
     }
     private val paintCenter = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFF333333.toInt(); style = Paint.Style.FILL
     }
     private val paintCenterText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0xFFFFFFFF.toInt(); textAlign = Paint.Align.CENTER
-        typeface = Typeface.DEFAULT_BOLD; textSize = this@RingMenuView.centerTextSize
+        typeface = Typeface.DEFAULT_BOLD
     }
     private val paintOverlay = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = 0x80000000.toInt(); style = Paint.Style.FILL
@@ -135,57 +97,37 @@ class RingMenuView @JvmOverloads constructor(
     var onItemExecuted: ((RingMenuItem) -> Unit)? = null
     var onCenterClicked: (() -> Unit)? = null
 
-    // ==================== 选择状态查询（供动画层读取） ====================
-
-    /** 当前选中的主菜单索引，-1 表示无选中 */
+    // ==================== 状态查询 ====================
     fun getSelectedIndex(): Int = selectedIndex
-
-    /** 当前选中的子菜单索引，-1 表示无选中 */
     fun getSelectedChildIndex(): Int = selectedChildIndex
-
-    /** 当前展开的父菜单索引，-1 表示无子菜单展开 */
     fun getActiveParentIndex(): Int = activeParentIndex
-
-    /** 菜单项列表 */
     fun getItems(): List<RingMenuItem> = items
 
-    // ==================== 数据驱动 API ====================
+    // ==================== 数据 API ====================
 
     fun setMenuItems(newItems: List<RingMenuItem>) {
         items = newItems
-        selectedIndex = -1
-        activeParentIndex = -1
-        selectedChildIndex = -1
+        resetSelection()
         invalidate()
     }
 
-    // ==================== 触摸处理 ====================
+    // ==================== 外部驱动 API（供 Coordinator 使用） ====================
 
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.action) {
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                handleMove(event.x, event.y)
-                return true
-            }
-            MotionEvent.ACTION_UP -> {
-                handleUp()
-                return true
-            }
-            MotionEvent.ACTION_CANCEL -> {
-                resetSelection()
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
-    }
-
-    private fun handleMove(x: Float, y: Float) {
+    /**
+     * 外部手指位置更新。由 Coordinator 或 onTouchEvent 调用。
+     * 统一使用 12 点钟为 0° 的坐标系。
+     */
+    fun updateFinger(x: Float, y: Float) {
         val dx = x - centerX
         val dy = y - centerY
         val distance = sqrt(dx * dx + dy * dy)
-        val angle = normalizeAngle(Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat())
 
-        // 中心区域
+        // ── 统一角度计算：12 点钟 = 0°，顺时针 ──
+        // atan2 的 0° 在 3 点钟方向，需要 +90° 对齐到 12 点钟
+        val rawAngle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+        val angle = normalizeAngle(rawAngle + 90f)
+
+        // 中心区域：取消高亮
         if (distance < innerRadius) {
             if (selectedIndex != -1 || selectedChildIndex != -1) {
                 resetSelection()
@@ -196,14 +138,18 @@ class RingMenuView @JvmOverloads constructor(
 
         // 二级菜单环
         if (activeParentIndex >= 0 && items.getOrNull(activeParentIndex)?.hasChildren == true) {
-            val subInner = innerRadius + ringWidth + 10f
+            val subInner = innerRadius + ringWidth + subGap
             val subOuter = subInner + subRingWidth
             if (distance in subInner..subOuter) {
                 val children = items[activeParentIndex].children ?: emptyList()
                 if (children.isNotEmpty()) {
+                    // ── B6 修复：子菜单以父扇区中心为基准展开 ──
+                    val parentAnglePerItem = 360f / items.size
+                    val parentCenter = activeParentIndex * parentAnglePerItem + parentAnglePerItem / 2
                     val childAnglePerItem = 360f / children.size
-                    val parentStartAngle = activeParentIndex * (360f / items.size)
-                    val relativeAngle = normalizeAngle(angle - parentStartAngle)
+                    val childTotalAngle = childAnglePerItem * children.size
+                    val childStartAngle = normalizeAngle(parentCenter - childTotalAngle / 2)
+                    val relativeAngle = normalizeAngle(angle - childStartAngle)
                     val idx = ((relativeAngle + childAnglePerItem / 2) / childAnglePerItem).toInt() % children.size
                     if (idx != selectedChildIndex) {
                         selectedChildIndex = idx
@@ -217,7 +163,7 @@ class RingMenuView @JvmOverloads constructor(
         }
 
         // 主菜单环
-        val mainInner = innerRadius + 10f
+        val mainInner = innerRadius + gap
         val mainOuter = mainInner + ringWidth
         if (distance in mainInner..mainOuter) {
             val anglePerItem = 360f / items.size
@@ -226,15 +172,52 @@ class RingMenuView @JvmOverloads constructor(
                 selectedIndex = idx
                 selectedChildIndex = -1
                 onItemSelected?.invoke(items[idx])
-                if (items[idx].hasChildren) {
-                    activeParentIndex = idx
-                } else {
-                    activeParentIndex = -1
-                }
+                activeParentIndex = if (items[idx].hasChildren) idx else -1
                 invalidate()
             }
         }
     }
+
+    /**
+     * 外部确认选择（手指抬起）。供 Coordinator 调用。
+     */
+    fun confirmSelection() {
+        handleUp()
+    }
+
+    /**
+     * 外部取消选择。供 Coordinator 调用。
+     */
+    fun cancelSelection() {
+        resetSelection()
+        invalidate()
+    }
+
+    // ==================== 触摸处理（自身也处理，Coordinator 模式下可禁用） ====================
+
+    /** 是否由自身处理触摸事件。设为 false 时由 Coordinator 驱动。 */
+    var selfTouchEnabled = true
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (!selfTouchEnabled) return false
+        when (event.action) {
+            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
+                updateFinger(event.x, event.y)
+                return true
+            }
+            MotionEvent.ACTION_UP -> {
+                confirmSelection()
+                return true
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                cancelSelection()
+                return true
+            }
+        }
+        return super.onTouchEvent(event)
+    }
+
+    // ==================== 选中执行 ====================
 
     private fun handleUp() {
         // 二级菜单执行
@@ -261,7 +244,7 @@ class RingMenuView @JvmOverloads constructor(
             return
         }
 
-        // 点了中心：关闭
+        // 无选中：点击中心 → 关闭
         onCenterClicked?.invoke()
     }
 
@@ -284,26 +267,27 @@ class RingMenuView @JvmOverloads constructor(
         super.onSizeChanged(w, h, oldw, oldh)
         centerX = w / 2f
         centerY = h / 2f
-        // 根据屏幕尺寸动态调整半径
         val minDim = min(w, h)
         innerRadius = minDim * 0.08f
         ringWidth = minDim * 0.16f
         subRingWidth = minDim * 0.13f
         textSize = minDim * 0.028f
         centerTextSize = minDim * 0.024f
+        // ── B8 修复：间距按屏幕比例 ──
+        gap = minDim * 0.012f
+        subGap = minDim * 0.012f
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (items.isEmpty()) return
 
-        // 应用菜单整体缩放
         val scale = menuScale
         if (scale <= 0.01f) return
         canvas.save()
         canvas.scale(scale, scale, centerX, centerY)
 
-        // 半透明遮罩（使用可动画化的 overlayAlpha）
+        // 遮罩
         paintOverlay.alpha = overlayAlpha
         canvas.drawPaint(paintOverlay)
 
@@ -316,27 +300,31 @@ class RingMenuView @JvmOverloads constructor(
             val isSelected = (index == selectedIndex && activeParentIndex != index)
             val expansion = if (isSelected) selectionExpansion else 0f
             drawSector(canvas, startAngle, sweepAngle,
-                innerRadius + 10f, innerRadius + 10f + ringWidth + expansion,
+                innerRadius + gap, innerRadius + gap + ringWidth + expansion,
                 item.color, isSelected)
             drawLabel(canvas, item.label, startAngle + sweepAngle / 2,
-                innerRadius + 10f + (ringWidth + expansion) / 2)
+                innerRadius + gap + (ringWidth + expansion) / 2)
         }
 
         // 绘制二级菜单环
         if (activeParentIndex >= 0 && items[activeParentIndex].hasChildren) {
             val children = items[activeParentIndex].children!!
             val childAnglePerItem = 360f / children.size
-            val parentStartAngle = activeParentIndex * anglePerItem
+            // ── B6 修复：子菜单以父扇区中心为基准 ──
+            val parentCenter = activeParentIndex * anglePerItem + anglePerItem / 2
+            val childTotalAngle = childAnglePerItem * children.size
+            val childStartAngle = parentCenter - childTotalAngle / 2
+
             val subScale = subMenuScale
             if (subScale > 0.01f) {
                 canvas.save()
                 canvas.scale(subScale, subScale, centerX, centerY)
                 children.forEachIndexed { cIndex, child ->
-                    val startAngle = parentStartAngle + cIndex * childAnglePerItem + gapAngle / 2
+                    val startAngle = childStartAngle + cIndex * childAnglePerItem + gapAngle / 2
                     val sweepAngle = childAnglePerItem - gapAngle
                     val isSelected = (cIndex == selectedChildIndex)
                     val expansion = if (isSelected) selectionExpansion else 0f
-                    val subInner = innerRadius + ringWidth + 10f
+                    val subInner = innerRadius + ringWidth + subGap
                     drawSector(canvas, startAngle, sweepAngle,
                         subInner, subInner + subRingWidth + expansion,
                         child.color, isSelected)
@@ -347,12 +335,13 @@ class RingMenuView @JvmOverloads constructor(
             }
         }
 
-        // 绘制中心圆（应用呼吸缩放）
+        // 中心圆
         val cScale = centerButtonScale
         canvas.save()
         canvas.scale(cScale, cScale, centerX, centerY)
         canvas.drawCircle(centerX, centerY, innerRadius, paintCenter)
-        val centerLabel = if (activeParentIndex >= 0) context.getString(R.string.menu_back) else context.getString(R.string.menu_close)
+        val centerLabel = if (activeParentIndex >= 0) context.getString(R.string.menu_back)
+            else context.getString(R.string.menu_close)
         canvas.drawText(centerLabel, centerX,
             centerY + paintCenterText.textSize / 3, paintCenterText)
         canvas.restore()
@@ -364,7 +353,8 @@ class RingMenuView @JvmOverloads constructor(
         canvas: Canvas, startAngle: Float, sweepAngle: Float,
         innerR: Float, outerR: Float, color: Int, isSelected: Boolean
     ) {
-        paintSector.color = if (isSelected) brighten(color, glowAlpha) else color
+        // ── B5 修复：glowIntensity 控制 RGB 提亮，而非 alpha ──
+        paintSector.color = if (isSelected) brighten(color) else color
         val path = Path()
         val rectInner = RectF(centerX - innerR, centerY - innerR, centerX + innerR, centerY + innerR)
         val rectOuter = RectF(centerX - outerR, centerY - outerR, centerX + outerR, centerY + outerR)
@@ -372,7 +362,7 @@ class RingMenuView @JvmOverloads constructor(
         path.arcTo(rectInner, startAngle + sweepAngle, -sweepAngle)
         path.close()
         canvas.drawPath(path, paintSector)
-        canvas.drawPath(path, paintSectorStroke)
+        canvas.drawPath(path, paintStroke)
     }
 
     private fun drawLabel(canvas: Canvas, label: String, angle: Float, radius: Float) {
@@ -384,16 +374,13 @@ class RingMenuView @JvmOverloads constructor(
     }
 
     /**
-     * 提亮颜色。
-     *
-     * @param color   原始颜色
-     * @param glowAlpha 额外的发光 alpha（0 表示无额外发光），由动画层驱动
+     * B5 修复：用 glowIntensity 控制提亮程度（0=原色，1=最大提亮）。
      */
-    private fun brighten(color: Int, glowAlpha: Int = 0): Int {
-        val r = ((color shr 16 and 0xFF) * 1.3f).toInt().coerceAtMost(255)
-        val g = ((color shr 8 and 0xFF) * 1.3f).toInt().coerceAtMost(255)
-        val b = ((color and 0xFF) * 1.3f).toInt().coerceAtMost(255)
-        val a = (0xFF + glowAlpha).coerceAtMost(0xFF)
-        return Color.argb(a, r, g, b)
+    private fun brighten(color: Int): Int {
+        val boost = 1.0f + glowIntensity * 0.3f  // glowIntensity 0..1 → boost 1.0..1.3
+        val r = ((color shr 16 and 0xFF) * boost).toInt().coerceAtMost(255)
+        val g = ((color shr 8 and 0xFF) * boost).toInt().coerceAtMost(255)
+        val b = ((color and 0xFF) * boost).toInt().coerceAtMost(255)
+        return Color.argb(0xFF, r, g, b)
     }
 }
