@@ -68,7 +68,8 @@ import com.example.voicenavigation.ui.ringmenu.RingMenuItem
 import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.dialog.TripPreviewDialog
-import com.example.voicenavigation.ui.voice.GestureVoiceLauncher
+import com.example.voicenavigation.ui.ringmenu.InteractionEvent
+import com.example.voicenavigation.ui.ringmenu.RingMenuCoordinator
 import com.example.voicenavigation.config.AppConfigProvider
 import com.example.voicenavigation.animation.Animations
 import com.example.voicenavigation.animation.AnimatorUtils
@@ -90,8 +91,7 @@ class MainActivity : AppCompatActivity(),
     NavigationManager.NavigationCallback,
     PoiSearch.OnPoiSearchListener,
     VoiceInteractionManager.CommandExecutor,
-    VoiceInteractionManager.TextInputListener,
-    GestureVoiceLauncher.GestureCallback {
+    VoiceInteractionManager.TextInputListener {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -166,7 +166,8 @@ class MainActivity : AppCompatActivity(),
     private var lastAddress: String? = null
     private var isObstacleRunning = false
 
-    // 环形菜单
+    // 环形菜单（由 Coordinator 统一管理）
+    private var ringMenuCoordinator: RingMenuCoordinator? = null
     private var ringMenuView: RingMenuView? = null
     private lateinit var ringMenuContainer: FrameLayout
 
@@ -189,8 +190,7 @@ class MainActivity : AppCompatActivity(),
         setupRingMenu()
         requestPermissions()
 
-        // 全局长按唤醒语音助手
-        GestureVoiceLauncher.attach(this, voiceInteractionManager, this)
+        // Coordinator 在 setupRingMenu() 中初始化（替代 GestureVoiceLauncher）
 
         mapView = findViewById(R.id.map)
         mapView.onCreate(savedInstanceState)
@@ -1053,18 +1053,10 @@ class MainActivity : AppCompatActivity(),
         return com.example.voicenavigation.util.TextUtils.cleanSpeechText(text)
     }
 
-    // ==================== 环形菜单（数据来自 menu_config.json） ====================
+    // ==================== 环形菜单（Coordinator 中介者模式） ====================
 
     private fun setupRingMenu() {
-        // MenuConfig is Hilt-injected (no manual creation needed)
-
-        // Collect CommandRouter events — THIS is what makes ring menu commands actually work
-        lifecycleScope.launch {
-            commandRouter.events.collect { event ->
-                handleCommandEvent(event)
-            }
-        }
-
+        // 1. 创建容器和 View
         ringMenuContainer = FrameLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT,
@@ -1072,7 +1064,6 @@ class MainActivity : AppCompatActivity(),
             )
             visibility = View.GONE
         }
-
         val rootLayout = findViewById<ViewGroup>(android.R.id.content)
         rootLayout.addView(ringMenuContainer)
 
@@ -1082,28 +1073,54 @@ class MainActivity : AppCompatActivity(),
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
             setMenuItems(menuConfig.getItems())
-
-            onItemExecuted = { item ->
-                hideRingMenu()
-                commandRouter.execute(item.command)
-            }
-            onCenterClicked = {
-                hideRingMenu()
-            }
         }
         ringMenuContainer.addView(ringMenuView)
+
+        // 2. 创建 Coordinator（统一管理手势 + 状态机 + 动画 + 菜单交互）
+        ringMenuCoordinator = RingMenuCoordinator(
+            context = this,
+            ringMenuView = ringMenuView!!,
+            ringMenuContainer = ringMenuContainer
+        )
+
+        // 3. 收集 Coordinator 事件
+        lifecycleScope.launch {
+            ringMenuCoordinator!!.events.collect { event ->
+                handleInteractionEvent(event)
+            }
+        }
+
+        // 4. 收集 CommandRouter 事件（命令执行后的 UI 效果）
+        lifecycleScope.launch {
+            commandRouter.events.collect { event ->
+                handleCommandEvent(event)
+            }
+        }
     }
 
-    private fun showRingMenu(centerX: Float, centerY: Float) {
-        // B3 修复：先设 VISIBLE 再动画，确保 View 能立即接收触摸事件
-        ringMenuContainer.visibility = View.VISIBLE
-        ViewTransition.scaleInFrom(ringMenuContainer, centerX, centerY, 350)
-        ringMenuView?.invalidate()
+    /**
+     * 处理 Coordinator 产生的交互事件。
+     */
+    private fun handleInteractionEvent(event: InteractionEvent) {
+        when (event) {
+            is InteractionEvent.ItemExecuted -> {
+                commandRouter.execute(event.commandId)
+            }
+            is InteractionEvent.LaunchVoiceAssistant -> {
+                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
+            }
+            is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
+                // 菜单已由 Coordinator 关闭
+            }
+            is InteractionEvent.Cancelled -> {
+                // 菜单已由 Coordinator 关闭
+            }
+            else -> { /* ShowMenu, ItemHighlighted, HighlightCleared — 无需处理 */ }
+        }
     }
 
-    private fun hideRingMenu() {
-        ViewTransition.scaleOut(ringMenuContainer, 200)
-    }
+    // showRingMenu / hideRingMenu 现在由 RingMenuCoordinator 内部管理
 
     /**
      * Handle events emitted by CommandRouter (from ring menu, voice commands, or gestures).
@@ -1184,26 +1201,6 @@ class MainActivity : AppCompatActivity(),
             }
             is com.example.voicenavigation.command.CommandEvent.QueryResult -> { /* display result */ }
         }
-    }
-
-    // ==================== GestureVoiceLauncher.GestureCallback ====================
-
-    override fun onVoiceAssistant() {
-        voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
-        Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onRingMenuShow(centerX: Float, centerY: Float) {
-        showRingMenu(centerX, centerY)
-    }
-
-    override fun onRingMenuConfirm() {
-        // RingMenuView handles the selection internally via onTouchEvent
-        // The view's onItemExecuted callback will fire
-    }
-
-    override fun onCancel() {
-        hideRingMenu()
     }
 
     override fun onLocationUpdated(location: Location, address: String?) {
@@ -1297,12 +1294,13 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        GestureVoiceLauncher.onDispatchTouchEvent(ev)
+        ringMenuCoordinator?.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
 
     override fun onDestroy() {
-        GestureVoiceLauncher.detach()
+        ringMenuCoordinator?.destroy()
+        ringMenuCoordinator = null
         voicePulseAnim?.cancel()
         voicePulseAnim = null
         voiceCommandPulseAnim?.cancel()
