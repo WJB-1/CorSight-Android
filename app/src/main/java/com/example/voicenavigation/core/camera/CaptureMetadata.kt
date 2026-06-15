@@ -32,5 +32,6 @@ data class CaptureMetadata(
     val fovY: Float,             // 垂直视场角（后端未用，留作扩展）
     val focalLength: Float,      // 当前焦距 mm
     val zoomRatio: Float,        // 变焦倍率
+    val isWide: Boolean = false, // 是否广角模式（zoomRatio < 0.9 时为 true）
     val timestamp: Long          // 拍摄时间戳
 )

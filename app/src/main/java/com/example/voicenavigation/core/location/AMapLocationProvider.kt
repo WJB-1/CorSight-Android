@@ -2,6 +2,7 @@ package com.example.voicenavigation.core.location
 
 import android.content.Context
 import android.location.Location
+import android.location.LocationManager
 import android.util.Log
 import com.amap.api.location.AMapLocationClient
 import com.amap.api.location.AMapLocationClientOption
@@ -19,8 +20,8 @@ import kotlin.coroutines.resume
  * 高德定位实现。
  *
  * 单例，内部维护一个 AMapLocationClient 实例：
- * - [observe] 使用连续定位模式
- * - [getLastLocation] 使用单次定位模式
+ * - [observe] 连续定位模式，返回 LocationResult 流（含成功和错误）
+ * - [getLastLocation] 单次定位模式
  *
  * 注意：同一时刻只应使用一种模式，切换时内部自动重新配置。
  */
@@ -50,6 +51,16 @@ class AMapLocationProvider @Inject constructor(
         }
     }
 
+    override fun isLocationEnabled(): Boolean {
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return try {
+            lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
+                    lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
     override suspend fun getLastLocation(timeoutMs: Long): Location? {
         return suspendCancellableCoroutine { cont ->
             val c = ensureClient()
@@ -59,7 +70,7 @@ class AMapLocationProvider @Inject constructor(
                 c.stopLocation()
                 running.set(false)
                 if (aMapLoc == null || aMapLoc.errorCode != 0) {
-                    Log.w(TAG, "getLastLocation failed: ${aMapLoc?.errorInfo}")
+                    Log.w(TAG, "getLastLocation failed: code=${aMapLoc?.errorCode} info=${aMapLoc?.errorInfo}")
                     if (cont.isActive) cont.resume(null)
                     return@setLocationListener
                 }
@@ -81,13 +92,16 @@ class AMapLocationProvider @Inject constructor(
         }
     }
 
-    override fun observe(intervalMs: Long): Flow<Location> = callbackFlow {
+    override fun observe(intervalMs: Long): Flow<LocationResult> = callbackFlow {
         val c = ensureClient()
         c.stopLocation()
         c.setLocationOption(buildOption(intervalMs, once = false))
         c.setLocationListener { aMapLoc ->
             if (aMapLoc == null || aMapLoc.errorCode != 0) {
-                Log.w(TAG, "observe failed: ${aMapLoc?.errorInfo}")
+                val code = aMapLoc?.errorCode ?: -1
+                val info = aMapLoc?.errorInfo ?: "unknown error"
+                Log.w(TAG, "observe error: code=$code info=$info")
+                trySend(LocationResult.Error(code, info))
                 return@setLocationListener
             }
             val loc = Location("amap").apply {
@@ -96,7 +110,7 @@ class AMapLocationProvider @Inject constructor(
                 accuracy = aMapLoc.accuracy
                 time = aMapLoc.time
             }
-            trySend(loc)
+            trySend(LocationResult.Success(loc))
         }
         running.set(true)
         c.startLocation()
