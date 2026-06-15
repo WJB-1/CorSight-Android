@@ -147,7 +147,15 @@ class FullscreenPreviewDialog : DialogFragment() {
         override fun onBindViewHolder(holder: VH, position: Int) {
             val photo = photos[position]
             try {
-                val bitmap = BitmapFactory.decodeFile(photo.filePath)
+                // 全屏预览用较大采样目标，但仍避免解码超大原图
+                val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(photo.filePath, opts)
+                val screenW = holder.imageView.resources.displayMetrics.widthPixels
+                val screenH = holder.imageView.resources.displayMetrics.heightPixels
+                val targetPx = maxOf(screenW, screenH)
+                opts.inSampleSize = maxOf(1, maxOf(opts.outWidth, opts.outHeight) / targetPx)
+                opts.inJustDecodeBounds = false
+                val bitmap = BitmapFactory.decodeFile(photo.filePath, opts)
                 holder.imageView.setImageBitmap(bitmap)
             } catch (_: Exception) {
                 holder.imageView.setImageResource(android.R.drawable.ic_menu_gallery)

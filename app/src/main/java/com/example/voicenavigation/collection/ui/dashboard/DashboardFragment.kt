@@ -100,6 +100,12 @@ class DashboardFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // ViewPager2 切回此页面时刷新数据（其他页面的保存/拍照可能产生了新 Task）
+        viewModel.refreshTasks()
+    }
+
     // ===== 多选模式 =====
 
     private fun toggleSelectionMode() {
@@ -205,9 +211,16 @@ class DashboardFragment : Fragment() {
             val photo = photos[position]
             val photoKey = "${task.pointId}::${photo.id}"
 
-            // 缩略图
+            // 缩略图（采样解码，避免加载原图导致卡顿）
             try {
-                val bitmap = BitmapFactory.decodeFile(photo.filePath)
+                // 第一遍：只读尺寸
+                val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(photo.filePath, opts)
+                // 计算采样率：目标 200px
+                val targetPx = 200
+                opts.inSampleSize = maxOf(1, maxOf(opts.outWidth, opts.outHeight) / targetPx)
+                opts.inJustDecodeBounds = false
+                val bitmap = BitmapFactory.decodeFile(photo.filePath, opts)
                 holder.ivThumb.setImageBitmap(bitmap)
             } catch (_: Exception) {
                 holder.ivThumb.setImageResource(android.R.drawable.ic_menu_gallery)

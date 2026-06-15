@@ -284,24 +284,34 @@ class GridCaptureFragment : Fragment() {
                 }
             })
 
+        var downX = 0f
+        var downY = 0f
+
         previewView.setOnTouchListener { v, event ->
             scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    v.parent.requestDisallowInterceptTouchEvent(true)
+                    downX = event.x
+                    downY = event.y
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = kotlin.math.abs(event.x - downX)
+                    val dy = kotlin.math.abs(event.y - downY)
+                    if (scaleDetector.isInProgress) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    } else if (dx > 20 && dx > dy * 1.5f) {
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                    } else if (dy > 20) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent.requestDisallowInterceptTouchEvent(false)
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    if (scaleDetector.isInProgress) {
-                        v.parent.requestDisallowInterceptTouchEvent(true)
-                    }
-                }
             }
-            true
+            scaleDetector.isInProgress
         }
     }
 

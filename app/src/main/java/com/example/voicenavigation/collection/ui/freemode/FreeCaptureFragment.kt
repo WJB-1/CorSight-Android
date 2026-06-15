@@ -197,27 +197,44 @@ class FreeCaptureFragment : Fragment() {
                 }
             })
 
+        var downX = 0f
+        var downY = 0f
+        var isDragging = false
+
         previewView.setOnTouchListener { v, event ->
-            // 先让手势检测器处理
             scaleDetector.onTouchEvent(event)
             gestureDetector.onTouchEvent(event)
 
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    // 手指按下时告诉 ViewPager2 不要拦截，我们先判断
-                    v.parent.requestDisallowInterceptTouchEvent(true)
+                    downX = event.x
+                    downY = event.y
+                    isDragging = false
+                    // 不拦截，让 ViewPager2 有机会判断
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = kotlin.math.abs(event.x - downX)
+                    val dy = kotlin.math.abs(event.y - downY)
+                    // 双指缩放 → 拦截 ViewPager2
+                    if (scaleDetector.isInProgress) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
+                    // 明显横向滑动 → 交给 ViewPager2（不拦截）
+                    else if (dx > 20 && dx > dy * 1.5f) {
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                        isDragging = true
+                    }
+                    // 明显纵向滑动或小幅度移动 → 自己处理（可能是手势）
+                    else if (dy > 20) {
+                        v.parent.requestDisallowInterceptTouchEvent(true)
+                    }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent.requestDisallowInterceptTouchEvent(false)
                 }
-                MotionEvent.ACTION_MOVE -> {
-                    // 双指缩放进行中 → 拦截
-                    if (scaleDetector.isInProgress) {
-                        v.parent.requestDisallowInterceptTouchEvent(true)
-                    }
-                }
             }
-            true
+            // 只在缩放进行中消费事件，否则让 GestureDetector 处理双击/单击
+            scaleDetector.isInProgress
         }
     }
 
