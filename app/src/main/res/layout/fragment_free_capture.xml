@@ -63,4 +63,14 @@
         android:layout_marginBottom="40dp"
         android:background="@android:color/white" />
 
+    <!-- 快门闪光覆盖层（拍照瞬间白闪） -->
+    <View
+        android:id="@+id/shutterFlashOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/white"
+        android:alpha="0"
+        android:clickable="false"
+        android:focusable="false" />
+
 </FrameLayout>
