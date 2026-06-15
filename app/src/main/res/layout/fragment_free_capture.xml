@@ -54,14 +54,24 @@
             android:visibility="gone" />
     </LinearLayout>
 
-    <!-- 底部快门按钮 -->
-    <View
+    <!-- 底部快门按钮（经典相机造型：外圈白色圆环 + 内圈白色实心圆） -->
+    <FrameLayout
         android:id="@+id/shutterBtn"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="40dp"
-        android:background="@android:color/white" />
+        android:layout_marginBottom="36dp"
+        android:background="@drawable/bg_shutter_outer"
+        android:elevation="6dp"
+        android:clickable="true"
+        android:focusable="true">
+
+        <View
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_shutter_inner" />
+    </FrameLayout>
 
     <!-- 快门闪光覆盖层（拍照瞬间白闪） -->
     <View

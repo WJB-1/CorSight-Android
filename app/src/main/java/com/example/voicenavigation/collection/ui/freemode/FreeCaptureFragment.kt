@@ -63,7 +63,7 @@ class FreeCaptureFragment : Fragment() {
     private lateinit var tvPhotoCount: TextView
     private lateinit var btnSaveTask: View
     private lateinit var shutterBtn: View
-    private lateinit var shutterFlashOverlay: View
+    private var shutterFlashOverlay: View? = null
 
     private var camera: Camera? = null
     private var imageCapture: ImageCapture? = null
@@ -97,7 +97,7 @@ class FreeCaptureFragment : Fragment() {
         tvPhotoCount = view.findViewById(R.id.tvPhotoCount)
         btnSaveTask = view.findViewById(R.id.btnSaveTask)
         shutterBtn = view.findViewById(R.id.shutterBtn)
-        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)  // 可能为 null（向后兼容旧布局）
 
         shutterBtn.setOnClickListener { takePhoto() }
         // 快门按压反馈动画

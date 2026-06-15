@@ -107,11 +107,13 @@ object ShutterAnimations {
      *
      * 在预览区域上叠加一个白色 View，快速淡出模拟闪光灯。
      * 需要布局中有一个 id 为 `shutterFlashOverlay` 的 View（半透明白色）。
+     * 如果 flashView 为 null（布局中没有该 View），则静默跳过，不崩溃。
      *
-     * @param flashView 闪光覆盖层 View
+     * @param flashView 闪光覆盖层 View（可为 null，向后兼容旧布局）
      * @param duration  闪光时长（毫秒）
      */
-    fun flashOverlay(flashView: View, duration: Long = 150L) {
+    fun flashOverlay(flashView: View?, duration: Long = 150L) {
+        flashView ?: return
         flashView.alpha = 0.8f
         flashView.visibility = View.VISIBLE
         AnimatorUtils.alphaAnimator(flashView, 0.8f, 0f, duration).apply {

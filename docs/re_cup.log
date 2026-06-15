@@ -1,0 +1,655 @@
+2026-06-15 16:06:03.841 18112-18112 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.collection.ui.hub.CaptureHubActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=623680203, downTime=623680203, phoneEventTime=1781510763836 } moveCount:0
+2026-06-15 16:06:03.842 18112-18112 VRI[CaptureHubActivity] com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 16:06:03.899 18112-18112 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.collection.ui.hub.CaptureHubActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=623680262, downTime=623680203, phoneEventTime=1781510763894 } moveCount:0
+2026-06-15 16:06:03.930 18112-18112 AbsListViewStubImpl     com.example.voicenavigation          I  com.example.voicenavigation, version: 1.0, Enable Prefetch: false
+2026-06-15 16:06:03.947 18112-18112 DecorView               com.example.voicenavigation          D  updateFreeformOutlineFromActivity, inFreeform=false,inFreeformWindowMode=false
+2026-06-15 16:06:03.953  2090-2625  HyperSentinel           system_server                        E  ->pid:18112,processName:"com.example.voicenavigation",Rss Memory Size Change 1401360kb -> 536828kb
+2026-06-15 16:06:03.974 18112-18112 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:03.987 18112-18112 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:04.013 18112-18219 HWUI                    com.example.voicenavigation          D  TAG_DDRE, CanvasContext::setDdreActivities: 
+2026-06-15 16:06:04.026 18112-18112 InputEventReceiver      com.example.voicenavigation          D  Input log is disabled in InputEventReceiver.
+2026-06-15 16:06:04.033 18112-18219 HWUI                    com.example.voicenavigation          D  [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:04.033 18112-18219 HWUI                    com.example.voicenavigation          D  [HWUI] EnhanceVkPipelineCache is disabled
+2026-06-15 16:06:04.033 18112-18219 HWUI                    com.example.voicenavigation          D  [HWUI] Flag ddre enabled
+2026-06-15 16:06:04.034 18112-18112 DecorViewImmersiveImpl  com.example.voicenavigation          D  onAttachedToWindow. pkg: com.example.voicenavigation
+2026-06-15 16:06:04.035 18112-18112 ComputilityLevel        com.example.voicenavigation          I  getComputilityLevel(): 5
+2026-06-15 16:06:04.035 18112-18112 DecorViewImmersiveImpl  com.example.voicenavigation          D  com.example.voicenavigation.collection.ui.hub.CaptureHubActivity@3097d70 already set forced E2E by app
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.037 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.061 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.061 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.061 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.061 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.061 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.062 18112-18112 BufferQueueConsumer     com.example.voicenavigation          D  [](id:46c000000005,api:0,p:-1,c:18112) connect: controlledByApp=false
+2026-06-15 16:06:04.062 18112-18112 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[CaptureHubActivity]#4](f:0,a:0) constructor()
+2026-06-15 16:06:04.062 18112-18112 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[CaptureHubActivity]#4](f:0,a:0) update width=1365 height=822 format=-3 mTransformHint=0
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.063 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.064 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:04.068 18112-18112 VRI[CaptureHubActivity] com.example.voicenavigation          D  vri.Setup new sync=wmsSync-VRI[CaptureHubActivity]#8
+2026-06-15 16:06:04.071 18112-18219 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[CaptureHubActivity]#4](f:0,a:1) acquireNextBufferLocked size=1365x822 mFrameNumber=1 applyTransaction=true mTimestamp=623680438935019(auto) mPendingTransactions.size=0 graphicBufferId=77790447665174 transform=0
+2026-06-15 16:06:04.071 18112-18112 VRI[CaptureHubActivity] com.example.voicenavigation          D  vri.reportDrawFinished 0 0 Rect(31, 1118 - 1188, 1732)
+2026-06-15 16:06:06.530 18112-18112 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.collection.ui.hub.CaptureHubActivity', { action=ACTION_DOWN, id[0]=0, pointerCount=1, eventTime=623682892, downTime=623682892, phoneEventTime=1781510766524 } moveCount:0
+2026-06-15 16:06:06.531 18112-18112 VRI[CaptureHubActivity] com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 16:06:06.639 18112-18112 MIUIInput               com.example.voicenavigation          I  [MotionEvent] ViewRootImpl windowName 'com.example.voicenavigation/com.example.voicenavigation.collection.ui.hub.CaptureHubActivity', { action=ACTION_UP, id[0]=0, pointerCount=1, eventTime=623683003, downTime=623682892, phoneEventTime=1781510766635 } moveCount:0
+2026-06-15 16:06:06.646 18112-18112 WindowOnBackDispatcher  com.example.voicenavigation          W  sendCancelIfRunning: isInProgress=false callback=android.app.Dialog$$ExternalSyntheticLambda2@f535396
+2026-06-15 16:06:06.648 18112-18112 DecorViewImmersiveImpl  com.example.voicenavigation          D  onDetachedFromWindow
+2026-06-15 16:06:06.652 18112-18112 voicenavigation         com.example.voicenavigation          W  Binder 0xb4000072cd8df100 destroyed after setInheritRt before being parceled.
+2026-06-15 16:06:06.653 18112-18112 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[CaptureHubActivity]#4](f:0,a:2) destructor()
+2026-06-15 16:06:06.653 18112-18112 BufferQueueConsumer     com.example.voicenavigation          D  [VRI[CaptureHubActivity]#4(BLAST Consumer)4](id:46c000000005,api:0,p:-1,c:18112) disconnect: caller 18112
+2026-06-15 16:06:06.661 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =39 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:06.662 18112-18112 InputEventReceiver      com.example.voicenavigation          W  Attempted to finish an input event but the input event receiver has already been disposed.
+2026-06-15 16:06:06.687 18112-18112 AndroidRuntime          com.example.voicenavigation          E  FATAL EXCEPTION: main
+                                                                                                    Process: com.example.voicenavigation, PID: 18112
+                                                                                                    java.lang.IllegalStateException: Fragment RetakeFragment{7630a2e} (da31ce01-594b-410b-b491-ea4b463cd65e id=0x7f0800f0) is not a child Fragment, it is directly attached to dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper@51f4a19
+                                                                                                    	at androidx.fragment.app.Fragment.requireParentFragment(Fragment.java:1178)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$viewModel$2.invoke(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$viewModel$2.invoke(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$1.invoke(FragmentViewModelLazy.kt:111)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$1.invoke(FragmentViewModelLazy.kt:111)
+                                                                                                    	at kotlin.UnsafeLazyImpl.getValue(Lazy.kt:81)
+                                                                                                    	at androidx.fragment.app.FragmentViewModelLazyKt.viewModels$lambda-1(FragmentViewModelLazy.kt:111)
+                                                                                                    	at androidx.fragment.app.FragmentViewModelLazyKt.access$viewModels$lambda-1(FragmentViewModelLazy.kt:1)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$2.invoke(FragmentViewModelLazy.kt:114)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$2.invoke(FragmentViewModelLazy.kt:112)
+                                                                                                    	at androidx.lifecycle.ViewModelLazy.getValue(ViewModelLazy.kt:47)
+                                                                                                    	at androidx.lifecycle.ViewModelLazy.getValue(ViewModelLazy.kt:35)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.getViewModel(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.access$getViewModel(RetakeFragment.kt:44)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$startLocationCheck$1.invokeSuspend(RetakeFragment.kt:174)
+                                                                                                    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+                                                                                                    	at kotlinx.coroutines.internal.DispatchedContinuationKt.resumeCancellableWith(DispatchedContinuation.kt:367)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable(Cancellable.kt:30)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable$default(Cancellable.kt:25)
+                                                                                                    	at kotlinx.coroutines.CoroutineStart.invoke(CoroutineStart.kt:110)
+                                                                                                    	at kotlinx.coroutines.AbstractCoroutine.start(AbstractCoroutine.kt:126)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch(Builders.common.kt:56)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch(Unknown Source:1)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch$default(Builders.common.kt:47)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch$default(Unknown Source:1)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.startLocationCheck(RetakeFragment.kt:170)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.onViewCreated(RetakeFragment.kt:124)
+                                                                                                    	at androidx.fragment.app.Fragment.performViewCreated(Fragment.java:3147)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.createView(FragmentStateManager.java:588)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.moveToExpectedState(FragmentStateManager.java:272)
+                                                                                                    	at androidx.fragment.app.FragmentManager.executeOpsTogether(FragmentManager.java:1943)
+                                                                                                    	at androidx.fragment.app.FragmentManager.removeRedundantOperationsAndExecute(FragmentManager.java:1839)
+                                                                                                    	at androidx.fragment.app.FragmentManager.execPendingActions(FragmentManager.java:1782)
+                                                                                                    	at androidx.fragment.app.FragmentManager$5.run(FragmentManager.java:565)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:1029)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:107)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:274)
+                                                                                                    	at android.os.Looper.loop(Looper.java:369)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:10090)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+2026-06-15 16:06:06.687 18112-18112 AndroidRuntime          com.example.voicenavigation          E  	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:616)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1137)
+                                                                                                    	Suppressed: kotlinx.coroutines.internal.DiagnosticCoroutineContextException: [StandaloneCoroutine{Cancelling}@77cf078, Dispatchers.Main.immediate]
+2026-06-15 16:06:06.687 18112-18112 pool-11-thread-         com.example.voicenavigation          W  type=1400 audit(0.0:1718736): avc:  denied  { search } for  name="miuilog" dev="dm-58" ino=771 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:data_log_file:s0 tclass=dir permissive=0 app=com.example.voicenavigation
+2026-06-15 16:06:06.697 18112-18690 FileUtils               com.example.voicenavigation          W  Failed to chmod(/data/miuilog/stability/jetrace): android.system.ErrnoException: chmod failed: EACCES (Permission denied)
+2026-06-15 16:06:06.695 18112-18112 pool-11-thread-         com.example.voicenavigation          W  type=1400 audit(0.0:1718737): avc:  denied  { search } for  name="miuilog" dev="dm-58" ino=771 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:data_log_file:s0 tclass=dir permissive=0 app=com.example.voicenavigation
+2026-06-15 16:06:06.695 18112-18112 pool-11-thread-         com.example.voicenavigation          W  type=1400 audit(0.0:1718738): avc:  denied  { search } for  name="miuilog" dev="dm-58" ino=771 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:data_log_file:s0 tclass=dir permissive=0 app=com.example.voicenavigation
+2026-06-15 16:06:06.695 18112-18112 pool-11-thread-         com.example.voicenavigation          W  type=1400 audit(0.0:1718739): avc:  denied  { search } for  name="miuilog" dev="dm-58" ino=771 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:data_log_file:s0 tclass=dir permissive=0 app=com.example.voicenavigation
+2026-06-15 16:06:06.695 18112-18112 pool-11-thread-         com.example.voicenavigation          W  type=1400 audit(0.0:1718740): avc:  denied  { search } for  name="miuilog" dev="dm-58" ino=771 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:data_log_file:s0 tclass=dir permissive=0 app=com.example.voicenavigation
+2026-06-15 16:06:06.697 18112-18690 RuntimeInitImpl         com.example.voicenavigation          W  dump java trace fail /data/miuilog/stability/jetrace/2026-06-15-16-06-06-694_com.example.voicenavigation_18112.trace.tmp: open failed: EACCES (Permission denied)
+2026-06-15 16:06:06.698 18112-18112 ScoutUtils              com.example.voicenavigation          W  Failed to mkdir /data/miuilog/stability/hprof/
+2026-06-15 16:06:06.709  5754-6429  JavaExceptionHandler    com.miui.daemon                      E  Process: com.example.voicenavigation, PID: 18112
+                                                                                                    java.lang.IllegalStateException: Fragment RetakeFragment{7630a2e} (da31ce01-594b-410b-b491-ea4b463cd65e id=0x7f0800f0) is not a child Fragment, it is directly attached to dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper@51f4a19
+                                                                                                    	at androidx.fragment.app.Fragment.requireParentFragment(Fragment.java:1178)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$viewModel$2.invoke(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$viewModel$2.invoke(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$1.invoke(FragmentViewModelLazy.kt:111)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$1.invoke(FragmentViewModelLazy.kt:111)
+                                                                                                    	at kotlin.UnsafeLazyImpl.getValue(Lazy.kt:81)
+                                                                                                    	at androidx.fragment.app.FragmentViewModelLazyKt.viewModels$lambda-1(FragmentViewModelLazy.kt:111)
+                                                                                                    	at androidx.fragment.app.FragmentViewModelLazyKt.access$viewModels$lambda-1(FragmentViewModelLazy.kt:1)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$2.invoke(FragmentViewModelLazy.kt:114)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$special$$inlined$viewModels$default$2.invoke(FragmentViewModelLazy.kt:112)
+                                                                                                    	at androidx.lifecycle.ViewModelLazy.getValue(ViewModelLazy.kt:47)
+                                                                                                    	at androidx.lifecycle.ViewModelLazy.getValue(ViewModelLazy.kt:35)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.getViewModel(RetakeFragment.kt:67)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.access$getViewModel(RetakeFragment.kt:44)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment$startLocationCheck$1.invokeSuspend(RetakeFragment.kt:174)
+                                                                                                    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+                                                                                                    	at kotlinx.coroutines.internal.DispatchedContinuationKt.resumeCancellableWith(DispatchedContinuation.kt:367)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable(Cancellable.kt:30)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable$default(Cancellable.kt:25)
+                                                                                                    	at kotlinx.coroutines.CoroutineStart.invoke(CoroutineStart.kt:110)
+                                                                                                    	at kotlinx.coroutines.AbstractCoroutine.start(AbstractCoroutine.kt:126)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch(Builders.common.kt:56)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch(Unknown Source:1)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch$default(Builders.common.kt:47)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch$default(Unknown Source:1)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.startLocationCheck(RetakeFragment.kt:170)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.onViewCreated(RetakeFragment.kt:124)
+                                                                                                    	at androidx.fragment.app.Fragment.performViewCreated(Fragment.java:3147)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.createView(FragmentStateManager.java:588)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.moveToExpectedState(FragmentStateManager.java:272)
+                                                                                                    	at androidx.fragment.app.FragmentManager.executeOpsTogether(FragmentManager.java:1943)
+                                                                                                    	at androidx.fragment.app.FragmentManager.removeRedundantOperationsAndExecute(FragmentManager.java:1839)
+                                                                                                    	at androidx.fragment.app.FragmentManager.execPendingActions(FragmentManager.java:1782)
+                                                                                                    	at androidx.fragment.app.FragmentManager$5.run(FragmentManager.java:565)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:1029)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:107)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:274)
+                                                                                                    	at android.os.Looper.loop(Looper.java:369)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:10090)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:616)
+2026-06-15 16:06:06.721 18112-18112 Process                 com.example.voicenavigation          I  Process is going to kill itself!
+                                                                                                    java.lang.Exception
+                                                                                                    	at android.os.Process.killProcess(Process.java:1457)
+                                                                                                    	at com.android.internal.os.RuntimeInit$KillApplicationHandler.uncaughtException(RuntimeInit.java:205)
+                                                                                                    	at com.amap.api.col.3l.ha.uncaughtException(SDKLogHandler.java:202)
+                                                                                                    	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:1071)
+                                                                                                    	at java.lang.ThreadGroup.uncaughtException(ThreadGroup.java:1066)
+                                                                                                    	at kotlinx.coroutines.internal.CoroutineExceptionHandlerImplKt.propagateExceptionFinalResort(CoroutineExceptionHandlerImpl.kt:35)
+                                                                                                    	at kotlinx.coroutines.internal.CoroutineExceptionHandlerImpl_commonKt.handleUncaughtCoroutineException(CoroutineExceptionHandlerImpl.common.kt:52)
+                                                                                                    	at kotlinx.coroutines.CoroutineExceptionHandlerKt.handleCoroutineException(CoroutineExceptionHandler.kt:32)
+                                                                                                    	at kotlinx.coroutines.StandaloneCoroutine.handleJobException(Builders.common.kt:194)
+                                                                                                    	at kotlinx.coroutines.JobSupport.finalizeFinishingState(JobSupport.kt:231)
+                                                                                                    	at kotlinx.coroutines.JobSupport.tryMakeCompletingSlowPath(JobSupport.kt:910)
+                                                                                                    	at kotlinx.coroutines.JobSupport.tryMakeCompleting(JobSupport.kt:867)
+                                                                                                    	at kotlinx.coroutines.JobSupport.makeCompletingOnce$kotlinx_coroutines_core(JobSupport.kt:832)
+                                                                                                    	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:100)
+                                                                                                    	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:46)
+                                                                                                    	at kotlinx.coroutines.internal.DispatchedContinuationKt.resumeCancellableWith(DispatchedContinuation.kt:367)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable(Cancellable.kt:30)
+                                                                                                    	at kotlinx.coroutines.intrinsics.CancellableKt.startCoroutineCancellable$default(Cancellable.kt:25)
+                                                                                                    	at kotlinx.coroutines.CoroutineStart.invoke(CoroutineStart.kt:110)
+                                                                                                    	at kotlinx.coroutines.AbstractCoroutine.start(AbstractCoroutine.kt:126)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch(Builders.common.kt:56)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch(Unknown Source:1)
+                                                                                                    	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch$default(Builders.common.kt:47)
+                                                                                                    	at kotlinx.coroutines.BuildersKt.launch$default(Unknown Source:1)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.startLocationCheck(RetakeFragment.kt:170)
+                                                                                                    	at com.example.voicenavigation.collection.ui.dashboard.RetakeFragment.onViewCreated(RetakeFragment.kt:124)
+                                                                                                    	at androidx.fragment.app.Fragment.performViewCreated(Fragment.java:3147)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.createView(FragmentStateManager.java:588)
+                                                                                                    	at androidx.fragment.app.FragmentStateManager.moveToExpectedState(FragmentStateManager.java:272)
+                                                                                                    	at androidx.fragment.app.FragmentManager.executeOpsTogether(FragmentManager.java:1943)
+                                                                                                    	at androidx.fragment.app.FragmentManager.removeRedundantOperationsAndExecute(FragmentManager.java:1839)
+                                                                                                    	at androidx.fragment.app.FragmentManager.execPendingActions(FragmentManager.java:1782)
+                                                                                                    	at androidx.fragment.app.FragmentManager$5.run(FragmentManager.java:565)
+                                                                                                    	at android.os.Handler.handleCallback(Handler.java:1029)
+                                                                                                    	at android.os.Handler.dispatchMessage(Handler.java:107)
+                                                                                                    	at android.os.Looper.loopOnce(Looper.java:274)
+                                                                                                    	at android.os.Looper.loop(Looper.java:369)
+                                                                                                    	at android.app.ActivityThread.main(ActivityThread.java:10090)
+                                                                                                    	at java.lang.reflect.Method.invoke(Native Method)
+                                                                                                    	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:616)
+                                                                                                    	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1137)
+2026-06-15 16:06:06.721 18112-18112 Process                 com.example.voicenavigation          I  Sending signal. PID: 18112 SIG: 9
+2026-06-15 16:06:06.721 18112-18112 libc                    com.example.voicenavigation          I  kill: send 9 to pid 18112
+2026-06-15 16:06:06.721 18112-18112 libc                    com.example.voicenavigation          W  Access denied finding property "ro.debuggable"
+2026-06-15 16:06:06.721 18112-18112 libc                    com.example.voicenavigation          I  debug pid reuse, real pid 18112
+---------------------------- PROCESS ENDED (18112) for package com.example.voicenavigation ----------------------------
+2026-06-15 16:06:06.791  2090-3153  AppOps                  system_server                        E  Operation not started: uid=10308 pkg=com.example.voicenavigation(null) op=MONITOR_LOCATION
+2026-06-15 16:06:06.794  2090-3245  TransitionChain         system_server                        E  Mismatch between current collecting (TransitionRecord{86b3ac3 id=14356 type=CLOSE flags=0x10 c=[
+                                                                                                       ChangeInfo{7619f40 container=Task{2034c84 #33748 type=standard A=10308:com.example.voicenavigation} flags=0x0}
+                                                                                                       ChangeInfo{e967e79 container=Display{#0 state=ON size=1220x2712 ROTATION_0} flags=0x0}
+                                                                                                       ChangeInfo{b32e7be container=ActivityRecord{67590872 u0 com.example.voicenavigation/.MainActivity t33748} flags=0x0}
+                                                                                                       ChangeInfo{23cc01f container=DefaultTaskDisplayArea@104208389 flags=0x0}
+                                                                                                       ChangeInfo{d616f6c container=ActivityRecord{111973244 u0 com.example.voicenavigation/.collection.ui.hub.CaptureHubActivity t33748 f} isExiting} flags=0x0}
+                                                                                                       ChangeInfo{bf78935 container=OneHanded:0:14@163885161 flags=0x0}
+                                                                                                    ]
+                                                                                                    }) and chain (TransitionRecord{86b3ac3 id=14356 type=CLOSE flags=0x10 c=[
+                                                                                                       ChangeInfo{7619f40 container=Task{2034c84 #33748 type=standard A=10308:com.example.voicenavigation} flags=0x0}
+                                                                                                       ChangeInfo{e967e79 container=Display{#0 state=ON size=1220x2712 ROTATION_0} flags=0x0}
+                                                                                                       ChangeInfo{b32e7be container=ActivityRecord{67590872 u0 com.example.voicenavigation/.MainActivity t33748} flags=0x0}
+                                                                                                       ChangeInfo{23cc01f container=DefaultTaskDisplayArea@104208389 flags=0x0}
+                                                                                                       ChangeInfo{d616f6c container=ActivityRecord{111973244 u0 com.example.voicenavigation/.collection.ui.hub.CaptureHubActivity t33748 f} isExiting} flags=0x0}
+                                                                                                       ChangeInfo{bf78935 container=OneHanded:0:14@163885161 flags=0x0}
+                                                                                                    ]
+                                                                                                    })
+2026-06-15 16:06:06.808  2090-2125  AppOps                  system_server                        E  Operation not started: uid=10308 pkg=com.example.voicenavigation(null) op=GPS
+2026-06-15 16:06:06.838 18709-18709 Zygote                  zygote64                             E  process_name_ptr:18709 com.example.voicenavigation
+2026-06-15 16:06:06.838 18709-18709 Zygote                  zygote64                             E  SetMemoryProtected process_name_ptr:18709 com.example.voicenavigation
+2026-06-15 16:06:06.863 18709-18709 nativeloader            com.example.voicenavigation          D  Load libframework-connectivity-tiramisu-jni.so using APEX ns com_android_tethering for caller /apex/com.android.tethering/javalib/framework-connectivity-t.jar: ok
+---------------------------- PROCESS STARTED (18709) for package com.example.voicenavigation ----------------------------
+2026-06-15 16:06:06.867 18709-18709 ActivityThread          com.example.voicenavigation          I  Current dynamic renderEngine type=0
+2026-06-15 16:06:06.877 18709-18732 MiuiDownscaleImpl       com.example.voicenavigation          D  set override inverted scale : 1.0
+2026-06-15 16:06:06.878 18709-18709 RENDER_TURBO            com.example.voicenavigation          I  onActivityThreadCreate not in white list, pkg=com.example.voicenavigation, type=rothko
+2026-06-15 16:06:06.879 18709-18732 AppScoutStateMachine    com.example.voicenavigation          D  18709-ScoutStateMachinecreated
+2026-06-15 16:06:06.888 18709-18709 ActivityThread          com.example.voicenavigation          D  setEmbeddedParam packageName=com.example.voicenavigation processName=com.example.voicenavigation isEmbedded=false isIsolated=false
+2026-06-15 16:06:06.889 18709-18709 ApplicationLoaders      com.example.voicenavigation          D  Returning zygote-cached class loader: /system_ext/framework/androidx.window.extensions.jar
+2026-06-15 16:06:06.889 18709-18709 ApplicationLoaders      com.example.voicenavigation          D  Returning zygote-cached class loader: /system_ext/framework/androidx.window.sidecar.jar
+2026-06-15 16:06:06.997 18709-18709 nativeloader            com.example.voicenavigation          D  Configuring clns-10 for other apk /data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk. target_sdk_version=36, uses_libraries=, library_path=/data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/lib/arm64:/data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk!/lib/arm64-v8a, permitted_path=/data:/mnt/expand:/data/user/0/com.example.voicenavigation
+2026-06-15 16:06:06.999 18709-18709 voicenavigation         com.example.voicenavigation          I  AssetManager2(0xb4000072ad7f8c78) locale list changing from [] to [zh-CN]
+2026-06-15 16:06:07.001 18709-18737 MiuiMonitorThread       com.example.voicenavigation          D  Shared singleton Thread for stability monitor start
+2026-06-15 16:06:07.001 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:07.001 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] EnhanceVkPipelineCache is disabled
+2026-06-15 16:06:07.001 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] Flag ddre enabled
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V  Currently set values for:
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V    angle_gl_driver_selection_pkgs=[]
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V    angle_gl_driver_selection_values=[]
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V  com.example.voicenavigation is not listed in per-application setting
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V  ANGLE allowlist from config: 
+2026-06-15 16:06:07.001 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V  com.example.voicenavigation is not listed in ANGLE allowlist or settings, returning default
+2026-06-15 16:06:07.002 18709-18709 GraphicsEnvironment     com.example.voicenavigation          V  App is not on the allowlist for updatable production driver.
+2026-06-15 16:06:07.006 18709-18737 ActivityThread          com.example.voicenavigation          I  TrafficStats init done
+2026-06-15 16:06:07.006 18709-18773 ashmem                  com.example.voicenavigation          E  Pinning is deprecated since Android Q. Please use trim or other methods.
+2026-06-15 16:06:07.006 18709-18737 ForceDarkHelperStubImpl com.example.voicenavigation          I  initialize for com.example.voicenavigation , ForceDarkOrigin
+2026-06-15 16:06:07.007 18709-18709 ResMonitorStub          com.example.voicenavigation          D  The current process type is: third_party_app, process name is: com.example.voicenavigation
+2026-06-15 16:06:07.007 18709-18737 nativeloader            com.example.voicenavigation          D  Load libforcedarkimpl.so using system ns (caller=/system_ext/framework/miui-framework.jar): ok
+2026-06-15 16:06:07.008 18709-18737 HWUI                    com.example.voicenavigation          D  JNI_OnLoad success
+2026-06-15 16:06:07.008 18709-18737 MiuiForceDarkConfig     com.example.voicenavigation          I  setConfig density:3.250000, mainRule:0, secondaryRule:0, tertiaryRule:0
+2026-06-15 16:06:07.013 18709-18737 ActivityThread          com.example.voicenavigation          I  Miui Feature Init done
+2026-06-15 16:06:07.022 18709-18709 libc                    com.example.voicenavigation          W  Access denied finding property "ro.vendor.perf.scroll_opt"
+2026-06-15 16:06:07.025 18709-18709 nativeloader            com.example.voicenavigation          D  Load libpowerhalwrap_jni.so using system ns (caller=/system_ext/framework/mediatek-framework.jar): ok
+2026-06-15 16:06:07.025 18709-18709 PowerHalWrapper         com.example.voicenavigation          I  PowerHalWrapper.getInstance 
+2026-06-15 16:06:07.026 18709-18709 PowerHalWrapper         com.example.voicenavigation          I  PowerHalWrapper.getInstance 
+2026-06-15 16:06:07.026 18709-18709 M-ProMotion             com.example.voicenavigation          I  M-ProMotion is disabled
+2026-06-15 16:06:07.027 18709-18709 FramePredict            com.example.voicenavigation          D  FramePredict init: false
+2026-06-15 16:06:07.028 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:07.029 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] EnhanceVkPipelineCache is disabled
+2026-06-15 16:06:07.029 18709-18709 HWUI                    com.example.voicenavigation          D  [HWUI] Flag ddre enabled
+2026-06-15 16:06:07.029 18709-18709 voicenavigation         com.example.voicenavigation          D  blurUtils, initBackgroundBlurMinInterval processName(com.example.voicenavigation), inWhiteLists(0)
+2026-06-15 16:06:07.029 18709-18737 ActivityThread          com.example.voicenavigation          I  HardwareRenderer preload  done
+2026-06-15 16:06:07.031 18709-18709 voicenavigation         com.example.voicenavigation          I  AssetManager2(0xb4000072ad8012d8) locale list changing from [] to [zh-CN]
+2026-06-15 16:06:07.044 18709-18709 AppCompatDelegate       com.example.voicenavigation          D  Checking for metadata for AppLocalesMetadataHolderService : Service not found
+2026-06-15 16:06:07.044 18709-18709 voicenavigation         com.example.voicenavigation          I  AssetManager2(0xb4000072ad7ff6b8) locale list changing from [] to [zh-CN]
+2026-06-15 16:06:07.046 18709-18787 DisplayManager          com.example.voicenavigation          I  Choreographer implicitly registered for the refresh rate.
+2026-06-15 16:06:07.054 18709-18787 libc                    com.example.voicenavigation          W  Access denied finding property "vendor.migl.debug"
+2026-06-15 16:06:07.054 18709-18787 libMiGL                 com.example.voicenavigation          I  EnableDR: 0
+2026-06-15 16:06:07.054 18709-18787 libMiGL                 com.example.voicenavigation          D  mDFIInterval: -1
+2026-06-15 16:06:07.054 18709-18787 libMEOW                 com.example.voicenavigation          D  meow new tls: 0xb40000737d8e1100
+2026-06-15 16:06:07.054 18709-18787 libMEOW                 com.example.voicenavigation          D  meow reload base cfg path: na
+2026-06-15 16:06:07.054 18709-18787 libMEOW                 com.example.voicenavigation          D  meow reload overlay cfg path: na
+2026-06-15 16:06:07.054 18709-18787 QT                      com.example.voicenavigation          W  qt_process_init() called
+2026-06-15 16:06:07.054 18709-18787 QT                      com.example.voicenavigation          E  [QT]file does not exist
+2026-06-15 16:06:07.054 18709-18787 QT                      com.example.voicenavigation          W  Support!!
+2026-06-15 16:06:07.060 18709-18709 NativeTurboSchedManager com.example.voicenavigation          I  Load libmiui_runtime
+2026-06-15 16:06:07.060 18709-18709 TurboSchedMonitor       com.example.voicenavigation          E  failed to find setSchedAffinity method com.example.voicenavigation
+2026-06-15 16:06:07.060 18709-18787 QT                      com.example.voicenavigation          E  [QT]file does not exist
+2026-06-15 16:06:07.060 18709-18787 libMEOW                 com.example.voicenavigation          D  applied 1 plugins for [com.example.voicenavigation]:
+2026-06-15 16:06:07.060 18709-18787 libMEOW                 com.example.voicenavigation          D    plugin 1: [libMEOW_gift.so]:
+2026-06-15 16:06:07.061 18709-18709 TurboSchedMonitor       com.example.voicenavigation          E  failed to find setSchedAffinity method com.example.voicenavigation
+2026-06-15 16:06:07.068 18709-18709 NavigationManager       com.example.voicenavigation          D  AMapLocationClient created successfully
+2026-06-15 16:06:07.068 18709-18709 NavigationManager       com.example.voicenavigation          D  AMapLocationClientOption configured successfully
+2026-06-15 16:06:07.074 18709-18709 [BDASR_LOG...ManagerAsr com.example.voicenavigation          I  SDK Version: 3.4.4.113
+2026-06-15 16:06:07.075 18709-18709 AudioSystem             com.example.voicenavigation          D  onNewServiceWithAdapter: media.audio_flinger service obtained 0xb40000733d81aaa0
+2026-06-15 16:06:07.078 18709-18709 AudioSystem             com.example.voicenavigation          D  getService: checking for service media.audio_flinger: 0xb40000732d825190
+2026-06-15 16:06:07.078 18709-18787 libEGL                  com.example.voicenavigation          I  shader cache num entries: 43
+2026-06-15 16:06:07.078 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:07.078 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] EnhanceVkPipelineCache is disabled
+2026-06-15 16:06:07.078 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] Flag ddre enabled
+2026-06-15 16:06:07.078 18709-18787 SKIA                    com.example.voicenavigation          D  [Skia] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:07.078 18709-18787 SKIA                    com.example.voicenavigation          D  [Skia] EnhanceVkPipelineCache is false
+2026-06-15 16:06:07.078 18709-18787 HWUI                    com.example.voicenavigation          D  MiShaderPrecompile handle com.example.voicenavigation, isSksl: 0, isAppInPreCacheList: 0, isGpuVersionChanged: 0, isSkslChanged: 0
+2026-06-15 16:06:07.125 18709-18709 nativeloader            com.example.voicenavigation          D  Load /data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk!/lib/arm64-v8a/libBaiduSpeechSDK.so using class loader ns clns-10 (caller=/data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk): ok
+2026-06-15 16:06:07.126 18709-18709 BaiduSpeechManager      com.example.voicenavigation          D  EventManagerFactory.create() succeeded
+2026-06-15 16:06:07.126 18709-18709 BaiduSpeechManager      com.example.voicenavigation          D  Baidu ASR initialized successfully
+2026-06-15 16:06:07.158 18709-18818 voicenavigation         com.example.voicenavigation          I  AssetManager2(0xb4000072ad7f1298) locale list changing from [] to [zh-CN]
+2026-06-15 16:06:07.159 18709-18709 CompatChangeReporter    com.example.voicenavigation          D  Compat change id reported: 377864165; UID 10308; state: ENABLED
+2026-06-15 16:06:07.160 18709-18709 DesktopModeFlags        com.example.voicenavigation          D  Toggle override initialized to: OVERRIDE_UNSET
+2026-06-15 16:06:07.161 18709-18818 ApplicationLoaders      com.example.voicenavigation          D  Returning zygote-cached class loader: /system/framework/org.apache.http.legacy.jar
+2026-06-15 16:06:07.164 18709-18818 nativeloader            com.example.voicenavigation          D  InitLlndkLibrariesProduct: libEGL.so:libGLESv1_CM.so:libGLESv2.so:libGLESv3.so:libRS.so:libandroid_net.so:libapexsupport.so:libavf.so:libbinder_ndk.so:libc.so:libcgrouprc.so:libclang_rt.asan-aarch64-android.so:libclang_rt.asan-arm-android.so:libclang_rt.hwasan-aarch64-android.so:libcom.android.tethering.connectivity_native.so:libdl.so:libft2.so:liblog.so:libm.so:libmediandk.so:libnativewindow.so:libneuralnetworks.so:libselinux.so:libsync.so:libvendorsupport.so:libvndksupport.so:libvulkan.so
+2026-06-15 16:06:07.164 18709-18818 nativeloader            com.example.voicenavigation          D  Configuring product-clns-11 for unbundled product apk /product/app/ContentCatcherOS3_1/ContentCatcherOS3_1.apk. target_sdk_version=35, uses_libraries=, library_path=/product/app/ContentCatcherOS3_1/lib/arm64:/product/app/ContentCatcherOS3_1/ContentCatcherOS3_1.apk!/lib/arm64-v8a:/product/lib64:/system/product/lib64, permitted_path=/data:/mnt/expand:/product/lib64:/system/product/lib64
+2026-06-15 16:06:07.164 18709-18818 nativeloader            com.example.voicenavigation          D  InitVndkspLibrariesProduct: VNDK is deprecated with product
+2026-06-15 16:06:07.164 18709-18709 DecorView               com.example.voicenavigation          D  updateFreeformOutlineFromActivity, inFreeform=false,inFreeformWindowMode=false
+2026-06-15 16:06:07.166 18709-18818 ViewContentFactory      com.example.voicenavigation          D  initViewContentFetcherClass
+2026-06-15 16:06:07.166 18709-18818 ViewContentFactory      com.example.voicenavigation          D  getInterceptorPackageInfo
+2026-06-15 16:06:07.166 18709-18818 ViewContentFactory      com.example.voicenavigation          D  getInitialApplication took 1ms
+2026-06-15 16:06:07.166 18709-18818 ViewContentFactory      com.example.voicenavigation          D  packageInfo.packageName: com.miui.contentcatcher
+2026-06-15 16:06:07.167 18709-18818 ViewContentFactory      com.example.voicenavigation          D  initViewContentFetcherClass took 2ms
+2026-06-15 16:06:07.167 18709-18818 ContentCatcher          com.example.voicenavigation          I  ViewContentFetcher : ViewContentFetcher
+2026-06-15 16:06:07.167 18709-18818 ViewContentFactory      com.example.voicenavigation          D  createInterceptor took 2ms
+2026-06-15 16:06:07.168 18709-18709 voicenavigation         com.example.voicenavigation          I  hiddenapi: Accessing hidden method Landroid/view/View;->computeFitSystemWindows(Landroid/graphics/Rect;Landroid/graphics/Rect;)Z (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app) using reflection: allowed
+2026-06-15 16:06:07.168 18709-18709 voicenavigation         com.example.voicenavigation          I  hiddenapi: Accessing hidden method Landroid/view/ViewGroup;->makeOptionalFitsSystemWindows()V (runtime_flags=0, domain=platform, api=unsupported) from Landroidx/appcompat/widget/ViewUtils; (domain=app) using reflection: allowed
+2026-06-15 16:06:07.168 18709-18818 ContentCatcher          com.example.voicenavigation          I  Interceptor_Catcher : Catcher list invalid for com.example.voicenavigation@com.example.voicenavigation.MainActivity@83583508
+2026-06-15 16:06:07.169 18709-18818 ContentCatcher          com.example.voicenavigation          I  Interceptor_Catcher : Get featureInfo from config image_pick_mode
+2026-06-15 16:06:07.169 18709-18818 ContentCatcher          com.example.voicenavigation          I  Interceptor_Catcher : Get featureInfo from config pick_mode
+2026-06-15 16:06:07.192 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 96, height = 96, encodedFormat = 4
+2026-06-15 16:06:07.196 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.210 18709-18709 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:07.212 18709-18709 libc                    com.example.voicenavigation          W  Access denied finding property "ro.vendor.mi_sf.new_dynamic_refresh_rate"
+2026-06-15 16:06:07.212 18709-18709 SplineOverScroller      com.example.voicenavigation          D  dynamic params is false
+2026-06-15 16:06:07.221 18709-18709 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:07.226 18709-18709 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:07.268 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 108, height = 108, encodedFormat = 4
+2026-06-15 16:06:07.268 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.268 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 108, height = 108, encodedFormat = 4
+2026-06-15 16:06:07.268 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.269 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 94, height = 64, encodedFormat = 4
+2026-06-15 16:06:07.269 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 38, height = 33, encodedFormat = 4
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 38, height = 33, encodedFormat = 4
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          D  ImageDecoder_nDecodeBitmap: width = 38, height = 33, encodedFormat = 4
+2026-06-15 16:06:07.303 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.329 18709-18709 MainActivity            com.example.voicenavigation          D  AMap runtime package=com.example.voicenavigation, sha1=2B:1E:7D:79:C3:87:DE:7F:7A:EE:A0:3C:B1:81:D4:3C:1D:60:01:37
+2026-06-15 16:06:07.332 18709-18709 BaiduTtsManager         com.example.voicenavigation          D  Initializing BaiduTtsManager...
+2026-06-15 16:06:07.332 18709-18709 TurboSchedMonitor       com.example.voicenavigation          E  failed to find setSchedAffinity method com.example.voicenavigation
+2026-06-15 16:06:07.333 18709-18829 BaiduTtsManager         com.example.voicenavigation          D  Fetching Baidu TTS token...
+2026-06-15 16:06:07.333 18709-18709 TurboSchedMonitor       com.example.voicenavigation          E  failed to find setSchedAffinity method com.example.voicenavigation
+2026-06-15 16:06:07.342 18709-18709 SurfaceFactory          com.example.voicenavigation          I  [static] sSurfaceFactory = com.mediatek.view.impl.SurfaceFactoryImpl@ec2de83
+2026-06-15 16:06:07.343 18709-18709 MiuiMultiWindowUtils    com.example.voicenavigation          D  freeform resolution args raw data:{  "wide_default":{    "freeform_args": {        "vertical_portrait":{"aspect_ratio":0.626, "original_ratio":0.5643,"original_scale":0.74,"top_margin":0.168,"left_margin":0.484},        "horizontal_portrait":{"aspect_ratio":0.626, "original_ratio":0.5643,"original_scale":0.74,"top_margin":0.1222,"left_margin":0.59745},        "vertical_landscape":{"aspect_ratio":1.6, "original_ratio":0.6992,"original_scale":0.604,"top_margin":0.2596,"left_margin":0.2624},        "horizontal_landscape":{"aspect_ratio":1.6, "original_ratio":0.6992,"original_scale":0.604,"top_margin":0.213,"left_margin":0.3758}    },    "mini_freeform_args":{        "vertical_portrait":{"original_ratio":0.147},        "horizontal_portrait":{"original_ratio":0.147},        "vertical_landscape":{"original_ratio":0.165},        "horizontal_landscape":{"original_ratio":0.165}    }  },  "narrow_default": {    "freeform_args": {        "vertical_portrait":{"aspect_ratio":0.626, "original_ratio":1,"original_scale":0.74,"top_margin":0.0753,"left_margin":-1},        "horizontal_portrait":{"aspect_ratio":0.626, "original_ratio":1,"original_scale":0.5756,"top_margin":-1,"left_margin":0.0753},        "vertical_landscape":{"aspect_ratio":1.6, "original_ratio":1,"original_scale":0.587,"top_margin":0.0753,"left_margin":-1},        "horizontal_landscape":{"aspect_ratio":1.6, "original_ratio":1,"original_scale":0.587,"top_margin":-1,"left_margin":0.0753}    },    "mini_freeform_args":{        "vertical_portrait":{"original_ratio":0.26},        "horizontal_portrait":{"original_ratio":0.26},        "vertical_landscape":{"original_ratio":0.293},        "horizontal_landscape":{"original_ratio":0.293}    }  },  "regular_default": {    "freeform_args": {      "vertical_portrait":{"aspect_ratio":0.625, "original_ratio":1,"original_scale":0.7,"top_margin":0.109,"left_margin":-1},      "horizontal_portrait":{"aspect_ratio":0.6667, "original_ratio":1,"original_scale":0.6102,"top_margin":-1,"left_margin":0.026},      "vertical_landscape":{"aspect_ratio":1.6, "original_ratio":1,"original_scale":0.5899,"top_margin":0.109,"left_margin":-1},      "horizontal_landscape":{"aspect_ratio":1.6, "original_ratio":1,"original_scale":0.5899,"top_margin":-1,"left_margin":0.026}    },    "mini_freeform_args":{      "vertical_portrait":{"original_ratio":0.25},      "horizontal_portrait":{"original_ratio":0.25},      "vertical_landscape":{"original_ratio":0.25},      "horizontal_landscape":{"original_ratio":0.25}    }  },  "pad_default": {    "freeform_args": {      "vertical_portrait":{"aspect_ratio":0.5625, "original_ratio":0.375,"original_scale":0.835,"top_margin":0.049,"left_margin":0.2775},      "horizontal_portrait":{"aspect_ratio":0.5625, "original_ratio":0.375,"original_scale":0.835,"top_margin":-1,"left_margin":0.6525},      "vertical_landscape":{"aspect_ratio":-1, "original_ratio":1,"original_scale":0.468,"top_margin":0.049,"left_margin":-1},      "horizontal_landscape":{"aspect_ratio":-1, "original_ratio":1,"original_scale":0.468,"top_margin":-1,"left_margin":0.4976}    },    "mini_freeform_args":{      "vertical_portrait":{"original_ratio":0.144},      "horizontal_portrait":{"original_ratio":0.144},      "vertical_landscape":{"original_ratio":0.2},      "horizontal_landscape":{"original_ratio":0.2}    }  }}
+2026-06-15 16:06:07.345 18709-18709 MiuiMultiWindowUtils    com.example.voicenavigation          D  initFreeFormResolutionArgs failed, device is rothko
+2026-06-15 16:06:07.361 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.362 18709-18829 System                  com.example.voicenavigation          W  ClassLoader referenced unknown path: /system/framework/tcmclient.jar
+2026-06-15 16:06:07.363 18709-18829 System                  com.example.voicenavigation          W  ClassLoader referenced unknown path: /system/framework/tcmiface.jar
+2026-06-15 16:06:07.370 18709-18709 Activity                com.example.voicenavigation          D  Activity = ActivityInfo{cc878c7 com.example.voicenavigation.MainActivity}, Resume onConfigurationChanged = {1.0 460mcc2mnc [zh_CN] ldltr sw375dp w375dp h834dp 520dpi nrml long hdr widecg port finger -keyb/v/h -nav/h winConfig={ mBounds=Rect(0, 0 - 1220, 2712) mAppBounds=Rect(0, 0 - 1220, 2712) mMaxBounds=Rect(0, 0 - 1220, 2712) mDisplayRotation=ROTATION_0 mWindowingMode=fullscreen mActivityType=standard mAlwaysOnTop=undefined mRotation=ROTATION_0 mInSplitScreen=false letterBoxed=false foScaled=false isSpecificEmbedded=false embeddingScale=1.0} s.2 fontWeightAdjustment=0/dc themeChanged=0 themeChangedFlags=0 display=0 extraData = Bundle[{}] screenType=0c}
+2026-06-15 16:06:07.372 18709-18818 ContentCatcher          com.example.voicenavigation          I  SettingTrigger : register screen QA status observer com.example.voicenavigation.MainActivity
+2026-06-15 16:06:07.373 18709-18782 PowerHalWrapper         com.example.voicenavigation          I  PowerHalWrapper.getInstance 
+2026-06-15 16:06:07.374 18709-18818 ContentCatcher          com.example.voicenavigation          I  SettingTrigger : register global collect status observer com.example.voicenavigation.MainActivity
+2026-06-15 16:06:07.374 18709-18818 ContentCatcher          com.example.voicenavigation          I  SettingTrigger : registerUIAgentListener com.example.voicenavigation.MainActivity, uid:10308
+2026-06-15 16:06:07.376 18709-18818 ContentCat...ListHelper com.example.voicenavigation          I   mActivities isEmpty
+2026-06-15 16:06:07.377 18709-18818 ContentCat...ListHelper com.example.voicenavigation          I   blackList size: 13 package is com.example.voicenavigation isInTaplusWhiteList: true
+2026-06-15 16:06:07.377 18709-18709 FramePredict            com.example.voicenavigation          D  init success
+2026-06-15 16:06:07.378 18709-18835 FramePredict            com.example.voicenavigation          E  registerContentObserver fail
+2026-06-15 16:06:07.379 18709-18709 MI-PreRender            com.example.voicenavigation          E  init cloud whiteList failed
+2026-06-15 16:06:07.381 18709-18709 voicenavigation         com.example.voicenavigation          D  MiuiProcessManagerServiceStub setSchedFifo
+2026-06-15 16:06:07.381 18709-18709 MiuiProcessManagerImpl  com.example.voicenavigation          I  setSchedFifo pid:18709, mode:3
+2026-06-15 16:06:07.382 18709-18787 libc                    com.example.voicenavigation          W  Access denied finding property "ro.vendor.display.iris_x7.support"
+2026-06-15 16:06:07.382 18709-18787 pwIrisCR                com.example.voicenavigation          I  isCnVersion = 1, isSupportIris = 0
+2026-06-15 16:06:07.383 18709-18787 HWUI                    com.example.voicenavigation          D  TAG_DDRE, CanvasContext::setDdreActivities: 
+2026-06-15 16:06:07.384 18709-18709 InsetsController        com.example.voicenavigation          D  com.example.voicenavigation/com.example.voicenavigation.MainActivity hide: statusBars captionBar android.view.InsetsController@1941790 android.view.InsetsController.applyAnimation:2241 android.view.InsetsController.applyAnimation:2212 android.view.InsetsController.hide:1439 android.view.InsetsController.hide:1349 android.view.ViewRootImpl.controlInsetsForCompatibility:4456 android.view.ViewRootImpl.setView:2438 
+2026-06-15 16:06:07.384 18709-18709 InsetsController        com.example.voicenavigation          D  Setting requestedVisibleTypes to -14 (was -9)
+2026-06-15 16:06:07.386 18709-18842 ServiceManagerCppClient com.example.voicenavigation          W  Failed to get isDeclared for mapper/mediatek: Status(-1, EX_SECURITY): 'SELinux denied for service.'
+2026-06-15 16:06:07.386 18709-18842 Gralloc5                com.example.voicenavigation          E  Failed to load mapper.mediatek.so
+2026-06-15 16:06:07.389 18709-18709 InputEventReceiver      com.example.voicenavigation          D  Input log is disabled in InputEventReceiver.
+2026-06-15 16:06:07.396 18709-18709 DecorViewImmersiveImpl  com.example.voicenavigation          D  onAttachedToWindow. pkg: com.example.voicenavigation
+2026-06-15 16:06:07.396 18709-18709 ComputilityLevel        com.example.voicenavigation          I  getComputilityLevel(): 5
+2026-06-15 16:06:07.396 18709-18709 DecorViewImmersiveImpl  com.example.voicenavigation          D  com.example.voicenavigation.MainActivity@4fb6214 already set forced E2E by app
+2026-06-15 16:06:07.420 18709-18831 SystemApiWrapper        com.example.voicenavigation          W  getwifiAccess null
+2026-06-15 16:06:07.424 18709-18709 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:07.425 18709-18709 voicenavigation         com.example.voicenavigation          E  [perfctl] 18709 18709 FPSGO ver:7
+2026-06-15 16:06:07.425 18709-18709 voicenavigation         com.example.voicenavigation          E  [perfctl] 1 1 1 0
+2026-06-15 16:06:07.426 18709-18709 BufferQueueConsumer     com.example.voicenavigation          D  [](id:491500000000,api:0,p:-1,c:18709) connect: controlledByApp=false
+2026-06-15 16:06:07.426 18709-18709 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[MainActivity]#0](f:0,a:0) constructor()
+2026-06-15 16:06:07.426 18709-18709 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[MainActivity]#0](f:0,a:0) update width=1220 height=2712 format=-3 mTransformHint=0
+2026-06-15 16:06:07.433 18709-18709 SurfaceView             com.example.voicenavigation          D  UPDATE null, mIsCastMode = false
+2026-06-15 16:06:07.433 18709-18709 ViewRootImplStubImpl    com.example.voicenavigation          D  onSurfaceViewAttached:
+                                                                                                    , vri:android.view.ViewRootImpl@c82399d, com.example.voicenavigation/com.example.voicenavigation.MainActivity
+                                                                                                    , vri size:1220x2712
+                                                                                                    , surfaceView:com.amap.api.col.3l.n{d204754 V.E...... ......ID 0,0-1220,2712}, SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity]
+                                                                                                    , surfaceView size:1220x2712
+                                                                                                    , surfaceControl:Surface(name=d204754 SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity](BLAST)#260759)/@0xd6e8e12
+2026-06-15 16:06:07.434 18709-18709 BufferQueueConsumer     com.example.voicenavigation          D  [](id:491500000001,api:0,p:-1,c:18709) connect: controlledByApp=false
+2026-06-15 16:06:07.434 18709-18709 BLASTBufferQueue        com.example.voicenavigation          D  [d204754 SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity]#1](f:0,a:0) constructor()
+2026-06-15 16:06:07.434 18709-18709 BLASTBufferQueue        com.example.voicenavigation          D  [d204754 SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity]#1](f:0,a:0) update width=1220 height=2712 format=4 mTransformHint=0
+2026-06-15 16:06:07.434 18709-18830 libMEOW                 com.example.voicenavigation          D  meow new tls: 0xb40000737d9911b0
+2026-06-15 16:06:07.434 18709-18830 libMEOW                 com.example.voicenavigation          D  applied 1 plugins for [com.example.voicenavigation]:
+2026-06-15 16:06:07.434 18709-18830 libMEOW                 com.example.voicenavigation          D    plugin 1: [libMEOW_gift.so]:
+2026-06-15 16:06:07.444 18709-18709 VRI[MainActivity]       com.example.voicenavigation          D  vri.Setup new sync=wmsSync-VRI[MainActivity]#1
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.454 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.455 18709-18830 nativeloader            com.example.voicenavigation          D  Load /data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk!/lib/arm64-v8a/libAMapSDK_MAP_v10_0_600.so using class loader ns clns-10 (caller=/data/app/~~fzEATtELJhu4j34giFk75g==/com.example.voicenavigation-fZsF7YSPySE_1JGqEukhew==/base.apk): ok
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.455 18709-18800 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.455 18709-18709 SurfaceView             com.example.voicenavigation          D  UPDATE Surface(name=d204754 SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity]#260758)/@0xd88651a, mIsProjectionMode = false
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.464 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.b(Aps.java:1777)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.a(AmapLocationManager.java:1585)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.b(AmapLocationManager.java:1662)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.m(AmapLocationManager.java:1540)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.n(AmapLocationManager.java:1786)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.h(AmapLocationManager.java:66)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$a.handleMessage(AmapLocationManager.java:2052)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$b.run(AmapLocationManager.java:1871)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.b(Aps.java:1777)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.a(AmapLocationManager.java:1585)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.b(AmapLocationManager.java:1662)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.m(AmapLocationManager.java:1540)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.n(AmapLocationManager.java:1786)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.h(AmapLocationManager.java:66)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$a.handleMessage(AmapLocationManager.java:2052)
+2026-06-15 16:06:07.465 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.466 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.466 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.466 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.466 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$b.run(AmapLocationManager.java:1871)
+2026-06-15 16:06:07.467 18709-18831 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.467 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.467 18709-18831 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.467 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.467 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.b(Aps.java:1777)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.a(AmapLocationManager.java:1585)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.b(AmapLocationManager.java:1662)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.m(AmapLocationManager.java:1540)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.n(AmapLocationManager.java:1786)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d.h(AmapLocationManager.java:66)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$a.handleMessage(AmapLocationManager.java:2052)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.468 18709-18831 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.d$b.run(AmapLocationManager.java:1871)
+2026-06-15 16:06:07.470 18709-18787 GrallocExtra            com.example.voicenavigation          I  gralloc_extra_query:is_SW3D 0
+2026-06-15 16:06:07.470 18709-18787 libc                    com.example.voicenavigation          W  Access denied finding property "ro.vendor.display.iris_x7.support"
+2026-06-15 16:06:07.471 18709-18787 BLASTBufferQueue        com.example.voicenavigation          D  [VRI[MainActivity]#0](f:0,a:1) acquireNextBufferLocked size=1220x2712 mFrameNumber=1 applyTransaction=true mTimestamp=623683838582173(auto) mPendingTransactions.size=0 graphicBufferId=80354543140864 transform=0
+2026-06-15 16:06:07.472 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] Flag vulkan_enhance_pipeline_cache enabled
+2026-06-15 16:06:07.472 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] EnhanceVkPipelineCache is disabled
+2026-06-15 16:06:07.472 18709-18787 HWUI                    com.example.voicenavigation          D  [HWUI] Flag ddre enabled
+2026-06-15 16:06:07.475 18709-18709 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:07.511 18709-18709 voicenavigation         com.example.voicenavigation          I  hiddenapi: Accessing hidden field Landroid/graphics/Bitmap;->mNativePtr:J (runtime_flags=0, domain=platform, api=unsupported) from Lcom/autonavi/base/amap/mapcore/AMapNativeGlOverlayLayer; (domain=app) using JNI: allowed
+2026-06-15 16:06:07.514 18709-18863 IdProviderImpl          com.example.voicenavigation          D  getOAID from com.example.voicenavigation
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  java.lang.NoSuchMethodException: android.view.accessibility.AccessibilityManager.isHighTextContrastEnabled []
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getMethod(Class.java:2940)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getDeclaredMethod(Class.java:2919)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.ReflectUtil.invoke(ReflectUtil.java:88)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.loadGlyphRaster(GlyphLoader.java:117)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.getGlyphRaster(GlyphLoader.java:338)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.nativeCreateAMapEngineWithFrame(Native Method)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.createAMapEngineWithFrame(GLMapEngine.java:1598)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.a(AMapDelegateImp.java:3599)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:3392)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:6776)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.onSurfaceChanged(GLMapRender.java:235)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1586)
+2026-06-15 16:06:07.519 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1301)
+2026-06-15 16:06:07.519 18709-18830 HighText                com.example.voicenavigation          E  highText exception:java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  java.lang.NoSuchMethodException: android.view.accessibility.AccessibilityManager.isHighTextContrastEnabled []
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getMethod(Class.java:2940)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getDeclaredMethod(Class.java:2919)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.ReflectUtil.invoke(ReflectUtil.java:88)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.loadGlyphRaster(GlyphLoader.java:117)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.getGlyphRaster(GlyphLoader.java:338)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.nativeCreateAMapEngineWithFrame(Native Method)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.createAMapEngineWithFrame(GLMapEngine.java:1598)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.a(AMapDelegateImp.java:3599)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:3392)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:6776)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.onSurfaceChanged(GLMapRender.java:235)
+2026-06-15 16:06:07.520 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1586)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1301)
+2026-06-15 16:06:07.521 18709-18830 HighText                com.example.voicenavigation          E  highText exception:java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  java.lang.NoSuchMethodException: android.view.accessibility.AccessibilityManager.isHighTextContrastEnabled []
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getMethod(Class.java:2940)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at java.lang.Class.getDeclaredMethod(Class.java:2919)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.ReflectUtil.invoke(ReflectUtil.java:88)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.loadGlyphRaster(GlyphLoader.java:117)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.glyph.GlyphLoader.getGlyphRaster(GlyphLoader.java:338)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.nativeCreateAMapEngineWithFrame(Native Method)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapEngine.createAMapEngineWithFrame(GLMapEngine.java:1598)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.a(AMapDelegateImp.java:3599)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:3392)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.l.changeSurface(AMapDelegateImp.java:6776)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at com.autonavi.base.ae.gmap.GLMapRender.onSurfaceChanged(GLMapRender.java:235)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.guardedRun(GLSurfaceView.java:1586)
+2026-06-15 16:06:07.521 18709-18830 System.err              com.example.voicenavigation          W  	at android.opengl.GLSurfaceView$GLThread.run(GLSurfaceView.java:1301)
+2026-06-15 16:06:07.521 18709-18830 HighText                com.example.voicenavigation          E  highText exception:java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.Boolean.booleanValue()' on a null object reference
+2026-06-15 16:06:07.534 18709-18863 voicenavigation         com.example.voicenavigation          I  hiddenapi: Accessing hidden field Landroid/net/SSLSessionCache;->mSessionCache:Lcom/android/org/conscrypt/SSLClientSessionCache; (runtime_flags=0, domain=platform, api=unsupported) from Lcom/amap/api/col/3l/id; (domain=app) using reflection: allowed
+2026-06-15 16:06:07.538 18709-18844 SystemApiWrapper        com.example.voicenavigation          W  getwifiAccess null
+2026-06-15 16:06:07.556 18709-18830 mapcore                 com.example.voicenavigation          E  addMapEngine 10001 0xb4000071ed827010
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e$a.onCellInfo(CgiManager.java:590)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4.lambda$onCellInfo$0(TelephonyManager.java:7417)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at android.telephony.TelephonyManager$4$$ExternalSyntheticLambda1.run(D8$$SyntheticClass:0)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1302)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:677)
+2026-06-15 16:06:07.561 18709-18828 System.err              com.example.voicenavigation          W  	at java.lang.Thread.run(Thread.java:1119)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.c(Aps.java:315)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:410)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:46)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$a.handleMessage(ApsManager.java:240)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$b.run(ApsManager.java:191)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.c(Aps.java:315)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:410)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:46)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$a.handleMessage(ApsManager.java:240)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.569 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$b.run(ApsManager.java:191)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  java.lang.NumberFormatException: s == null
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:743)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at java.lang.Integer.parseInt(Integer.java:897)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:940)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:776)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.restruct.e.a(CgiManager.java:266)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.autonavi.aps.amapapi.b.c(Aps.java:315)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:410)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e.a(ApsManager.java:46)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$a.handleMessage(ApsManager.java:240)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Handler.dispatchMessage(Handler.java:114)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loopOnce(Looper.java:274)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.Looper.loop(Looper.java:369)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at android.os.HandlerThread.run(HandlerThread.java:85)
+2026-06-15 16:06:07.570 18709-18844 System.err              com.example.voicenavigation          W  	at com.amap.api.col.3l.e$b.run(ApsManager.java:191)
+2026-06-15 16:06:07.582 18709-18830 libEGL                  com.example.voicenavigation          I  shader cache num entries: 142
+2026-06-15 16:06:07.585 18709-18830 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.587 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.588 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.590 18709-18709 ScrollerOp...ionManager com.example.voicenavigation          D  registerConfigChangedListener
+2026-06-15 16:06:07.592 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.593 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.593 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.594 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.595 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.595 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.595 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.596 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.596 18709-18829 BaiduTtsManager         com.example.voicenavigation          D  Token response code: 200
+2026-06-15 16:06:07.597 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.597 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.598 18709-18709 HWUI                    com.example.voicenavigation          W  Image decoding logging dropped!
+2026-06-15 16:06:07.601 18709-18829 BaiduTtsManager         com.example.voicenavigation          D  Token fetched successfully, expires_in: 2592000
+2026-06-15 16:06:07.602 18709-18830 BLASTBufferQueue        com.example.voicenavigation          D  [d204754 SurfaceView[com.example.voicenavigation/com.example.voicenavigation.MainActivity]#1](f:0,a:1) acquireNextBufferLocked size=1220x2712 mFrameNumber=1 applyTransaction=true mTimestamp=623683970340558(auto) mPendingTransactions.size=0 graphicBufferId=80354543140868 transform=0
+2026-06-15 16:06:07.605 18709-18709 VRI[MainActivity]       com.example.voicenavigation          D  getMiuiFreeformStackInfo mTmpFrames.miuiFreeFormStackInfo: null
+2026-06-15 16:06:07.609 18709-18830 VRI[MainActivity]       com.example.voicenavigation          D  vri.reportDrawFinished 0 0 Rect(0, 0 - 1220, 2712)
+2026-06-15 16:06:07.615 18709-18709 BaiduTtsManager         com.example.voicenavigation          D  BaiduTtsManager initialized, token ready
+2026-06-15 16:06:07.615 18709-18709 MainActivity            com.example.voicenavigation          D  TTS ready
+2026-06-15 16:06:07.626 18709-18709 HandWritingStubImpl     com.example.voicenavigation          I  refreshLastKeyboardType: 1
+2026-06-15 16:06:07.627 18709-18709 HandWritingStubImpl     com.example.voicenavigation          I  getCurrentKeyboardType: 1
+2026-06-15 16:06:07.629 18709-18709 InsetsController        com.example.voicenavigation          D  hide(ime(), fromIme=false)
+2026-06-15 16:06:07.629 18709-18709 ImeTracker              com.example.voicenavigation          I  com.example.voicenavigation:31ed78a: onCancelled at PHASE_CLIENT_ALREADY_HIDDEN
+2026-06-15 16:06:07.633 18709-18709 HandWritingStubImpl     com.example.voicenavigation          I  getCurrentKeyboardType: 1
+2026-06-15 16:06:07.668 18709-18709 InsetsSource            com.example.voicenavigation          W  Has no intersection or mTmpFrame.height(), return Insets.NONE mTmpFrame.height() =0 hasIntersection =false
+2026-06-15 16:06:07.939 18709-18721 voicenavigation         com.example.voicenavigation          I  Compiler allocated 6765KB to compile void android.view.ViewRootImpl.performTraversals()
+2026-06-15 16:06:08.783 18709-18709 com.exampl...navigation com.example.voicenavigation          W  type=1400 audit(0.0:1718782): avc:  denied  { getattr } for  comm=474C54687265616420313133 path="/sys/module/metis/parameters/minor_window_app" dev="sysfs" ino=135855 scontext=u:r:untrusted_app:s0:c52,c257,c512,c768 tcontext=u:object_r:sysfs_migt:s0 tclass=file permissive=0 app=com.example.voicenavigation

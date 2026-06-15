@@ -64,13 +64,15 @@ class RetakeFragment : Fragment() {
     @Inject lateinit var compassProvider: CompassProvider
     @Inject lateinit var locationProvider: LocationProvider
 
-    private val viewModel: DashboardViewModel by viewModels({ requireParentFragment() })
+    private val viewModel: DashboardViewModel by viewModels(
+        ownerProducer = { requireActivity() }
+    )
 
     private lateinit var previewView: PreviewView
     private lateinit var tvRetakeInfo: TextView
     private lateinit var tvLocationCheck: TextView
     private lateinit var shutterBtn: View
-    private lateinit var shutterFlashOverlay: View
+    private var shutterFlashOverlay: View? = null
 
     private var imageCapture: ImageCapture? = null
     private var currentBearing: Float = 0f
@@ -107,7 +109,7 @@ class RetakeFragment : Fragment() {
         tvRetakeInfo = view.findViewById(R.id.tvRetakeInfo)
         tvLocationCheck = view.findViewById(R.id.tvLocationCheck)
         shutterBtn = view.findViewById(R.id.shutterBtn)
-        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)  // 可能为 null（向后兼容旧布局）
 
         tvRetakeInfo.text = "补拍 — 原方位角: ${String.format("%.1f", origBearing)}°"
         shutterBtn.setOnClickListener {

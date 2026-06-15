@@ -72,7 +72,7 @@ class GridCaptureFragment : Fragment() {
     private lateinit var tvDirectionHint: TextView
     private lateinit var directionProgress: LinearLayout
     private lateinit var shutterBtn: View
-    private lateinit var shutterFlashOverlay: View
+    private var shutterFlashOverlay: View? = null
 
     private var camera: Camera? = null
     private var imageCapture: ImageCapture? = null
@@ -101,7 +101,7 @@ class GridCaptureFragment : Fragment() {
         tvDirectionHint = view.findViewById(R.id.tvDirectionHint)
         directionProgress = view.findViewById(R.id.directionProgress)
         shutterBtn = view.findViewById(R.id.shutterBtn)
-        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)
+        shutterFlashOverlay = view.findViewById(R.id.shutterFlashOverlay)  // 可能为 null（向后兼容旧布局）
 
         shutterBtn.setOnClickListener {
             if (isAligned) takePhoto()
