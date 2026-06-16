@@ -327,7 +327,8 @@ class MainActivity : AppCompatActivity(),
         }
         btnMyLocation.setOnClickListener { locateMe() }
         btnStopTts.setOnClickListener {
-            baiduTts?.stopPlayback()
+            unifiedTts.stopPlayback()
+//            baiduTts?.stopPlayback()
             ViewTransition.scaleOut(btnStopTts, 150)
         }
     }
@@ -488,7 +489,8 @@ class MainActivity : AppCompatActivity(),
     private fun setupHistoryAdapterListener() {
         historyAdapter?.setOnItemActionListener(object : VoiceRecordAdapter.OnItemActionListener {
             override fun onPlay(record: VoiceRecord, position: Int) {
-                baiduTts?.speak(record.content)
+                unifiedTts.speak(record.content)
+//                baiduTts?.speak(record.content)
             }
 
             override fun onDelete(record: VoiceRecord, position: Int) {
@@ -568,7 +570,8 @@ class MainActivity : AppCompatActivity(),
     private fun speak(text: String?) {
         if (text.isNullOrEmpty() || text == lastSpokenInstruction) return
         lastSpokenInstruction = text
-        baiduTts?.let {
+//        baiduTts?.let {
+        unifiedTts.let {
             it.speak(text)
             showStopTtsButton()
         }
@@ -576,7 +579,8 @@ class MainActivity : AppCompatActivity(),
 
     private fun speakForce(text: String?) {
         if (text.isNullOrEmpty()) return
-        baiduTts?.let {
+//        baiduTts?.let {
+        unifiedTts.let {
             it.speak(text)
             showStopTtsButton()
         }
