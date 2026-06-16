@@ -64,6 +64,8 @@ import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.stt.UnifiedTtsManager
+import com.example.voicenavigation.data.tts.TtsPlayer
+import com.example.voicenavigation.data.tts.TtsPreloader
 import com.example.voicenavigation.voice.LLMFunctionCaller
 import com.example.voicenavigation.ui.ringmenu.RingMenuView
 import com.example.voicenavigation.ui.ringmenu.RingMenuItem
@@ -106,6 +108,8 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var speechManager: BaiduSpeechManager
     @Inject lateinit var baiduTts: BaiduTtsManager
     @Inject lateinit var unifiedTts: UnifiedTtsManager
+    @Inject lateinit var ttsPlayer: TtsPlayer
+    @Inject lateinit var ttsPreloader: TtsPreloader
     @Inject lateinit var voiceInteractionManager: VoiceInteractionManager
     @Inject lateinit var appDatabase: AppDatabase
     @Inject lateinit var tripPreviewService: TripPreviewService
@@ -327,7 +331,7 @@ class MainActivity : AppCompatActivity(),
         }
         btnMyLocation.setOnClickListener { locateMe() }
         btnStopTts.setOnClickListener {
-            unifiedTts.stopPlayback()
+            ttsPlayer.stopPlayback()
 //            baiduTts?.stopPlayback()
             ViewTransition.scaleOut(btnStopTts, 150)
         }
@@ -489,7 +493,7 @@ class MainActivity : AppCompatActivity(),
     private fun setupHistoryAdapterListener() {
         historyAdapter?.setOnItemActionListener(object : VoiceRecordAdapter.OnItemActionListener {
             override fun onPlay(record: VoiceRecord, position: Int) {
-                unifiedTts.speak(record.content)
+                ttsPlayer.speak(record.content)
 //                baiduTts?.speak(record.content)
             }
 
@@ -539,12 +543,16 @@ class MainActivity : AppCompatActivity(),
         }
         baiduTts.init()
 
-        // UnifiedTTS init — 系统离线 TTS 优先，用于菜单反馈等低延迟场景
-        unifiedTts.callback = object : UnifiedTtsManager.TtsCallback {
-            override fun onTtsReady() { Log.d(TAG, "Unified TTS ready") }
-            override fun onTtsError(error: String) { Log.e(TAG, "Unified TTS error: $error") }
-        }
-        unifiedTts.init()
+        // TTS 预合成：首次启动时批量合成所有固定文本到本地缓存
+        Thread {
+            val count = ttsPreloader.preload(
+                getString(R.string.baidu_speech_api_key),
+                getString(R.string.baidu_speech_secret_key)
+            ) { current, total, text ->
+                Log.d(TAG, "TTS preload: $current/$total [$text]")
+            }
+            Log.d(TAG, "TTS preload complete: $count new audios cached")
+        }.start()
 
         // Load preview server URL from prefs
         val prefs = AppConfig.prefs(this)
@@ -570,20 +578,14 @@ class MainActivity : AppCompatActivity(),
     private fun speak(text: String?) {
         if (text.isNullOrEmpty() || text == lastSpokenInstruction) return
         lastSpokenInstruction = text
-//        baiduTts?.let {
-        unifiedTts.let {
-            it.speak(text)
-            showStopTtsButton()
-        }
+        ttsPlayer.speak(text)
+        showStopTtsButton()
     }
 
     private fun speakForce(text: String?) {
         if (text.isNullOrEmpty()) return
-//        baiduTts?.let {
-        unifiedTts.let {
-            it.speak(text)
-            showStopTtsButton()
-        }
+        ttsPlayer.speak(text)
+        showStopTtsButton()
     }
 
     private fun showStopTtsButton() {
@@ -1129,27 +1131,27 @@ class MainActivity : AppCompatActivity(),
             }
             is InteractionEvent.ItemExecuted -> {
                 // 菜单反馈用系统 TTS（低延迟）
-                unifiedTts.speak("正在${event.item.label}")
+                ttsPlayer.speak("正在${event.item.label}")
                 commandRouter.execute(event.commandId)
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.LaunchVoiceAssistant -> {
                 lockMapGestures(true)  // 解锁地图
-                unifiedTts.speak("语音助手已就绪")
+                ttsPlayer.speak("语音助手已就绪")
                 voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                 Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
             }
             is InteractionEvent.ItemHighlighted -> {
                 // 菜单项高亮：系统 TTS 打断旧播报，立即读新项名
-                unifiedTts.flushQueue()
-                unifiedTts.speak(event.item.label)
+                ttsPlayer.flushQueue()
+                ttsPlayer.speak(event.item.label)
             }
             is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
-                unifiedTts.flushQueue()
+                ttsPlayer.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.Cancelled, is InteractionEvent.DismissMenu -> {
-                unifiedTts.flushQueue()
+                ttsPlayer.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             else -> { /* HighlightCleared — 无需处理 */ }
@@ -1353,6 +1355,7 @@ class MainActivity : AppCompatActivity(),
         voiceCommandPulseAnim = null
         super.onDestroy()
         baiduTts.destroy()
+        ttsPlayer.destroy()
         unifiedTts.destroy()
         speechManager.destroyRecognizer()
         navigationManager.stopNavigation()

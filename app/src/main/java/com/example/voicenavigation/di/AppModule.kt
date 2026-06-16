@@ -6,7 +6,11 @@ import androidx.room.Room
 import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.data.VoiceRecordDao
 import com.example.voicenavigation.config.AppConstants
+import com.example.voicenavigation.data.tts.TtsAudioCache
+import com.example.voicenavigation.data.tts.TtsPlayer
+import com.example.voicenavigation.data.tts.TtsPreloader
 import com.example.voicenavigation.network.TripPreviewService
+import com.example.voicenavigation.stt.BaiduTtsManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -62,5 +66,31 @@ object AppModule {
     @Singleton
     fun provideTripPreviewService(): TripPreviewService {
         return TripPreviewService()
+    }
+
+    // ── TTS 音频数据层 ──
+
+    @Provides
+    @Singleton
+    fun provideTtsAudioCache(@ApplicationContext context: Context): TtsAudioCache {
+        return TtsAudioCache(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTtsPreloader(
+        @ApplicationContext context: Context,
+        cache: TtsAudioCache
+    ): TtsPreloader {
+        return TtsPreloader(context, cache)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTtsPlayer(
+        cache: TtsAudioCache,
+        baiduTts: BaiduTtsManager
+    ): TtsPlayer {
+        return TtsPlayer(cache, baiduTts)
     }
 }

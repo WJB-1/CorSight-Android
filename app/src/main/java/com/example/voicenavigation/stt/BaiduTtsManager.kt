@@ -137,6 +137,14 @@ class BaiduTtsManager(
 
     private fun synthesizeAndPlay(text: String) {
         try {
+            // ── 本地缓存：相同文本直接播放缓存文件，零网络延迟 ──
+            val cacheFile = getCacheFile(text)
+            if (cacheFile.exists() && cacheFile.length() > 0) {
+                Log.d(TAG, "Cache hit for [$text], playing from disk")
+                playAudioFile(cacheFile)
+                return
+            }
+
             if (accessToken == null) {
                 Log.e(TAG, "No access token")
                 notifyError("TTS token not ready")
@@ -174,6 +182,8 @@ class BaiduTtsManager(
             if (contentType != null && contentType.contains("audio")) {
                 val audioData = readAllBytes(conn.inputStream)
                 Log.d(TAG, "TTS audio: ${audioData.size} bytes for [$text]")
+                // 保存到本地缓存，后续相同文本直接播放
+                saveToCache(text, audioData)
                 playAudioData(audioData)
             } else {
                 val reader = BufferedReader(InputStreamReader(conn.inputStream))
@@ -298,6 +308,50 @@ class BaiduTtsManager(
     private fun notifyError(error: String) {
         mainHandler.post {
             callback?.onTtsError(error)
+        }
+    }
+
+    // ── 本地缓存 ──
+
+    private val cacheDir: java.io.File by lazy {
+        java.io.File(context.filesDir, "tts_cache").apply { mkdirs() }
+    }
+
+    private fun getCacheFile(text: String): java.io.File {
+        val md = java.security.MessageDigest.getInstance("MD5")
+        val hash = md.digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        return java.io.File(cacheDir, "$hash.mp3")
+    }
+
+    private fun saveToCache(text: String, audioData: ByteArray) {
+        try {
+            getCacheFile(text).writeBytes(audioData)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to cache audio for [$text]", e)
+        }
+    }
+
+    private fun playAudioFile(file: java.io.File) {
+        try {
+            if (mediaPlayer != null) {
+                try { mediaPlayer?.release() } catch (_: Exception) {}
+                mediaPlayer = null
+            }
+            mediaPlayer = MediaPlayer().apply {
+                setAudioStreamType(AudioManager.STREAM_MUSIC)
+                setDataSource(file.absolutePath)
+                setOnPreparedListener { mp -> mp.start() }
+                setOnCompletionListener { mp ->
+                    mp.release(); mediaPlayer = null; onPlaybackFinished()
+                }
+                setOnErrorListener { mp, _, _ ->
+                    mp.release(); mediaPlayer = null; onPlaybackFinished(); true
+                }
+                prepareAsync()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to play cached file", e)
+            onPlaybackFinished()
         }
     }
 

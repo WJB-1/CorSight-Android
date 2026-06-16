@@ -16,12 +16,11 @@ import java.util.Queue
  * 初始化策略：
  * 1. 尝试系统 TTS，5 秒内没就绪则自动切百度
  * 2. 系统 TTS 初始化失败或不支持中文 → 直接用百度
- * 3. 首次 speak() 时如果系统 TTS 还没就绪 → 单次用百度，不永久切换
+ * 3. 百度 TTS 实例由外部注入（复用 Hilt 单例，token 已预取）
  */
 class UnifiedTtsManager(
     private val context: Context,
-    private val baiduApiKey: String = "",
-    private val baiduSecretKey: String = ""
+    private val baiduTtsFallback: BaiduTtsManager
 ) {
     companion object {
         private const val TAG = "UnifiedTtsManager"
@@ -211,9 +210,9 @@ class UnifiedTtsManager(
     }
 
     private fun ensureBaiduTts() {
+        // baiduTtsFallback 由 Hilt 注入，token 已预取，无需懒加载
         if (baiduTts == null) {
-            Log.d(TAG, "Lazy-init Baidu TTS")
-            baiduTts = BaiduTtsManager(context, baiduApiKey, baiduSecretKey).apply { init() }
+            baiduTts = baiduTtsFallback
         }
     }
 

@@ -40,12 +40,11 @@ object VoiceModule {
      */
     @Provides
     @Singleton
-    fun provideUnifiedTtsManager(@ApplicationContext context: Context): UnifiedTtsManager {
-        return UnifiedTtsManager(
-            context,
-            context.getString(R.string.baidu_speech_api_key),
-            context.getString(R.string.baidu_speech_secret_key)
-        )
+    fun provideUnifiedTtsManager(
+        @ApplicationContext context: Context,
+        baiduTtsManager: BaiduTtsManager
+    ): UnifiedTtsManager {
+        return UnifiedTtsManager(context, baiduTtsManager)
     }
 
     @Provides
