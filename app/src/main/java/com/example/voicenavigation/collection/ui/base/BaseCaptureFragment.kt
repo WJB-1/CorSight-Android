@@ -193,6 +193,15 @@ abstract class BaseCaptureFragment : Fragment() {
     }
 
     // ===== 手势裁判（修复 ViewPager2 冲突 + 双指缩放）=====
+    //
+    // 策略：PreviewView 始终消费触摸事件（return true），
+    // 通过 requestDisallowInterceptTouchEvent 控制 ViewPager2 是否拦截。
+    //
+    // - ACTION_DOWN: 默认锁死父容器（保证后续事件都到我们这里）
+    // - ACTION_POINTER_DOWN: 双指落下，保持锁死（缩放准备）
+    // - ACTION_MOVE: 单指横向滑动 → 释放给 ViewPager2（翻页）
+    //               双指 → 保持锁死（缩放）
+    // - ACTION_UP/CANCEL: 释放父容器
 
     private fun setupGestures() {
         val gestureDetector = GestureDetectorCompat(requireContext(),
@@ -219,6 +228,7 @@ abstract class BaseCaptureFragment : Fragment() {
 
         var downX = 0f
         var downY = 0f
+        var isHorizontalDrag = false
 
         previewView.setOnTouchListener { v, event ->
             scaleDetector.onTouchEvent(event)
@@ -228,31 +238,38 @@ abstract class BaseCaptureFragment : Fragment() {
                 MotionEvent.ACTION_DOWN -> {
                     downX = event.x
                     downY = event.y
+                    isHorizontalDrag = false
+                    // 默认锁死：保证双击、双指、单击等后续事件不被 ViewPager2 抢走
+                    v.parent.requestDisallowInterceptTouchEvent(true)
                 }
-                // 关键：双指落下的瞬间立即锁死事件，防止 ViewPager2 抢走
                 MotionEvent.ACTION_POINTER_DOWN -> {
+                    // 双指落下：保持锁死，准备缩放
                     v.parent.requestDisallowInterceptTouchEvent(true)
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    // 双指缩放中或屏幕上有两根手指 → 保持拦截
-                    if (scaleDetector.isInProgress || event.pointerCount >= 2) {
+                    if (event.pointerCount >= 2 || scaleDetector.isInProgress) {
+                        // 双指 → 保持锁死（缩放）
                         v.parent.requestDisallowInterceptTouchEvent(true)
-                    }
-                    // 单指：判断是横向滑动（交给 ViewPager2）还是纵向/点击（自己处理）
-                    else {
+                    } else if (!isHorizontalDrag) {
+                        // 单指：检查是否明显横向滑动
                         val dx = abs(event.x - downX)
                         val dy = abs(event.y - downY)
-                        if (dx > 20 && dx > dy * 1.5f) {
+                        if (dx > 40 && dx > dy * 2) {
+                            // 明确横向滑动 → 释放给 ViewPager2 翻页
+                            isHorizontalDrag = true
                             v.parent.requestDisallowInterceptTouchEvent(false)
                         }
+                        // 其他情况（纵向/短距离/点击）保持锁死
                     }
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.parent.requestDisallowInterceptTouchEvent(false)
+                    isHorizontalDrag = false
                 }
             }
-            // 消费事件条件：缩放进行中或多指触控
-            scaleDetector.isInProgress || event.pointerCount >= 2
+            // 始终返回 true：PreviewView 消费所有触摸事件
+            // GestureDetector 和 ScaleGestureDetector 通过 onTouchEvent 内部处理
+            true
         }
     }
 
