@@ -94,8 +94,9 @@ class UnifiedTtsManager(
                 Log.d(TAG, "System TTS ready (Chinese)")
                 mainHandler.post { callback?.onTtsReady() }
             } else {
-                Log.e(TAG, "System TTS init failed (status=$status), falling back to Baidu")
-                initBaiduTts()
+                Log.e(TAG, "System TTS init failed (status=$status), will use Baidu as fallback")
+                // 不设 useBaidu=true，processQueue 中会按需懒加载百度 TTS
+                mainHandler.post { callback?.onTtsReady() }  // 通知就绪（百度兜底）
             }
         }
     }
@@ -222,11 +223,24 @@ class UnifiedTtsManager(
         Log.d(TAG, "System TTS speaking: [$next]")
 
         val tts = systemTts
-        if (tts == null || !systemTtsReady) {
-            Log.w(TAG, "System TTS not ready, falling back to Baidu for this utterance")
+        if (tts == null) {
+            // 系统 TTS 完全不可用（可能还在初始化），单次回退百度
+            Log.w(TAG, "System TTS null, falling back to Baidu for this utterance")
             isSpeaking = false
-            if (baiduTts == null) initBaiduTts()
+            if (baiduTts == null) {
+                // 懒加载百度 TTS，但不设 useBaidu=true（下次仍尝试系统 TTS）
+                baiduTts = BaiduTtsManager(context, baiduApiKey, baiduSecretKey).apply { init() }
+            }
             baiduTts?.speak(next)
+            return
+        }
+
+        if (!systemTtsReady) {
+            // 系统 TTS 正在初始化（异步回调还没到），等 200ms 重试
+            Log.d(TAG, "System TTS initializing, retrying in 200ms")
+            isSpeaking = false
+            synchronized(speechQueue) { speechQueue.offer(next) }  // 放回队列
+            mainHandler.postDelayed({ processQueue() }, 200)
             return
         }
 
