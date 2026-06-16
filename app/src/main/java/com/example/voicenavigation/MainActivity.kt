@@ -770,8 +770,9 @@ class MainActivity : AppCompatActivity(),
                     // TTS 播报队列自动顺序播放，无需延迟
                     val loc = currentLocation
                     if (loc != null) {
+                        val dest = selectedDestLatLng ?: return
                         ViewTransition.slideUp(layoutNavInfo, 250)
-                        navigationManager.planRoute(loc, selectedDestLatLng!!, selectedDestName)
+                        navigationManager.planRoute(loc, dest, selectedDestName)
                     } else {
                         locateMe()
                         speakForce(getString(R.string.tts_getting_location_wait))
@@ -833,9 +834,11 @@ class MainActivity : AppCompatActivity(),
             Toast.makeText(this, getString(R.string.msg_getting_location_wait), Toast.LENGTH_SHORT).show()
             return
         }
+        val curLoc = currentLocation ?: return
+        val dest = selectedDestLatLng ?: return
         ViewTransition.slideUp(layoutNavInfo, 250)
         saveVoiceRecord(selectedDestName)
-        navigationManager.planRoute(currentLocation!!, selectedDestLatLng!!, selectedDestName)
+        navigationManager.planRoute(curLoc, dest, selectedDestName)
     }
 
     private fun sendTripPreview() {
@@ -858,11 +861,13 @@ class MainActivity : AppCompatActivity(),
             }
         }
 
-        if (selectedDestLatLng != null && currentLocation != null) {
+        val curLoc = currentLocation
+        val destLoc = selectedDestLatLng
+        if (destLoc != null && curLoc != null) {
             // 有目的地：使用标准路线预览（高德规划）
             tripPreviewService.sendPreviewRequest(
-                currentLocation!!.latitude, currentLocation!!.longitude,
-                selectedDestLatLng!!.latitude, selectedDestLatLng!!.longitude,
+                curLoc.latitude, curLoc.longitude,
+                destLoc.latitude, destLoc.longitude,
                 callback
             )
         } else {

@@ -49,11 +49,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".collection.DataCollectionActivity"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:exported="false" />
-
-        <activity
             android:name=".collection.ui.hub.CaptureHubActivity"
             android:screenOrientation="fullSensor"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"

@@ -417,8 +417,16 @@ class VisionTestActivity : AppCompatActivity() {
 
     // ==================== 帧处理 ====================
 
+    /** 安全执行 UI 操作：Activity 存活时才执行 */
+    private fun runOnUiThreadSafe(action: () -> Unit) {
+        if (destroyed || isFinishing) return
+        runOnUiThread {
+            if (!destroyed && !isFinishing) action()
+        }
+    }
+
     private fun processFrame(bitmap: Bitmap, rotationDegrees: Int) {
-        if (destroyed) return
+        if (destroyed || isFinishing || isDestroyed) return
         val now = SystemClock.elapsedRealtime()
         lastFrameWidth = if (rotationDegrees == 90 || rotationDegrees == 270) bitmap.height else bitmap.width
         lastFrameHeight = if (rotationDegrees == 90 || rotationDegrees == 270) bitmap.width else bitmap.height

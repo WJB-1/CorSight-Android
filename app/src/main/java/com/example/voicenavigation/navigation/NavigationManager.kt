@@ -203,9 +203,14 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         isRerouting = true
         navigationCallback?.onReRouting()
         Log.d(TAG, "Re-routing from current position")
+        val dest = destination ?: run {
+            Log.w(TAG, "triggerReroute called but destination is null")
+            isRerouting = false
+            return
+        }
         planRoute(
             LatLng(currentLocation.latitude, currentLocation.longitude),
-            destination!!,
+            dest,
             destinationName
         )
     }

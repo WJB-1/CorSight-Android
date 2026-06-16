@@ -119,7 +119,6 @@ class TtsPlayer(
             val mp = MediaPlayer().apply {
                 setAudioStreamType(AudioManager.STREAM_MUSIC)
                 setDataSource(file.absolutePath)
-                setOnPreparedListener { it.start() }
                 setOnCompletionListener {
                     it.release()
                     mediaPlayer = null
@@ -133,7 +132,10 @@ class TtsPlayer(
                     if (!stopped) processQueue()
                     true
                 }
-                prepareAsync()
+                // 同步准备：文件已在本地磁盘，I/O 延迟可忽略
+                // 比 prepareAsync() 少一次线程切换 + 回调等待
+                prepare()
+                start()
             }
             mediaPlayer = mp
         } catch (e: Exception) {
