@@ -37,6 +37,7 @@ class BaiduTtsManager(
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val mediaPlayerLock = Any()
     private var mediaPlayer: MediaPlayer? = null
     var callback: TtsCallback? = null
 
@@ -208,38 +209,37 @@ class BaiduTtsManager(
 
     private fun playAudioData(audioData: ByteArray) {
         try {
-            if (mediaPlayer != null) {
-                try { mediaPlayer?.release() } catch (_: Exception) {}
-                mediaPlayer = null
-            }
-
             val cacheFile = File(context.cacheDir, "baidu_tts_temp.mp3")
-            val fos = FileOutputStream(cacheFile)
-            fos.write(audioData)
-            fos.flush()
-            fos.close()
+            cacheFile.writeBytes(audioData)
 
-            mediaPlayer = MediaPlayer().apply {
-                setAudioStreamType(AudioManager.STREAM_MUSIC)
-                setDataSource(cacheFile.absolutePath)
-                setOnPreparedListener { mp ->
-                    Log.d(TAG, "MediaPlayer prepared, starting playback")
-                    mp.start()
+            synchronized(mediaPlayerLock) {
+                releaseMediaPlayer()
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioStreamType(AudioManager.STREAM_MUSIC)
+                    setDataSource(cacheFile.absolutePath)
+                    setOnPreparedListener { mp ->
+                        Log.d(TAG, "MediaPlayer prepared, starting playback")
+                        mp.start()
+                    }
+                    setOnCompletionListener { mp ->
+                        Log.d(TAG, "MediaPlayer completed")
+                        synchronized(mediaPlayerLock) {
+                            mp.release()
+                            if (mediaPlayer === mp) mediaPlayer = null
+                        }
+                        onPlaybackFinished()
+                    }
+                    setOnErrorListener { mp, what, extra ->
+                        Log.e(TAG, "MediaPlayer error: what=$what extra=$extra")
+                        synchronized(mediaPlayerLock) {
+                            mp.release()
+                            if (mediaPlayer === mp) mediaPlayer = null
+                        }
+                        onPlaybackFinished()
+                        true
+                    }
+                    prepareAsync()
                 }
-                setOnCompletionListener { mp ->
-                    Log.d(TAG, "MediaPlayer completed")
-                    mp.release()
-                    mediaPlayer = null
-                    onPlaybackFinished()
-                }
-                setOnErrorListener { mp, what, extra ->
-                    Log.e(TAG, "MediaPlayer error: what=$what extra=$extra")
-                    mp.release()
-                    mediaPlayer = null
-                    onPlaybackFinished()
-                    true
-                }
-                prepareAsync()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to play audio", e)
@@ -248,33 +248,24 @@ class BaiduTtsManager(
         }
     }
 
-    /**
-     * 当前一条播报完成后调用：标记空闲并处理下一条。
-     */
-    private fun onPlaybackFinished() {
-        synthesizing = false
-        if (!stopped) {
-            processQueue()
-        }
-    }
-
-    /**
-     * 停止播放并清空队列。
-     */
-    fun stopPlayback() {
-        stopped = true
-        synchronized(speechQueue) {
-            speechQueue.clear()
-        }
-        if (mediaPlayer != null) {
-            try {
-                mediaPlayer?.stop()
-                mediaPlayer?.release()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error stopping MediaPlayer", e)
+    private fun releaseMediaPlayer() {
+        synchronized(mediaPlayerLock) {
+            mediaPlayer?.let {
+                try { it.stop(); it.release() } catch (_: Exception) {}
             }
             mediaPlayer = null
         }
+    }
+
+    private fun onPlaybackFinished() {
+        synthesizing = false
+        if (!stopped) processQueue()
+    }
+
+    fun stopPlayback() {
+        stopped = true
+        synchronized(speechQueue) { speechQueue.clear() }
+        releaseMediaPlayer()
         synthesizing = false
     }
 
@@ -283,18 +274,8 @@ class BaiduTtsManager(
      */
     fun flushQueue() {
         Log.d(TAG, "Flushing TTS queue: size=${speechQueue.size} synthesizing=$synthesizing")
-        synchronized(speechQueue) {
-            speechQueue.clear()
-        }
-        if (mediaPlayer != null) {
-            try {
-                mediaPlayer?.stop()
-                mediaPlayer?.release()
-            } catch (e: Exception) {
-                Log.w(TAG, "Error stopping MediaPlayer", e)
-            }
-            mediaPlayer = null
-        }
+        synchronized(speechQueue) { speechQueue.clear() }
+        releaseMediaPlayer()
         synthesizing = false
     }
 

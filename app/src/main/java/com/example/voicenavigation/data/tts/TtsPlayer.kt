@@ -35,18 +35,15 @@ class TtsPlayer(
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val lock = Any()
     private var mediaPlayer: MediaPlayer? = null
     private val speechQueue: Queue<String> = LinkedList()
     private var isPlaying = false
     @Volatile private var stopped = false
 
-    /**
-     * 播报文本。缓存命中直接播放，否则回退百度在线合成。
-     */
     fun speak(text: String?) {
         if (text.isNullOrEmpty()) return
         stopped = false
-
         synchronized(speechQueue) {
             speechQueue.offer(text)
             Log.d(TAG, "Speak queued: [$text] cache=${cache.has(text)} queue=${speechQueue.size}")
@@ -54,28 +51,16 @@ class TtsPlayer(
         processQueue()
     }
 
-    /**
-     * 清空队列（打断当前播放的旧文本，新文本继续播放）。
-     */
     fun flushQueue() {
         synchronized(speechQueue) { speechQueue.clear() }
-        mediaPlayer?.let {
-            try { it.stop(); it.release() } catch (_: Exception) {}
-        }
-        mediaPlayer = null
+        releaseMediaPlayer()
         isPlaying = false
     }
 
-    /**
-     * 停止播放并清空队列。
-     */
     fun stopPlayback() {
         stopped = true
         synchronized(speechQueue) { speechQueue.clear() }
-        mediaPlayer?.let {
-            try { it.stop(); it.release() } catch (_: Exception) {}
-        }
-        mediaPlayer = null
+        releaseMediaPlayer()
         isPlaying = false
     }
 
@@ -85,7 +70,14 @@ class TtsPlayer(
         stopPlayback()
     }
 
-    // ── 内部 ──
+    private fun releaseMediaPlayer() {
+        synchronized(lock) {
+            mediaPlayer?.let {
+                try { it.stop(); it.release() } catch (_: Exception) {}
+            }
+            mediaPlayer = null
+        }
+    }
 
     private fun processQueue() {
         if (isPlaying || stopped) return
@@ -115,29 +107,33 @@ class TtsPlayer(
 
     private fun playFile(file: File) {
         try {
-            mediaPlayer?.release()
-            val mp = MediaPlayer().apply {
-                setAudioStreamType(AudioManager.STREAM_MUSIC)
-                setDataSource(file.absolutePath)
-                setOnCompletionListener {
-                    it.release()
-                    mediaPlayer = null
-                    this@TtsPlayer.isPlaying = false
-                    if (!stopped) processQueue()
+            synchronized(lock) {
+                releaseMediaPlayer()
+                val mp = MediaPlayer().apply {
+                    setAudioStreamType(AudioManager.STREAM_MUSIC)
+                    setDataSource(file.absolutePath)
+                    setOnCompletionListener {
+                        synchronized(lock) {
+                            it.release()
+                            if (mediaPlayer === it) mediaPlayer = null
+                        }
+                        this@TtsPlayer.isPlaying = false
+                        if (!stopped) processQueue()
+                    }
+                    setOnErrorListener { p, _, _ ->
+                        synchronized(lock) {
+                            p.release()
+                            if (mediaPlayer === p) mediaPlayer = null
+                        }
+                        this@TtsPlayer.isPlaying = false
+                        if (!stopped) processQueue()
+                        true
+                    }
+                    prepare()
+                    start()
                 }
-                setOnErrorListener { p, _, _ ->
-                    p.release()
-                    mediaPlayer = null
-                    this@TtsPlayer.isPlaying = false
-                    if (!stopped) processQueue()
-                    true
-                }
-                // 同步准备：文件已在本地磁盘，I/O 延迟可忽略
-                // 比 prepareAsync() 少一次线程切换 + 回调等待
-                prepare()
-                start()
+                mediaPlayer = mp
             }
-            mediaPlayer = mp
         } catch (e: Exception) {
             Log.e(TAG, "Failed to play cached file", e)
             isPlaying = false

@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.RectF
@@ -30,11 +31,13 @@ import com.corsight.vision.ToolRegistry
 import com.corsight.vision.ToolResult
 import com.corsight.vision.tools.GenericDetectionTool
 import com.example.voicenavigation.databinding.ActivityVisionTestBinding
-import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.stt.UnifiedTtsManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -249,7 +252,11 @@ class VisionTestActivity : AppCompatActivity() {
             }
         }
         val filter = IntentFilter("com.example.voicenavigation.ACTION_STOP_OBSTACLE")
-        registerReceiver(stopObstacleReceiver, filter)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(stopObstacleReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(stopObstacleReceiver, filter)
+        }
     }
 
     private fun startCameraOrRequestPermission() {

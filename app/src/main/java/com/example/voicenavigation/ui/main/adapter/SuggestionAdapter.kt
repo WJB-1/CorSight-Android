@@ -1,4 +1,4 @@
-package com.example.voicenavigation.data
+package com.example.voicenavigation.ui.main.adapter
 
 import android.view.LayoutInflater
 import android.view.View

@@ -112,7 +112,8 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
                     time = aMapLocation.time
                 }
 
-                if (isNavigating && routePoints != null && routePoints!!.isNotEmpty()) {
+                val points = routePoints
+                if (isNavigating && points != null && points.isNotEmpty()) {
                     updateNavigationProgress(location)
                 }
 
@@ -141,14 +142,18 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
     }
 
     private fun updateNavigationProgress(currentLocation: Location) {
+        val points = routePoints ?: return
+        val instructions = stepInstructions
+        val walkPath = currentWalkPath
+
         val currentLatLng = LatLng(currentLocation.latitude, currentLocation.longitude)
         var minDist = Float.MAX_VALUE
         var nearestIdx = currentPolylineIndex
 
         val startSearch = Math.max(0, currentPolylineIndex - 5)
-        val endSearch = Math.min(routePoints!!.size, currentPolylineIndex + 50)
+        val endSearch = Math.min(points.size, currentPolylineIndex + 50)
         for (i in startSearch until endSearch) {
-            val dist = calculateDistance(currentLatLng, routePoints!![i])
+            val dist = calculateDistance(currentLatLng, points[i])
             if (dist < minDist) {
                 minDist = dist
                 nearestIdx = i
@@ -164,22 +169,22 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
         currentPolylineIndex = nearestIdx
 
         remainingDistance = 0f
-        for (i in currentPolylineIndex until routePoints!!.size - 1) {
-            remainingDistance += calculateDistance(routePoints!![i], routePoints!![i + 1])
+        for (i in currentPolylineIndex until points.size - 1) {
+            remainingDistance += calculateDistance(points[i], points[i + 1])
         }
 
         val remainingDuration = if (totalDistance > 0) (remainingDistance / totalDistance) * totalDuration else 0f
         var nextInstruction = ""
-        if (stepInstructions != null && currentWalkPath != null) {
+        if (instructions != null && walkPath != null) {
             var stepIdx = 0
             var accumulated = 0
-            for (step in currentWalkPath!!.steps) {
+            for (step in walkPath.steps) {
                 val pts = step.polyline
                 if (pts != null) {
                     accumulated += pts.size
                     if (accumulated > currentPolylineIndex) {
-                        if (stepIdx < stepInstructions!!.size) {
-                            nextInstruction = stepInstructions!![stepIdx]
+                        if (stepIdx < instructions.size) {
+                            nextInstruction = instructions[stepIdx]
                         }
                         break
                     }
@@ -249,12 +254,13 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
             }
 
             currentRouteResult = result
-            currentWalkPath = result.paths[0]
-            totalDistance = currentWalkPath!!.distance.toFloat()
-            totalDuration = currentWalkPath!!.duration.toFloat()
+            val walkPath = result.paths[0]
+            currentWalkPath = walkPath
+            totalDistance = walkPath.distance.toFloat()
+            totalDuration = walkPath.duration.toFloat()
             remainingDistance = totalDistance
 
-            val steps: List<WalkStep> = currentWalkPath!!.steps
+            val steps: List<WalkStep> = walkPath.steps
             val points = mutableListOf<LatLng>()
             val instructions = mutableListOf<String>()
 
@@ -279,16 +285,17 @@ class NavigationManager(private val context: Context) : RouteSearch.OnRouteSearc
                 isNavigating = true
             }
 
-            Log.d(TAG, "Walk route found: ${routePoints!!.size} points, ${totalDistance}m, ${totalDuration}s")
+            Log.d(TAG, "Walk route found: ${points.size} points, ${totalDistance}m, ${totalDuration}s")
 
             if (locationClient != null && !isRerouting) {
                 locationClient?.startLocation()
             }
 
-            if (navigationCallback != null) {
-                navigationCallback!!.onRouteReady(routePoints!!, totalDistance, totalDuration, stepInstructions!!)
+            val callback = navigationCallback
+            if (callback != null) {
+                callback.onRouteReady(points, totalDistance, totalDuration, instructions)
                 if (!isRerouting) {
-                    navigationCallback!!.onNavigationStarted()
+                    callback.onNavigationStarted()
                 }
             }
 

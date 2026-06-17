@@ -4,7 +4,6 @@ import androidx.activity.enableEdgeToEdge
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Build
@@ -55,10 +54,10 @@ import com.amap.api.services.core.ServiceSettings
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
 import com.example.voicenavigation.data.AppDatabase
-import com.example.voicenavigation.data.SuggestionAdapter
+import com.example.voicenavigation.ui.main.adapter.SuggestionAdapter
 // Room import removed — AppDatabase is Hilt-injected
 import com.example.voicenavigation.data.VoiceRecord
-import com.example.voicenavigation.data.VoiceRecordAdapter
+import com.example.voicenavigation.ui.main.adapter.VoiceRecordAdapter
 import com.example.voicenavigation.navigation.NavigationManager
 import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
@@ -116,7 +115,7 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var menuConfig: MenuConfig
 
     private var mMap: AMap? = null
-    private lateinit var mapView: MapView
+    private var mapView: MapView? = null
     private lateinit var handler: Handler
 
     private lateinit var btnVoiceContainer: FrameLayout
@@ -205,9 +204,10 @@ class MainActivity : AppCompatActivity(),
 
         // Coordinator 在 setupRingMenu() 中初始化（替代 GestureVoiceLauncher）
 
-        mapView = findViewById(R.id.map)
-        mapView.onCreate(savedInstanceState)
-        mMap = mapView.map
+        mapView = findViewById<MapView?>(R.id.map)?.also {
+            it.onCreate(savedInstanceState)
+            mMap = it.map
+        }
         initMap()
 
         // 从其他页面长按跳转回来时，自动启动语音助手
@@ -1332,17 +1332,17 @@ class MainActivity : AppCompatActivity(),
 
     override fun onResume() {
         super.onResume()
-        mapView.onResume()
+        mapView?.onResume()
     }
 
     override fun onPause() {
         super.onPause()
-        mapView.onPause()
+        mapView?.onPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        mapView.onSaveInstanceState(outState)
+        mapView?.onSaveInstanceState(outState)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -1354,6 +1354,7 @@ class MainActivity : AppCompatActivity(),
         lockMapGestures(true)  // 确保地图手势恢复
         ringMenuCoordinator?.destroy()
         ringMenuCoordinator = null
+        voiceInteractionManager.release()
         voicePulseAnim?.cancel()
         voicePulseAnim = null
         voiceCommandPulseAnim?.cancel()
@@ -1366,6 +1367,6 @@ class MainActivity : AppCompatActivity(),
         navigationManager.stopNavigation()
         navigationManager.destroyLocationClient()
         tripPreviewService.cancelAll()
-        mapView.onDestroy()
+        mapView?.onDestroy()
     }
 }

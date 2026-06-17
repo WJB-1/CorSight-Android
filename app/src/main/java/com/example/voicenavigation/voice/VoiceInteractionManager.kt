@@ -147,6 +147,17 @@ class VoiceInteractionManager(
     fun getTtsManager(): UnifiedTtsManager? = ttsManager
     fun isLLMAvailable(): Boolean = llmCaller != null && llmCaller.isConfigured()
 
+    /**
+     * 释放所有 Activity 级回调引用，防止 Activity 销毁后
+     * LLM 回调或延迟 TTS 仍然触发已销毁的 Activity。
+     */
+    fun release() {
+        textInputListener = null
+        commandExecutor = null
+        voiceEventListener = null
+        lastFeedbackText = ""
+    }
+
     // ==================== Toast 管理 ====================
 
     private var currentToast: Toast? = null

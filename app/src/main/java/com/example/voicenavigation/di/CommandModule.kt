@@ -1,7 +1,19 @@
 package com.example.voicenavigation.di
 
 import com.example.voicenavigation.command.MenuCommand
-import com.example.voicenavigation.command.commands.*
+import com.example.voicenavigation.command.commands.DataCollectionCommand
+import com.example.voicenavigation.command.commands.NavigateToCommand
+import com.example.voicenavigation.command.commands.PreviewRouteCommand
+import com.example.voicenavigation.command.commands.QueryStatusCommand
+import com.example.voicenavigation.command.commands.RepeatLastCommand
+import com.example.voicenavigation.command.commands.ShowHistoryCommand
+import com.example.voicenavigation.command.commands.ShowSettingsCommand
+import com.example.voicenavigation.command.commands.StartObstacleCommand
+import com.example.voicenavigation.command.commands.StopNavigationCommand
+import com.example.voicenavigation.command.commands.StopObstacleCommand
+import com.example.voicenavigation.command.commands.TextSearchCommand
+import com.example.voicenavigation.command.commands.VoiceAssistantCommand
+import com.example.voicenavigation.command.commands.WhereAmICommand
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

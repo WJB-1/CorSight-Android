@@ -1,6 +1,11 @@
 package com.example.voicenavigation.collection
 
-import kotlin.math.*
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.ln
+import kotlin.math.pow
+import kotlin.math.tan
 
 object GridUtils {
 

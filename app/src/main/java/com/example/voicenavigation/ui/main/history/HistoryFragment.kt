@@ -13,7 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.voicenavigation.R
-import com.example.voicenavigation.data.VoiceRecordAdapter
+import com.example.voicenavigation.ui.main.adapter.VoiceRecordAdapter
 import com.example.voicenavigation.stt.UnifiedTtsManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch

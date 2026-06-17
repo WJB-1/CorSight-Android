@@ -1,4 +1,4 @@
-package com.example.voicenavigation.data
+package com.example.voicenavigation.ui.main.adapter
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +7,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.voicenavigation.R
+import com.example.voicenavigation.data.VoiceRecord
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
