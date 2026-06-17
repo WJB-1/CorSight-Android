@@ -2,6 +2,7 @@ package com.example.voicenavigation.collection.ui.base
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.GestureDetector
@@ -149,6 +150,16 @@ abstract class BaseCaptureFragment : Fragment() {
         super.onPause()
         stopSensors()
         cameraProvider?.unbindAll()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 屏幕旋转时：释放旧相机绑定 → 重新绑定（更新 targetRotation）
+        // 解决横屏时 TextureView BufferQueue 溢出（"Can't acquire next buffer"）
+        cameraProvider?.unbindAll()
+        if (hasCameraPermission()) {
+            startCamera()
+        }
     }
 
     // ===== 传感器 =====
