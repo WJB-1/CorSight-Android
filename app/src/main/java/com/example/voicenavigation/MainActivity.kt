@@ -677,9 +677,10 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun enableMapLocation() {
-        if (mMap != null && checkLocationPermission() && hasValidAmapKey()) {
+        val map = mMap ?: return
+        if (checkLocationPermission() && hasValidAmapKey()) {
             try {
-                mMap!!.isMyLocationEnabled = true
+                map.isMyLocationEnabled = true
             } catch (e: SecurityException) {
                 Log.e(TAG, "Enable map location failed", e)
             }
@@ -698,9 +699,10 @@ class MainActivity : AppCompatActivity(),
         }
         enableMapLocation()
         navigationManager.requestCurrentLocation()
+        val map = mMap
         val loc = currentLocation
-        if (mMap != null && loc != null) {
-            mMap!!.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16f))
+        if (map != null && loc != null) {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(loc, 16f))
         } else {
             Toast.makeText(this, getString(R.string.msg_getting_location), Toast.LENGTH_SHORT).show()
         }
@@ -807,7 +809,7 @@ class MainActivity : AppCompatActivity(),
                     hideSuggestions()  // 语音模式不弹列表
                     etDestination.setText("")  // 清空搜索框残留
 
-                    val firstItem = poiResults!![0]
+                    val firstItem = (poiResults ?: return)[0]
                     val point = firstItem.latLonPoint
                     val latLng = LatLng(point.latitude, point.longitude)
                     // 设置 isSelectingDestination 防止 setDestination 中的
@@ -903,11 +905,12 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun drawRoute(points: List<LatLng>?) {
-        if (mMap == null || points.isNullOrEmpty()) return
+        val map = mMap ?: return
+        if (points.isNullOrEmpty()) return
         routePolyline?.remove()
         routePolyline = null
         val options = PolylineOptions().addAll(points).color(0xFF3B8EFF.toInt()).width(12f)
-        routePolyline = mMap!!.addPolyline(options)
+        routePolyline = map.addPolyline(options)
     }
 
     private fun clearRouteDisplay() {
@@ -918,9 +921,9 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun addDestinationMarker(latLng: LatLng) {
-        if (mMap == null) return
+        val map = mMap ?: return
         destinationMarker?.remove()
-        destinationMarker = mMap!!.addMarker(
+        destinationMarker = map.addMarker(
             MarkerOptions()
                 .position(latLng)
                 .title(getString(R.string.destination_hint))
