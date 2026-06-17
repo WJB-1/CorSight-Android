@@ -16,26 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- ═══ 2. 左下角品牌水印（极淡 + 阴影） ═══ -->
-    <TextView
-        android:id="@+id/tv_brand"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginBottom="60dp"
-        android:text="瞳心引航"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:textColor="#15FFFFFF"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="3"
-        android:elevation="4dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-    <!-- ═══ 3. 导航信息浮层（地图上方，仅导航时显示） ═══ -->
+    <!-- ═══ 2. 导航信息浮层（地图上方，仅导航时显示） ═══ -->
     <LinearLayout
         android:id="@+id/layout_nav_info"
         android:layout_width="0dp"
@@ -87,149 +68,99 @@
             android:layout_marginTop="6dp" />
     </LinearLayout>
 
-    <!-- ═══ 4. 中央语音区域（地图上层，居中大按钮） ═══ -->
-    <LinearLayout
-        android:id="@+id/layout_voice_center"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center_horizontal"
-        app:layout_constraintStart_toStartOf="parent"
+    <!-- ═══ 3. 定位按钮（地图右下角） ═══ -->
+    <ImageButton
+        android:id="@+id/btn_my_location"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/card_background"
+        android:src="@android:drawable/ic_menu_mylocation"
+        android:tint="?android:attr/textColorPrimary"
+        android:elevation="4dp"
+        android:contentDescription="定位"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/voice_zone" />
+
+    <!-- ═══ 4. 底部语音交互区域（屏幕下 1/4，半透明圆角卡片） ═══ -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/voice_zone"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="4dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="#99000000"
+        app:layout_constraintHeight_percent="0.22"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginBottom="80dp">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- 语音状态文字 -->
-        <TextView
-            android:id="@+id/tv_voice_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="长按屏幕唤醒语音助手"
-            android:textSize="14sp"
-            android:textColor="#80FFFFFF"
-            android:elevation="4dp"
-            android:layout_marginBottom="16dp" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp">
 
-        <!-- 大语音按钮（语音助手 COMMAND 模式） -->
-        <FrameLayout
-            android:id="@+id/btn_voice_command_container"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
-            android:background="@drawable/bg_voice_command_button"
-            android:clickable="true"
-            android:focusable="true"
-            android:elevation="8dp"
-            android:foreground="?attr/selectableItemBackground">
-
+            <!-- 取消指示箭头（平时隐藏，上滑时显示） -->
             <ImageView
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_microphone"
-                android:tint="@color/white" />
+                android:id="@+id/iv_cancel_indicator"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/arrow_up_float"
+                android:tint="#FF4444"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@id/tv_voice_hint"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginBottom="8dp" />
 
-            <!-- 涟漪动画 -->
-            <View
-                android:id="@+id/voice_command_ripple"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/bg_voice_button_active"
-                android:visibility="gone" />
-        </FrameLayout>
-
-        <!-- 语音助手文字 -->
-        <TextView
-            android:id="@+id/tv_voice_command_hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="语音助手"
-            android:textSize="13sp"
-            android:textColor="#B0FFFFFF"
-            android:elevation="4dp"
-            android:layout_marginTop="8dp" />
-
-        <!-- 按住说话按钮（语音转文字搜索） -->
-        <FrameLayout
-            android:id="@+id/btn_voice_container"
-            android:layout_width="160dp"
-            android:layout_height="48dp"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_voice_button"
-            android:clickable="true"
-            android:focusable="true"
-            android:elevation="6dp"
-            android:foreground="?attr/selectableItemBackground">
-
-            <LinearLayout
+            <!-- 语音状态提示文字 -->
+            <TextView
+                android:id="@+id/tv_voice_hint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:text="按住说话"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:elevation="4dp"
+                app:layout_constraintBottom_toTopOf="@id/voice_wave_background"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginBottom="8dp" />
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:src="@drawable/ic_microphone"
-                    android:tint="@color/white" />
-
-                <TextView
-                    android:id="@+id/tv_voice_hint"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="按住说话"
-                    android:textColor="@color/white"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
+            <!-- 声波背景（平时隐藏，录音时显示） -->
             <View
-                android:id="@+id/voice_ripple"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@drawable/bg_voice_button_active"
-                android:visibility="gone" />
-        </FrameLayout>
-    </LinearLayout>
+                android:id="@+id/voice_wave_background"
+                android:layout_width="120dp"
+                android:layout_height="4dp"
+                android:background="#4DFFFFFF"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@id/tv_voice_sub_hint"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                android:layout_marginBottom="6dp" />
 
-    <!-- ═══ 5. 底部操作栏（精简：定位 + 停止语音） ═══ -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent">
+            <!-- 副提示文字 -->
+            <TextView
+                android:id="@+id/tv_voice_sub_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="松开发送 · 上滑取消"
+                android:textSize="11sp"
+                android:textColor="#99FFFFFF"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
-        <!-- 定位按钮 -->
-        <ImageButton
-            android:id="@+id/btn_my_location"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/card_background"
-            android:src="@android:drawable/ic_menu_mylocation"
-            android:tint="?android:attr/textColorPrimary"
-            android:elevation="4dp"
-            android:contentDescription="定位"
-            android:layout_marginEnd="16dp" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-        <!-- 停止语音按钮（仅播报时出现） -->
-        <Button
-            android:id="@+id/btn_stop_tts"
-            android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:paddingHorizontal="20dp"
-            android:text="停止语音"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            android:background="@color/gray"
-            android:elevation="4dp"
-            android:visibility="gone" />
-    </LinearLayout>
-
-    <!-- ═══ 6. 搜索建议列表（语音搜索后浮动显示） ═══ -->
+    <!-- ═══ 5. 搜索建议列表（语音搜索后浮动显示） ═══ -->
     <androidx.cardview.widget.CardView
         android:id="@+id/card_suggestions"
         android:layout_width="0dp"
@@ -256,7 +187,7 @@
             android:scrollbars="vertical" />
     </androidx.cardview.widget.CardView>
 
-    <!-- ═══ 隐藏区域：原功能页面容器（保留 ID 供 Kotlin 引用，不可见但会 inflate） ═══ -->
+    <!-- ═══ 隐藏区域：原功能容器（保留 ID，0dp + alpha=0，inflate 但不可见） ═══ -->
     <FrameLayout
         android:id="@+id/container_pages"
         android:layout_width="0dp"
@@ -266,54 +197,52 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
-
-        <include
-            android:id="@+id/page_history"
-            layout="@layout/page_history"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <include
-            android:id="@+id/page_settings"
-            layout="@layout/page_settings"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+        <include android:id="@+id/page_history" layout="@layout/page_history"
+            android:layout_width="match_parent" android:layout_height="match_parent" />
+        <include android:id="@+id/page_settings" layout="@layout/page_settings"
+            android:layout_width="match_parent" android:layout_height="match_parent" />
     </FrameLayout>
 
-    <!-- ═══ 隐藏区域：旧功能按钮（保留 ID 供 Kotlin 引用，0dp 尺寸不可见但会 inflate） ═══ -->
     <LinearLayout
         android:id="@+id/bottom_controls"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:alpha="0"
-        android:importantForAccessibility="no"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:alpha="0" android:importantForAccessibility="no"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
-
         <Button android:id="@+id/btn_start_navigation" android:layout_width="0dp" android:layout_height="0dp" />
         <Button android:id="@+id/btn_preview_route" android:layout_width="0dp" android:layout_height="0dp" />
         <Button android:id="@+id/btn_vision_test" android:layout_width="0dp" android:layout_height="0dp" />
     </LinearLayout>
 
-    <!-- 隐藏的搜索栏（保留 ID 供 Kotlin 代码引用，0dp 尺寸但会 inflate） -->
     <FrameLayout
         android:id="@+id/search_bar_container"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:alpha="0">
-
+        android:layout_width="0dp" android:layout_height="0dp" android:alpha="0">
         <EditText android:id="@+id/et_destination" android:layout_width="0dp" android:layout_height="0dp" />
         <ImageButton android:id="@+id/btn_clear_search" android:layout_width="0dp" android:layout_height="0dp" />
     </FrameLayout>
 
-    <!-- 隐藏的底部导航栏（保留 ID 供 Kotlin 代码引用，0dp 尺寸但会 inflate） -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottom_nav"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:alpha="0"
-        android:importantForAccessibility="no"
+        android:layout_width="0dp" android:layout_height="0dp"
+        android:alpha="0" android:importantForAccessibility="no"
         app:menu="@menu/menu_main_bottom" />
+
+    <!-- 停止语音按钮（浮动在语音卡片上方，播报时出现） -->
+    <Button
+        android:id="@+id/btn_stop_tts"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:paddingHorizontal="20dp"
+        android:text="停止语音"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:background="@color/gray"
+        android:elevation="4dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/voice_zone"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="16dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

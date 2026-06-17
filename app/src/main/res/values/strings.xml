@@ -260,4 +260,13 @@
     <string name="status_obstacle_on">避障模式已开启</string>
     <string name="status_obstacle_off">避障模式未开启</string>
     <string name="msg_unknown_command">抱歉，没有听懂</string>
+
+    <!-- 语音交互区域 -->
+    <string name="voice_zone_press_to_talk">按住说话</string>
+    <string name="voice_zone_release_to_send">松开发送</string>
+    <string name="voice_zone_swipe_cancel">上滑取消</string>
+    <string name="voice_zone_cancel_release">松开取消</string>
+    <string name="voice_zone_release_to_cancel">松开手指取消</string>
+    <string name="voice_zone_cancelled">已取消语音输入</string>
+    <string name="voice_zone_sub_hint">松开发送 · 上滑取消</string>
 </resources>

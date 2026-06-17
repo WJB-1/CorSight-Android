@@ -117,14 +117,12 @@ class MainActivity : AppCompatActivity(),
     private var mapView: MapView? = null
     private lateinit var handler: Handler
 
-    private lateinit var btnVoiceContainer: FrameLayout
+    // 底部语音交互区域
+    private lateinit var voiceZone: View
     private lateinit var tvVoiceHint: TextView
-    private lateinit var voiceRipple: View
-
-    // 语音助手按钮（Function Calling）
-    private lateinit var btnVoiceCommandContainer: FrameLayout
-    private lateinit var tvVoiceCommandHint: TextView
-    private lateinit var voiceCommandRipple: View
+    private lateinit var tvVoiceSubHint: TextView
+    private lateinit var ivCancelIndicator: View
+    private lateinit var voiceWaveBackground: View
 
     private lateinit var btnStartNavigation: Button
     private lateinit var btnPreviewRoute: Button
@@ -325,15 +323,12 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun initViews() {
-        // 语音转文字按钮
-        btnVoiceContainer = findViewById(R.id.btn_voice_container)
+        // 底部语音交互区域
+        voiceZone = findViewById(R.id.voice_zone)
         tvVoiceHint = findViewById(R.id.tv_voice_hint)
-        voiceRipple = findViewById(R.id.voice_ripple)
-
-        // 语音助手按钮（Function Calling）
-        btnVoiceCommandContainer = findViewById(R.id.btn_voice_command_container)
-        tvVoiceCommandHint = findViewById(R.id.tv_voice_command_hint)
-        voiceCommandRipple = findViewById(R.id.voice_command_ripple)
+        tvVoiceSubHint = findViewById(R.id.tv_voice_sub_hint)
+        ivCancelIndicator = findViewById(R.id.iv_cancel_indicator)
+        voiceWaveBackground = findViewById(R.id.voice_wave_background)
 
         btnStartNavigation = findViewById(R.id.btn_start_navigation)
         btnPreviewRoute = findViewById(R.id.btn_preview_route)
@@ -390,8 +385,7 @@ class MainActivity : AppCompatActivity(),
         }
 
         vibrator = getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator?
-        setupVoiceButton()
-        setupVoiceCommandButton()
+        setupVoiceZone()
         setupSearchBar()
 
         btnStartNavigation.setOnClickListener { toggleNavigation() }
@@ -408,52 +402,16 @@ class MainActivity : AppCompatActivity(),
     }
 
     /**
-     * 语音转文字按钮（蓝色「按住说话」）
-     * 按下 → 语音识别 → 结果填入搜索框。
-     * 松开后延迟 150ms 再发送 ASR_STOP，防止最后一个字被截断。
+     * 底部语音交互区域：按住说话 + 上滑取消。
+     * 统一使用 COMMAND 模式（语音助手），不再区分"按住说话"和"语音助手"两个按钮。
+     * 该区域消费所有触摸事件，不会触发环形菜单。
      */
-    private fun setupVoiceButton() {
-        btnVoiceContainer.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    if (!checkAudioPermission()) {
-                        Toast.makeText(this, R.string.permission_audio_denied, Toast.LENGTH_SHORT).show()
-                        requestPermissions()
-                        return@setOnTouchListener true
-                    }
-                    vibrate(50)
-                    tvVoiceHint.text = getString(R.string.ui_release_to_stop)
-                    // 动画：涟漪淡入 + 呼吸脉冲
-                    ViewTransition.fadeIn(voiceRipple, 150)
-                    voicePulseAnim?.cancel()
-                    voicePulseAnim = Animations.Ambient.breathingScale(voiceRipple, 1f, 1.15f, 600)
-                    voicePulseAnim?.start()
-                    voiceInteractionManager.startListening(VoiceInteractionManager.Mode.TEXT_INPUT)
-                    true
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    tvVoiceHint.text = getString(R.string.ui_recognizing)
-                    // 动画：停止脉冲 + 涟漪淡出
-                    voicePulseAnim?.cancel()
-                    voicePulseAnim = null
-                    voiceRipple.scaleX = 1f
-                    voiceRipple.scaleY = 1f
-                    ViewTransition.fadeOut(voiceRipple, 150)
-                    // 立即停止（不延迟），百度引擎用 VAD Endpoint Timeout 自行采集尾音
-                    voiceInteractionManager.stopListening()
-                    true
-                }
-                else -> false
-            }
-        }
-    }
+    private fun setupVoiceZone() {
+        var startY = 0f
+        var isCancelling = false
+        val cancelThreshold = 80f
 
-    /**
-     * 语音助手按钮（橙色「语音助手」）
-     * 按下 → 语音识别 → Function Calling 执行指令。
-     */
-    private fun setupVoiceCommandButton() {
-        btnVoiceCommandContainer.setOnTouchListener { _, event ->
+        voiceZone.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     if (!checkAudioPermission()) {
@@ -461,26 +419,46 @@ class MainActivity : AppCompatActivity(),
                         requestPermissions()
                         return@setOnTouchListener true
                     }
+                    startY = event.rawY
+                    isCancelling = false
+                    tvVoiceHint.text = getString(R.string.voice_zone_release_to_send)
+                    tvVoiceSubHint.text = getString(R.string.voice_zone_swipe_cancel)
+                    voiceWaveBackground.visibility = View.VISIBLE
+                    ivCancelIndicator.visibility = View.GONE
                     vibrate(50)
-                    tvVoiceCommandHint.text = getString(R.string.ui_recognizing_active)
-                    // 动画：涟漪淡入 + 呼吸脉冲
-                    ViewTransition.fadeIn(voiceCommandRipple, 150)
-                    voiceCommandPulseAnim?.cancel()
-                    voiceCommandPulseAnim = Animations.Ambient.breathingScale(voiceCommandRipple, 1f, 1.15f, 600)
-                    voiceCommandPulseAnim?.start()
-                    Toast.makeText(this, getString(R.string.msg_listening_start), Toast.LENGTH_SHORT).show()
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                     true
                 }
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaY = startY - event.rawY
+                    if (deltaY > cancelThreshold && !isCancelling) {
+                        isCancelling = true
+                        tvVoiceHint.text = getString(R.string.voice_zone_cancel_release)
+                        tvVoiceHint.setTextColor(getColor(android.R.color.holo_red_light))
+                        tvVoiceSubHint.text = getString(R.string.voice_zone_release_to_cancel)
+                        ivCancelIndicator.visibility = View.VISIBLE
+                        vibrate(30)
+                    } else if (deltaY <= cancelThreshold && isCancelling) {
+                        isCancelling = false
+                        tvVoiceHint.text = getString(R.string.voice_zone_release_to_send)
+                        tvVoiceHint.setTextColor(getColor(android.R.color.white))
+                        tvVoiceSubHint.text = getString(R.string.voice_zone_swipe_cancel)
+                        ivCancelIndicator.visibility = View.GONE
+                    }
+                    true
+                }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    tvVoiceCommandHint.text = getString(R.string.ui_recognizing)
-                    // 动画：停止脉冲 + 涟漪淡出
-                    voiceCommandPulseAnim?.cancel()
-                    voiceCommandPulseAnim = null
-                    voiceCommandRipple.scaleX = 1f
-                    voiceCommandRipple.scaleY = 1f
-                    ViewTransition.fadeOut(voiceCommandRipple, 150)
                     voiceInteractionManager.stopListening()
+                    if (isCancelling) {
+                        Toast.makeText(this, getString(R.string.voice_zone_cancelled), Toast.LENGTH_SHORT).show()
+                    }
+                    tvVoiceHint.text = getString(R.string.voice_zone_press_to_talk)
+                    tvVoiceHint.setTextColor(getColor(android.R.color.white))
+                    tvVoiceSubHint.text = getString(R.string.voice_zone_sub_hint)
+                    tvVoiceSubHint.setTextColor(getColor(android.R.color.darker_gray))
+                    voiceWaveBackground.visibility = View.GONE
+                    ivCancelIndicator.visibility = View.GONE
+                    isCancelling = false
                     true
                 }
                 else -> false
@@ -633,8 +611,8 @@ class MainActivity : AppCompatActivity(),
             override fun onListeningStopped() {}
             override fun onPartialResultReceived(text: String) {}
             override fun onPipelineStage(stage: String) {
-                // 实时更新橙色按钮文字，显示流水线进度
-                runOnUiThread { tvVoiceCommandHint.text = stage }
+                // 实时更新语音区域提示文字
+                runOnUiThread { tvVoiceHint.text = stage }
             }
         })
     }
