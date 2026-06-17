@@ -25,7 +25,12 @@ import kotlin.math.abs
  * 单例，返回共享流（shareIn），多个订阅者共用同一个传感器会话。
  * 平滑状态为 flow 内部局部变量，多订阅者不会互相覆盖。
  *
- * 职责：读取传感器 → 坐标系重映射（横屏兼容） → 航向平滑 → 输出 [HeadingData]。
+ * 滤波链：
+ * 1. 跳变拒绝（>120° 视为干扰，丢弃）
+ * 2. 死区（静止时 ±2° 内不更新，消除手持微震）
+ * 3. 两级 EMA 串联（快通道 α=0.25 + 慢通道 α=0.12），兼顾响应速度和平滑度
+ *
+ * 职责：读取传感器 → 坐标系重映射（横屏兼容） → 多级滤波 → 输出 [HeadingData]。
  */
 @Singleton
 class HardwareCompassProvider @Inject constructor(
@@ -33,8 +38,14 @@ class HardwareCompassProvider @Inject constructor(
 ) : CompassProvider {
 
     companion object {
-        private const val SMOOTHING_FACTOR = 0.1f
+        // 第一级 EMA：较快，跟踪真实转向
+        private const val FAST_ALPHA = 0.25f
+        // 第二级 EMA：较慢，平滑抖动
+        private const val SLOW_ALPHA = 0.12f
+        // 跳变拒绝阈值
         private const val JUMP_REJECT_DEG = 120f
+        // 死区：静止时 ±2° 内不更新（消除手持微震）
+        private const val DEADZONE_DEG = 2f
     }
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -57,9 +68,11 @@ class HardwareCompassProvider @Inject constructor(
         val remappedMatrix = FloatArray(9)
         val orientation = FloatArray(3)
 
-        // 平滑状态（局部，每个 flow 实例独立）
-        var smoothedHeading: Float? = null
+        // 滤波状态（局部，每个 flow 实例独立）
+        var fastFiltered: Float? = null   // 第一级 EMA
+        var slowFiltered: Float? = null   // 第二级 EMA
         var lastRawHeading: Float? = null
+        var lastEmittedHeading: Float? = null  // 上次发送的值（死区用）
         var currentAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_LOW
 
         val listener = object : SensorEventListener {
@@ -98,7 +111,7 @@ class HardwareCompassProvider @Inject constructor(
                 var heading = Math.toDegrees(orientation[0].toDouble()).toFloat()
                 if (heading < 0) heading += 360f
 
-                // 跳变拒绝
+                // 1. 跳变拒绝：>120° 的突变视为磁干扰，丢弃
                 lastRawHeading?.let { last ->
                     var diff = abs(heading - last)
                     if (diff > 180) diff = 360 - diff
@@ -106,19 +119,41 @@ class HardwareCompassProvider @Inject constructor(
                 }
                 lastRawHeading = heading
 
-                // EMA 指数平滑
-                smoothedHeading = if (smoothedHeading == null) {
-                    heading
-                } else {
-                    var diff = heading - smoothedHeading!!
+                // 2. 两级 EMA 串联
+                //    快通道 (α=0.25)：快速跟踪真实转向
+                //    慢通道 (α=0.12)：对快通道输出再平滑，消除残余抖动
+                fun emaStep(prev: Float, raw: Float, alpha: Float): Float {
+                    var diff = raw - prev
                     if (diff > 180) diff -= 360
                     if (diff < -180) diff += 360
-                    (smoothedHeading!! + SMOOTHING_FACTOR * diff + 360) % 360
+                    return (prev + alpha * diff + 360) % 360
                 }
+
+                if (fastFiltered == null) {
+                    // 首次初始化
+                    fastFiltered = heading
+                    slowFiltered = heading
+                } else {
+                    fastFiltered = emaStep(fastFiltered!!, heading, FAST_ALPHA)
+                    slowFiltered = emaStep(slowFiltered!!, fastFiltered!!, SLOW_ALPHA)
+                }
+
+                // 3. 死区：输出层面抑制微震
+                //    与上一次发送的值比较，变化 < DEADZONE_DEG 时复用旧值
+                val candidate = slowFiltered!!
+                val result = if (lastEmittedHeading != null) {
+                    var diff = candidate - lastEmittedHeading!!
+                    if (diff > 180) diff -= 360
+                    if (diff < -180) diff += 360
+                    if (abs(diff) < DEADZONE_DEG) lastEmittedHeading!! else candidate
+                } else {
+                    candidate
+                }
+                lastEmittedHeading = result
 
                 trySend(
                     HeadingData(
-                        heading = smoothedHeading!!,
+                        heading = result,
                         accuracy = currentAccuracy,
                         timestamp = event.timestamp
                     )
