@@ -109,7 +109,6 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var speechManager: BaiduSpeechManager
     @Inject lateinit var baiduTts: BaiduTtsManager
     @Inject lateinit var unifiedTts: UnifiedTtsManager
-    @Inject lateinit var voiceInteractionManager: VoiceInteractionManager
     // appDatabase removed — operations go through VoiceRecordRepository via ViewModel
     @Inject lateinit var tripPreviewService: TripPreviewService
     @Inject lateinit var menuConfig: MenuConfig
@@ -220,7 +219,7 @@ class MainActivity : AppCompatActivity(),
     private fun handleVoiceCommandIntent(intent: Intent?) {
         if (intent?.getBooleanExtra("START_VOICE_COMMAND", false) == true) {
             intent.removeExtra("START_VOICE_COMMAND")
-            voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+            viewModel.voiceUseCase.startListening(VoiceInteractionManager.Mode.COMMAND)
             Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
         }
     }
@@ -263,7 +262,6 @@ class MainActivity : AppCompatActivity(),
                     is UiEffect.StopObstacle -> {
                         sendBroadcast(Intent(com.example.voicenavigation.config.AppConstants.BROADCAST_ACTION_STOP_OBSTACLE))
                     }
-                    is UiEffect.DrawRoute -> { /* handled via navigationState */ }
                 }
             }
         }
@@ -392,8 +390,7 @@ class MainActivity : AppCompatActivity(),
         }
         btnMyLocation.setOnClickListener { locateMe() }
         btnStopTts.setOnClickListener {
-            viewModel.ttsPlayer.stopPlayback()
-//            baiduTts?.stopPlayback()
+            viewModel.voiceUseCase.stopPlayback()
             ViewTransition.scaleOut(btnStopTts, 150)
         }
     }
@@ -431,7 +428,7 @@ class MainActivity : AppCompatActivity(),
                     voiceWaveView.startWave()
 
                     vibrate(50)
-                    voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                    viewModel.voiceUseCase.startListening(VoiceInteractionManager.Mode.COMMAND)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -456,7 +453,7 @@ class MainActivity : AppCompatActivity(),
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    voiceInteractionManager.stopListening(cancel = isCancelling)
+                    viewModel.voiceUseCase.stopListening(cancel = isCancelling)
                     // 声波：停止（平滑回落）
                     voiceWaveView.stopWave()
 
@@ -557,8 +554,7 @@ class MainActivity : AppCompatActivity(),
     private fun setupHistoryAdapterListener() {
         historyAdapter?.setOnItemActionListener(object : VoiceRecordAdapter.OnItemActionListener {
             override fun onPlay(record: VoiceRecord, position: Int) {
-                viewModel.ttsPlayer.speak(record.content)
-//                baiduTts?.speak(record.content)
+                record.content?.let { viewModel.voiceUseCase.speak(it) }
             }
 
             override fun onDelete(record: VoiceRecord, position: Int) {
@@ -619,10 +615,10 @@ class MainActivity : AppCompatActivity(),
         )
         tripPreviewService.baseUrl = savedUrl
 
-        // Voice interaction callbacks
-        voiceInteractionManager.setTextInputListener(this)
-        voiceInteractionManager.setCommandExecutor(this)
-        voiceInteractionManager.setVoiceEventListener(object : VoiceInteractionManager.VoiceEventListener {
+        // Voice interaction callbacks (via ViewModel's VoiceUseCase)
+        viewModel.voiceUseCase.setTextInputListener(this)
+        viewModel.voiceUseCase.setCommandExecutor(this)
+        viewModel.voiceUseCase.setVoiceEventListener(object : VoiceInteractionManager.VoiceEventListener {
             override fun onListeningStarted() {}
             override fun onListeningStopped() {}
             override fun onPartialResultReceived(text: String) {}
@@ -636,13 +632,13 @@ class MainActivity : AppCompatActivity(),
     private fun speak(text: String?) {
         if (text.isNullOrEmpty() || text == lastSpokenInstruction) return
         lastSpokenInstruction = text
-        viewModel.ttsPlayer.speak(text)
+        viewModel.voiceUseCase.speak(text!!)
         showStopTtsButton()
     }
 
     private fun speakForce(text: String?) {
         if (text.isNullOrEmpty()) return
-        viewModel.ttsPlayer.speak(text)
+        viewModel.voiceUseCase.speak(text!!)
         showStopTtsButton()
     }
 
@@ -823,7 +819,7 @@ class MainActivity : AppCompatActivity(),
 
                     // 播报 + Toast 确认目的地
                     val confirmMsg = getString(R.string.tts_navigation_started, firstItem.title)
-                    voiceInteractionManager.speakAndToast(confirmMsg)
+                    viewModel.speak(confirmMsg)
 
                     // TTS 播报队列自动顺序播放，无需延迟
                     val loc = currentLocation
@@ -1118,27 +1114,27 @@ class MainActivity : AppCompatActivity(),
             }
             is InteractionEvent.ItemExecuted -> {
                 // 菜单反馈用系统 TTS（低延迟）
-                viewModel.ttsPlayer.speak("正在${event.item.label}")
+                viewModel.voiceUseCase.speak("正在${event.item.label}")
                 commandRouter.execute(event.commandId)
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.LaunchVoiceAssistant -> {
                 lockMapGestures(true)  // 解锁地图
-                viewModel.ttsPlayer.speak("语音助手已就绪")
-                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                viewModel.voiceUseCase.speak("语音助手已就绪")
+                viewModel.voiceUseCase.startListening(VoiceInteractionManager.Mode.COMMAND)
                 Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
             }
             is InteractionEvent.ItemHighlighted -> {
                 // 菜单项高亮：系统 TTS 打断旧播报，立即读新项名
-                viewModel.ttsPlayer.flushQueue()
-                viewModel.ttsPlayer.speak(event.item.label)
+                viewModel.voiceUseCase.flushQueue()
+                viewModel.voiceUseCase.speak(event.item.label)
             }
             is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
-                viewModel.ttsPlayer.flushQueue()
+                viewModel.voiceUseCase.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.Cancelled, is InteractionEvent.DismissMenu -> {
-                viewModel.ttsPlayer.flushQueue()
+                viewModel.voiceUseCase.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             else -> { /* HighlightCleared — 无需处理 */ }
@@ -1226,7 +1222,7 @@ class MainActivity : AppCompatActivity(),
                 startActivity(Intent(this, com.example.voicenavigation.collection.ui.hub.CaptureHubActivity::class.java))
             }
             is com.example.voicenavigation.command.CommandEvent.StartVoiceAssistant -> {
-                voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
+                viewModel.voiceUseCase.startListening(VoiceInteractionManager.Mode.COMMAND)
                 speak(getString(R.string.msg_voice_assistant_ready))
             }
             is com.example.voicenavigation.command.CommandEvent.UnknownCommand -> {
@@ -1344,10 +1340,10 @@ class MainActivity : AppCompatActivity(),
         lockMapGestures(true)  // 确保地图手势恢复
         ringMenuCoordinator?.destroy()
         ringMenuCoordinator = null
-        voiceInteractionManager.release()
+        viewModel.voiceUseCase.releaseCallbacks()
         super.onDestroy()
         baiduTts.destroy()
-        viewModel.ttsPlayer.destroy()
+        viewModel.voiceUseCase.destroy()
         unifiedTts.destroy()
         speechManager.destroyRecognizer()
         navigationManager.stopNavigation()
