@@ -32,6 +32,7 @@ android {
         ]
         // 注入到 BuildConfig（代码中使用）
         buildConfigField "String", "AMAP_API_KEY", "\"${localProps.getProperty('amap.api.key', '')}\""
+        // 服务端地址统一由 core/network/ServerConfig.kt 管理，此处仅为向后兼容
         buildConfigField "String", "PREVIEW_BASE_URL", "\"${localProps.getProperty('preview.base.url', 'http://114.132.86.138:5000')}\""
         buildConfigField "String", "DETECTION_BASE_URL", "\"${localProps.getProperty('detection.base.url', '')}\""
     }

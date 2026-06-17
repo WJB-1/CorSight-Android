@@ -23,7 +23,8 @@ class TripPreviewService(
 
     companion object {
         private const val TAG = "TripPreviewService"
-        val DEFAULT_BASE_URL: String = com.example.voicenavigation.BuildConfig.PREVIEW_BASE_URL
+        // 服务端地址由 core/network/ServerConfig.kt 统一定义
+        val DEFAULT_BASE_URL: String = com.example.voicenavigation.core.network.ServerConfig.EXTERNAL_URL
         private val JSON_MEDIA = "application/json; charset=utf-8".toMediaType()
     }
 

@@ -1,13 +1,10 @@
 package com.example.voicenavigation.animation
 
-import android.animation.AnimatorSet
-import android.animation.ValueAnimator
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
-import com.example.voicenavigation.animation.AnimatorUtils.onEnd
 
 /**
  * 快门按钮动画编排器。
@@ -94,15 +91,29 @@ object ShutterAnimations {
      * @param view 快门按钮 View
      * @return AnimatorSet（可监听结束）
      */
-    fun onCapture(view: View): AnimatorSet {
-        // 先取消可能还在播放的弹回动画，避免 scaleX/Y 竞争
+    fun onCapture(view: View) {
+        // 取消可能还在播放的弹回动画
         view.animate().cancel()
-        // 心跳：当前值 → 1.2 → 0.95 → 1
-        val heartbeat = Animations.Feedback.heartbeat(view, 300)
-        return AnimatorSet().apply {
-            playTogether(heartbeat)
-            start()
-        }
+        // 心跳：用 view.animate() 链式调用，避免 ValueAnimator 和 ViewPropertyAnimator 冲突
+        // scale: 1 → 1.2（100ms）→ 0.95（100ms）→ 1.0（100ms）
+        view.animate()
+            .scaleX(1.2f).scaleY(1.2f)
+            .setDuration(100)
+            .setInterpolator(DecelerateInterpolator())
+            .withEndAction {
+                view.animate()
+                    .scaleX(0.95f).scaleY(0.95f)
+                    .setDuration(100)
+                    .withEndAction {
+                        view.animate()
+                            .scaleX(1f).scaleY(1f)
+                            .setDuration(100)
+                            .setInterpolator(OvershootInterpolator(2f))
+                            .start()
+                    }
+                    .start()
+            }
+            .start()
     }
 
     // ==================== 启用/禁用动画 ====================

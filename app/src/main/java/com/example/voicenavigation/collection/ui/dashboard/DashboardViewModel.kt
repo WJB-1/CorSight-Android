@@ -2,7 +2,6 @@ package com.example.voicenavigation.collection.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.voicenavigation.AppConfig
 import com.example.voicenavigation.collection.data.CaptureTask
 import com.example.voicenavigation.collection.data.PhotoRecord
 import com.example.voicenavigation.collection.data.TaskStatus
@@ -10,12 +9,12 @@ import com.example.voicenavigation.collection.data.TaskStorage
 import com.example.voicenavigation.collection.data.UploadStatus
 import com.example.voicenavigation.collection.service.UploadService
 import com.example.voicenavigation.core.location.LocationProvider
+import com.example.voicenavigation.core.network.NetworkUrlResolver
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 import kotlin.math.atan2
@@ -28,8 +27,11 @@ import kotlin.math.sqrt
 class DashboardViewModel @Inject constructor(
     val taskStorage: TaskStorage,
     private val locationProvider: LocationProvider,
-    @com.example.voicenavigation.di.BaseUrl private val baseUrl: String
+    private val urlResolver: NetworkUrlResolver
 ) : ViewModel() {
+
+    /** 获取当前最优服务端 URL（带缓存，每次调用可能返回不同值） */
+    private fun getBaseUrl(): String = urlResolver.resolve()
 
     companion object {
         const val RETAKE_MAX_DISTANCE_M = 50.0     // 补拍允许最大偏移距离（米）
@@ -59,7 +61,7 @@ class DashboardViewModel @Inject constructor(
     fun uploadTask(task: CaptureTask) {
         viewModelScope.launch(Dispatchers.IO) {
             _isUploading.value = true
-            val service = UploadService(baseUrl, taskStorage)
+            val service = UploadService(getBaseUrl(), taskStorage)
             service.uploadTask(
                 task = task,
                 onPhotoProgress = { photoId, pct ->
@@ -78,7 +80,7 @@ class DashboardViewModel @Inject constructor(
         val task = taskStorage.getTask(taskId) ?: return
         val photo = task.photos.find { it.id == photoId } ?: return
         viewModelScope.launch(Dispatchers.IO) {
-            val service = UploadService(baseUrl, taskStorage)
+            val service = UploadService(getBaseUrl(), taskStorage)
             service.uploadSinglePhoto(task, photo) { pct ->
                 _photoProgress.value = _photoProgress.value.toMutableMap().apply {
                     put(photoId, pct)
@@ -92,7 +94,7 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _isUploading.value = true
             val pending = taskStorage.getPendingTasks()
-            val service = UploadService(baseUrl, taskStorage)
+            val service = UploadService(getBaseUrl(), taskStorage)
             pending.forEach { task ->
                 service.uploadTask(
                     task = task,
@@ -115,7 +117,7 @@ class DashboardViewModel @Inject constructor(
     fun uploadSelectedPhotos(selectedPhotos: List<Pair<String, String>>) {
         viewModelScope.launch(Dispatchers.IO) {
             _isUploading.value = true
-            val service = UploadService(baseUrl, taskStorage)
+            val service = UploadService(getBaseUrl(), taskStorage)
 
             for ((taskId, photoId) in selectedPhotos) {
                 val task = taskStorage.getTask(taskId) ?: continue

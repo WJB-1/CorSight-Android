@@ -31,6 +31,8 @@ object AppConstants {
     const val LLM_TOOL_CHOICE = "auto"
 
     // ── 网络默认 URL ──
+    // 由 core/network/ServerConfig.kt 统一管理，此处保留为兼容引用
+    @Deprecated("Use core.network.ServerConfig via NetworkUrlResolver", ReplaceWith("ServerConfig.EXTERNAL_URL"))
     const val PREVIEW_DEFAULT_BASE_URL = "http://114.132.86.138:5000"
     const val PREVIEW_API_PATH = "/api/navigation/preview"
     const val PREVIEW_FIXED_API_PATH_PREFIX = "/api/navigation/preview/fixed/"
