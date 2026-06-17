@@ -106,9 +106,9 @@
 
 | ID | 问题 | 说明 |
 |----|------|------|
-| V1-V5 | MainActivity 跨层依赖 | 需要完成 Fragment 拆分后才能彻底清理 |
-| H2/H3 (part) | BaiduTtsManager 队列线程安全 | MediaPlayer 部分已修复，队列部分待跟进 |
-| 其余 HIGH | ViewModels 直接依赖 domain 具体类 | 需要引入 UseCase 层 |
+| V1-V5 | MainActivity 跨层依赖 | 将业务逻辑抽取到 MainViewModel，Activity 只管 UI 绑定。不需要拆 Fragment——地图+语音在 Activity 层更合理 |
+| H2/H3 (part) | BaiduTtsManager 队列线程安全 | MediaPlayer 锁已修复，队列并发部分待跟进 |
+| 其余 HIGH | ViewModels 直接依赖 domain 具体类 | 优先级低，不影响功能，后续迭代逐步清理 |
 
 ---
 
