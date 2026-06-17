@@ -1227,7 +1227,7 @@ class MainActivity : AppCompatActivity(),
             }
             is com.example.voicenavigation.command.CommandEvent.StartVoiceAssistant -> {
                 voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
-                Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
+                speak(getString(R.string.msg_voice_assistant_ready))
             }
             is com.example.voicenavigation.command.CommandEvent.UnknownCommand -> {
                 speakForce(getString(R.string.msg_unknown_command))

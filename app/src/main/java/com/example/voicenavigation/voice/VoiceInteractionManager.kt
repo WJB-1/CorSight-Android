@@ -223,11 +223,13 @@ class VoiceInteractionManager(
     }
 
     override fun onError(error: String) {
+        if (cancelled) return  // 用户已取消，忽略错误
         waitingForResult = false
         watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
 
         Log.e(TAG, "=== STT ERROR === $error")
         showToast(context.getString(R.string.msg_stt_failed, error))
+        speakFeedback(context.getString(R.string.msg_stt_failed, error))
         emitStage(context.getString(R.string.stage_voice_assistant))
     }
 

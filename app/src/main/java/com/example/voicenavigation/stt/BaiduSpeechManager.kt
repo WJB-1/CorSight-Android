@@ -180,6 +180,12 @@ class BaiduSpeechManager(context: Context) {
             return
         }
 
+        // 防止重复启动：如果已在识别中，先停止上一次
+        if (isListening) {
+            Log.w(TAG, "Already listening, stopping previous session first")
+            stopListeningInternal()
+        }
+
         isListening = true
         resultDelivered = false
         lastPartialResult = ""
@@ -205,17 +211,23 @@ class BaiduSpeechManager(context: Context) {
         }
     }
 
-    fun stopListening() {
+    private fun stopListeningInternal() {
         handler.removeCallbacks(stopRunnable)
-        if (asr != null && isListening) {
+        if (asr != null) {
             try {
                 asr!!.send(SpeechConstant.ASR_STOP, null, null, 0, 0)
-                isListening = false
-                notifyStopped()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to stop ASR", e)
-            }
+            } catch (_: Exception) {}
+            try {
+                asr!!.send(SpeechConstant.ASR_CANCEL, null, null, 0, 0)
+            } catch (_: Exception) {}
         }
+        isListening = false
+        resultDelivered = false
+    }
+
+    fun stopListening() {
+        stopListeningInternal()
+        notifyStopped()
     }
 
     fun cancelListening() {
