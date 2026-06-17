@@ -1,10 +1,11 @@
-package com.example.voicenavigation.ui.ringmenu
+package com.example.voicenavigation.menu
 
 import androidx.annotation.DrawableRes
 
 /**
- * 环形菜单项。支持无限级嵌套（children 即为子菜单）。
+ * 环形菜单项数据模型（domain 层）。
  *
+ * 支持无限级嵌套（children 即为子菜单）。
  * [command] 字段对应 CommandRouter 中的 command_id。
  * 新增菜单项只需在 assets/menu_config.json 中添加，不改代码。
  */

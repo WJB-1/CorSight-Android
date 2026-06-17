@@ -53,21 +53,15 @@ import com.amap.api.services.core.PoiItem
 import com.amap.api.services.core.ServiceSettings
 import com.amap.api.services.poisearch.PoiResult
 import com.amap.api.services.poisearch.PoiSearch
-import com.example.voicenavigation.data.AppDatabase
 import com.example.voicenavigation.ui.main.adapter.SuggestionAdapter
-// Room import removed — AppDatabase is Hilt-injected
-import com.example.voicenavigation.data.VoiceRecord
 import com.example.voicenavigation.ui.main.adapter.VoiceRecordAdapter
 import com.example.voicenavigation.navigation.NavigationManager
-import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.stt.BaiduSpeechManager
 import com.example.voicenavigation.stt.BaiduTtsManager
 import com.example.voicenavigation.stt.UnifiedTtsManager
-import com.example.voicenavigation.data.tts.TtsPlayer
-import com.example.voicenavigation.data.tts.TtsPreloader
 import com.example.voicenavigation.voice.LLMFunctionCaller
 import com.example.voicenavigation.ui.ringmenu.RingMenuView
-import com.example.voicenavigation.ui.ringmenu.RingMenuItem
+import com.example.voicenavigation.menu.RingMenuItem
 import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.dialog.TripPreviewDialog
@@ -86,6 +80,8 @@ import com.example.voicenavigation.animation.AnimatorUtils.onEnd
 import com.example.voicenavigation.animation.ViewTransition
 import com.example.voicenavigation.util.FormatUtils
 import com.example.voicenavigation.util.SecurityUtils
+import com.example.voicenavigation.data.VoiceRecord
+import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import dagger.hilt.android.AndroidEntryPoint
@@ -112,10 +108,8 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var speechManager: BaiduSpeechManager
     @Inject lateinit var baiduTts: BaiduTtsManager
     @Inject lateinit var unifiedTts: UnifiedTtsManager
-    @Inject lateinit var ttsPlayer: TtsPlayer
-    @Inject lateinit var ttsPreloader: TtsPreloader
     @Inject lateinit var voiceInteractionManager: VoiceInteractionManager
-    @Inject lateinit var appDatabase: AppDatabase
+    // appDatabase removed — operations go through VoiceRecordRepository via ViewModel
     @Inject lateinit var tripPreviewService: TripPreviewService
     @Inject lateinit var menuConfig: MenuConfig
 
@@ -407,7 +401,7 @@ class MainActivity : AppCompatActivity(),
         }
         btnMyLocation.setOnClickListener { locateMe() }
         btnStopTts.setOnClickListener {
-            ttsPlayer.stopPlayback()
+            viewModel.ttsPlayer.stopPlayback()
 //            baiduTts?.stopPlayback()
             ViewTransition.scaleOut(btnStopTts, 150)
         }
@@ -569,7 +563,7 @@ class MainActivity : AppCompatActivity(),
     private fun setupHistoryAdapterListener() {
         historyAdapter?.setOnItemActionListener(object : VoiceRecordAdapter.OnItemActionListener {
             override fun onPlay(record: VoiceRecord, position: Int) {
-                ttsPlayer.speak(record.content)
+                viewModel.ttsPlayer.speak(record.content)
 //                baiduTts?.speak(record.content)
             }
 
@@ -579,7 +573,7 @@ class MainActivity : AppCompatActivity(),
                     .setMessage(R.string.msg_confirm_delete)
                     .setPositiveButton(R.string.btn_delete) { _, _ ->
                         Thread {
-                            appDatabase.voiceRecordDao().deleteById(record.id)
+                            viewModel.deleteVoiceRecord(record.id)
                             runOnUiThread {
                                 historyAdapter?.removeItem(position)
                                 loadHistory()
@@ -619,15 +613,10 @@ class MainActivity : AppCompatActivity(),
         baiduTts.init()
 
         // TTS 预合成：首次启动时批量合成所有固定文本到本地缓存
-        Thread {
-            val count = ttsPreloader.preload(
-                getString(R.string.baidu_speech_api_key),
-                getString(R.string.baidu_speech_secret_key)
-            ) { current, total, text ->
-                Log.d(TAG, "TTS preload: $current/$total [$text]")
-            }
-            Log.d(TAG, "TTS preload complete: $count new audios cached")
-        }.start()
+        viewModel.preloadTts(
+            getString(R.string.baidu_speech_api_key),
+            getString(R.string.baidu_speech_secret_key)
+        )
 
         // Load preview server URL from prefs
         val prefs = AppConfig.prefs(this)
@@ -653,13 +642,13 @@ class MainActivity : AppCompatActivity(),
     private fun speak(text: String?) {
         if (text.isNullOrEmpty() || text == lastSpokenInstruction) return
         lastSpokenInstruction = text
-        ttsPlayer.speak(text)
+        viewModel.ttsPlayer.speak(text)
         showStopTtsButton()
     }
 
     private fun speakForce(text: String?) {
         if (text.isNullOrEmpty()) return
-        ttsPlayer.speak(text)
+        viewModel.ttsPlayer.speak(text)
         showStopTtsButton()
     }
 
@@ -957,19 +946,7 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun saveVoiceRecord(content: String?) {
-        if (content == null) return
-        Thread {
-            try {
-                val record = VoiceRecord()
-                record.content = content
-                record.filePath = ""
-                record.destination = etDestination.text.toString()
-                record.timestamp = System.currentTimeMillis()
-                appDatabase.voiceRecordDao().insert(record)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to save voice record", e)
-            }
-        }.start()
+        viewModel.saveVoiceRecord(content)
     }
 
     // ==================== TextInputListener（语音转文字 → 搜索框）====================
@@ -1147,27 +1124,27 @@ class MainActivity : AppCompatActivity(),
             }
             is InteractionEvent.ItemExecuted -> {
                 // 菜单反馈用系统 TTS（低延迟）
-                ttsPlayer.speak("正在${event.item.label}")
+                viewModel.ttsPlayer.speak("正在${event.item.label}")
                 commandRouter.execute(event.commandId)
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.LaunchVoiceAssistant -> {
                 lockMapGestures(true)  // 解锁地图
-                ttsPlayer.speak("语音助手已就绪")
+                viewModel.ttsPlayer.speak("语音助手已就绪")
                 voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                 Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
             }
             is InteractionEvent.ItemHighlighted -> {
                 // 菜单项高亮：系统 TTS 打断旧播报，立即读新项名
-                ttsPlayer.flushQueue()
-                ttsPlayer.speak(event.item.label)
+                viewModel.ttsPlayer.flushQueue()
+                viewModel.ttsPlayer.speak(event.item.label)
             }
             is InteractionEvent.CenterTapped, is InteractionEvent.SubMenuBack -> {
-                ttsPlayer.flushQueue()
+                viewModel.ttsPlayer.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             is InteractionEvent.Cancelled, is InteractionEvent.DismissMenu -> {
-                ttsPlayer.flushQueue()
+                viewModel.ttsPlayer.flushQueue()
                 lockMapGestures(true)  // 解锁地图
             }
             else -> { /* HighlightCleared — 无需处理 */ }
@@ -1372,7 +1349,7 @@ class MainActivity : AppCompatActivity(),
         voiceCommandPulseAnim = null
         super.onDestroy()
         baiduTts.destroy()
-        ttsPlayer.destroy()
+        viewModel.ttsPlayer.destroy()
         unifiedTts.destroy()
         speechManager.destroyRecognizer()
         navigationManager.stopNavigation()

@@ -3,7 +3,7 @@ package com.example.voicenavigation.menu
 import android.content.Context
 import android.graphics.Color
 import android.util.Log
-import com.example.voicenavigation.ui.ringmenu.RingMenuItem
+import com.example.voicenavigation.menu.RingMenuItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.json.JSONObject
 import javax.inject.Inject

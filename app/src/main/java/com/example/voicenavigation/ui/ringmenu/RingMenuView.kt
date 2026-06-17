@@ -11,6 +11,7 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import com.example.voicenavigation.R
+import com.example.voicenavigation.menu.RingMenuItem
 import com.example.voicenavigation.util.RadialGeometry
 
 /**

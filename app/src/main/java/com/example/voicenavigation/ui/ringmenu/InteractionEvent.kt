@@ -1,5 +1,7 @@
 package com.example.voicenavigation.ui.ringmenu
 
+import com.example.voicenavigation.menu.RingMenuItem
+
 /**
  * Events emitted by [RingMenuCoordinator] to notify the host (Activity/Fragment)
  * of user interactions with the ring menu.

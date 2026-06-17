@@ -10,6 +10,8 @@ import com.example.voicenavigation.command.CommandRouter
 import com.example.voicenavigation.AppConfig
 import com.example.voicenavigation.data.VoiceRecord
 import com.example.voicenavigation.data.VoiceRecordRepository
+import com.example.voicenavigation.data.tts.TtsPlayer
+import com.example.voicenavigation.data.tts.TtsPreloader
 import com.example.voicenavigation.network.TripPreviewService
 import com.example.voicenavigation.voice.VoiceInteractionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,7 +59,9 @@ class MainViewModel @Inject constructor(
     val navigationManager: com.example.voicenavigation.navigation.NavigationManager,
     val tripPreviewService: TripPreviewService,
     val voiceInteractionManager: VoiceInteractionManager,
-    val commandRouter: CommandRouter
+    val commandRouter: CommandRouter,
+    val ttsPlayer: TtsPlayer,
+    val ttsPreloader: TtsPreloader
 ) : ViewModel() {
 
     companion object {
@@ -226,6 +230,21 @@ class MainViewModel @Inject constructor(
         val dest = _selectedDestination.value?.name
         viewModelScope.launch {
             voiceRecordRepository.insert(VoiceRecord(content, "", dest ?: ""))
+        }
+    }
+
+    fun deleteVoiceRecord(id: Int) {
+        viewModelScope.launch {
+            voiceRecordRepository.deleteById(id)
+        }
+    }
+
+    // ── TTS 预合成 ──
+
+    fun preloadTts(apiKey: String, secretKey: String) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val count = ttsPreloader.preload(apiKey, secretKey)
+            Log.d(TAG, "TTS preload complete: $count new audios cached")
         }
     }
 
