@@ -600,9 +600,8 @@ class MainActivity : AppCompatActivity(),
 
     private fun hideKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
-        if (imm != null && currentFocus != null) {
-            imm.hideSoftInputFromWindow(currentFocus!!.windowToken, 0)
-        }
+        val focus = currentFocus ?: return
+        imm?.hideSoftInputFromWindow(focus.windowToken, 0)
     }
 
     private fun initServices() {

@@ -1,6 +1,7 @@
 package com.example.voicenavigation
 
 import com.corsight.inference.Detection
+import java.util.concurrent.ConcurrentHashMap
 
 data class ObstacleSpeechEvent(
     val label: String,
@@ -21,8 +22,8 @@ class ObstacleAlertTracker {
         var missingFrames: Int = 0
     )
 
-    private val targetStates = mutableMapOf<String, TargetState>()
-    private val activeLabels = mutableListOf<String>()
+    private val targetStates = ConcurrentHashMap<String, TargetState>()
+    private val activeLabels = java.util.concurrent.CopyOnWriteArrayList<String>()
 
     fun update(detections: List<Detection>, alerts: List<ObstacleAlert>): List<ObstacleSpeechEvent> {
         val detectedLabels = detections.map { normalizeLabel(it.label) }
