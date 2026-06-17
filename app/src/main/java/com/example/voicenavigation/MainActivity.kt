@@ -73,7 +73,12 @@ import com.example.voicenavigation.menu.MenuConfig
 import com.example.voicenavigation.ui.dialog.TripPreviewDialog
 import com.example.voicenavigation.ui.ringmenu.InteractionEvent
 import com.example.voicenavigation.ui.ringmenu.RingMenuCoordinator
+import com.example.voicenavigation.ui.main.MainViewModel
+import com.example.voicenavigation.ui.main.UiEffect
+import com.example.voicenavigation.ui.main.NavigationState
 import com.example.voicenavigation.config.AppConfigProvider
+import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
 import com.example.voicenavigation.animation.Animations
 import com.example.voicenavigation.animation.AnimatorUtils
 import com.example.voicenavigation.animation.AnimatorUtils.cancelAndClear
@@ -183,6 +188,7 @@ class MainActivity : AppCompatActivity(),
 
     @Inject lateinit var commandRouter: CommandRouter
 
+    private val viewModel: MainViewModel by viewModels()
     private val appConfigProvider by lazy { AppConfigProvider(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -210,6 +216,9 @@ class MainActivity : AppCompatActivity(),
         }
         initMap()
 
+        // 订阅 ViewModel 的 UI 效果
+        observeViewModel()
+
         // 从其他页面长按跳转回来时，自动启动语音助手
         handleVoiceCommandIntent(intent)
     }
@@ -224,6 +233,73 @@ class MainActivity : AppCompatActivity(),
             intent.removeExtra("START_VOICE_COMMAND")
             voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
             Toast.makeText(this, getString(R.string.msg_voice_assistant_ready), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * 订阅 ViewModel 的 UI 效果，将业务结果映射到 UI 操作。
+     * 这是 Activity 唯一的职责：接收状态 → 更新界面。
+     */
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            viewModel.uiEffect.collect { effect ->
+                when (effect) {
+                    is UiEffect.ShowToast -> {
+                        Toast.makeText(this@MainActivity, effect.message, Toast.LENGTH_SHORT).show()
+                    }
+                    is UiEffect.Speak -> {
+                        if (effect.force) speakForce(effect.text) else speak(effect.text)
+                    }
+                    is UiEffect.NavigateToVisionTest -> {
+                        startActivity(Intent(this@MainActivity, VisionTestActivity::class.java))
+                    }
+                    is UiEffect.NavigateToDataCollection -> {
+                        startActivity(Intent(this@MainActivity, com.example.voicenavigation.collection.ui.hub.CaptureHubActivity::class.java))
+                    }
+                    is UiEffect.ShowTripPreview -> {
+                        TripPreviewDialog.show(this@MainActivity, effect.responseJson,
+                            org.json.JSONObject(effect.responseJson).optJSONObject("data")?.optJSONObject("route_summary"),
+                            org.json.JSONObject(effect.responseJson).optJSONObject("data")?.optJSONArray("key_nodes")
+                        ) { text -> speakForce(text) }
+                    }
+                    is UiEffect.PlanRoute -> {
+                        navigationManager.planRoute(effect.origin, effect.dest, effect.destName)
+                    }
+                    is UiEffect.LocateMe -> {
+                        locateMe()
+                    }
+                    is UiEffect.ClearRoute -> {
+                        clearRouteDisplay()
+                    }
+                    is UiEffect.StopObstacle -> {
+                        sendBroadcast(Intent(com.example.voicenavigation.config.AppConstants.BROADCAST_ACTION_STOP_OBSTACLE))
+                    }
+                    is UiEffect.DrawRoute -> { /* handled via navigationState */ }
+                }
+            }
+        }
+
+        // 订阅导航状态
+        lifecycleScope.launch {
+            viewModel.navigationState.collect { state ->
+                when (state) {
+                    is NavigationState.Idle -> {
+                        layoutNavInfo?.let { ViewTransition.slideDown(it, 250) }
+                    }
+                    is NavigationState.Navigating -> {
+                        tvNavDistance.text = viewModel.let {
+                            com.example.voicenavigation.util.FormatUtils.formatDistance(state.remainingDistance, appConfigProvider)
+                        }
+                        tvNavDuration.text = com.example.voicenavigation.util.FormatUtils.formatDuration(state.remainingDuration, appConfigProvider)
+                        if (state.instruction.isNotEmpty()) {
+                            tvNavInstruction.text = state.instruction
+                        }
+                    }
+                    is NavigationState.Arrived -> {
+                        layoutNavInfo?.let { ViewTransition.slideDown(it, 250) }
+                    }
+                }
+            }
         }
     }
 
@@ -806,75 +882,11 @@ class MainActivity : AppCompatActivity(),
     }
 
     private fun toggleNavigation() {
-        if (!checkLocationPermission()) {
-            requestPermissions()
-            Toast.makeText(this, R.string.permission_location_denied, Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!hasValidAmapKey()) {
-            Toast.makeText(this, getString(R.string.msg_amap_key_missing_nav), Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!::navigationManager.isInitialized) {
-            Toast.makeText(this, getString(R.string.msg_nav_service_not_ready), Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (navigationManager.isNavigating()) {
-            navigationManager.stopNavigation()
-            btnStartNavigation.setText(R.string.start_navigation)
-            clearRouteDisplay()
-            return
-        }
-        if (selectedDestLatLng == null) {
-            Toast.makeText(this, getString(R.string.msg_select_destination_first), Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (currentLocation == null) {
-            locateMe()
-            Toast.makeText(this, getString(R.string.msg_getting_location_wait), Toast.LENGTH_SHORT).show()
-            return
-        }
-        val curLoc = currentLocation ?: return
-        val dest = selectedDestLatLng ?: return
-        ViewTransition.slideUp(layoutNavInfo, 250)
-        saveVoiceRecord(selectedDestName)
-        navigationManager.planRoute(curLoc, dest, selectedDestName)
+        viewModel.startNavigation(checkLocationPermission(), hasValidAmapKey())
     }
 
     private fun sendTripPreview() {
-        val previewBaseUrl = AppConfig.normalizeBaseUrl(
-            AppConfig.prefs(this).getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL)
-        )
-        if (previewBaseUrl.isEmpty()) {
-            Toast.makeText(this, getString(R.string.msg_set_backend_url), Toast.LENGTH_SHORT).show()
-            return
-        }
-        tripPreviewService.baseUrl = previewBaseUrl
-
-        val callback = object : TripPreviewService.PreviewCallback {
-            override fun onSuccess(response: String) {
-                parseAndShowPreviewResult(response)
-            }
-
-            override fun onError(error: String) {
-                Toast.makeText(this@MainActivity, getString(R.string.msg_preview_failed_with_error, error), Toast.LENGTH_LONG).show()
-            }
-        }
-
-        val curLoc = currentLocation
-        val destLoc = selectedDestLatLng
-        if (destLoc != null && curLoc != null) {
-            // 有目的地：使用标准路线预览（高德规划）
-            tripPreviewService.sendPreviewRequest(
-                curLoc.latitude, curLoc.longitude,
-                destLoc.latitude, destLoc.longitude,
-                callback
-            )
-        } else {
-            // 没有目的地：使用固定路线预览（跳过高德，直接用预设采样点路线）
-            Toast.makeText(this, getString(R.string.msg_preview_fixed_route), Toast.LENGTH_SHORT).show()
-            tripPreviewService.sendFixedPreviewRequest(FIXED_ROUTE_ID, callback)
-        }
+        viewModel.sendTripPreview(hasValidAmapKey())
     }
 
     private fun parseAndShowPreviewResult(responseJson: String?) {
