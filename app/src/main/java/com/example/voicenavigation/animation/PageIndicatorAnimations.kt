@@ -4,11 +4,14 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
+import android.util.Log
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.TextView
 import com.example.voicenavigation.animation.AnimatorUtils.onEnd
+
+private const val TAG_DOT = "PageDotAnim"
 
 /**
  * 页面指示器（小圆点 + 页面名称）动画编排器。
@@ -46,10 +49,13 @@ object PageIndicatorAnimations {
      * @param position  当前选中位置
      */
     fun onPageChanged(dotViews: List<View>, position: Int) {
+        Log.d(TAG_DOT, "onPageChanged: position=$position, dots=${dotViews.size}, attached=${dotViews.firstOrNull()?.isAttachedToWindow}")
         val animators = dotViews.mapIndexed { index, dot ->
             val isSelected = index == position
             val targetScale = if (isSelected) 1.3f else 1f
             val targetAlpha = if (isSelected) 1f else 0.35f
+
+            Log.d(TAG_DOT, "  dot[$index]: scaleX=${dot.scaleX}→$targetScale, alpha=${dot.alpha}→$targetAlpha, attached=${dot.isAttachedToWindow}, w=${dot.width}")
 
             // scale X + Y
             val scaleAnimX = AnimatorUtils.floatAnimator(
@@ -71,6 +77,7 @@ object PageIndicatorAnimations {
         }
 
         AnimatorSet().apply { playTogether(animators) }.start()
+        Log.d(TAG_DOT, "onPageChanged: all animators started")
     }
 
     // ==================== 页面名称弹出动画 ====================
@@ -85,6 +92,7 @@ object PageIndicatorAnimations {
      * @param text       要显示的名称
      */
     fun showLabel(labelView: TextView, text: String) {
+        Log.d(TAG_DOT, "showLabel: text=$text, visibility=${labelView.visibility}, attached=${labelView.isAttachedToWindow}")
         // 取消前一个动画（防重入）
         cancelLabelAnimation(labelView)
 
@@ -140,6 +148,7 @@ object PageIndicatorAnimations {
      * @param dot 被点击的圆点 View
      */
     fun onDotClicked(dot: View) {
+        Log.d(TAG_DOT, "onDotClicked: dot=$dot, scaleX=${dot.scaleX}, attached=${dot.isAttachedToWindow}")
         ValueAnimator.ofFloat(1f, 1.4f, 0.9f, 1f).apply {
             duration = 200
             addUpdateListener {

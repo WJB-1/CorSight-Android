@@ -1,10 +1,13 @@
 package com.example.voicenavigation.animation
 
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
+
+private const val TAG_SHUTTER = "ShutterAnim"
 
 /**
  * 快门按钮动画编排器。
@@ -52,26 +55,26 @@ object ShutterAnimations {
     fun onTouchEvent(view: View, event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                // 按下：缩小到 0.88，100ms
-                // 使用 view.animate()（ViewPropertyAnimator），方便后续 onCapture 中取消
+                Log.d(TAG_SHUTTER, "ACTION_DOWN → scale 0.88, view=$view, attached=${view.isAttachedToWindow}, alpha=${view.alpha}")
                 view.animate()
                     .scaleX(0.88f).scaleY(0.88f)
                     .setDuration(100)
                     .setInterpolator(AccelerateDecelerateInterpolator())
+                    .withEndAction { Log.d(TAG_SHUTTER, "press anim end, scaleX=${view.scaleX}") }
                     .start()
             }
             MotionEvent.ACTION_UP -> {
-                // 松开：弹回 1.0，150ms 带弹性
+                Log.d(TAG_SHUTTER, "ACTION_UP → scale 1.0, scaleX=${view.scaleX}")
                 view.animate()
                     .scaleX(1f).scaleY(1f)
                     .setDuration(150)
                     .setInterpolator(OvershootInterpolator(2f))
+                    .withEndAction { Log.d(TAG_SHUTTER, "release anim end, scaleX=${view.scaleX}") }
                     .start()
-                // 手动触发 click（因为我们消费了事件，系统不会自动触发 onClick）
                 view.performClick()
             }
             MotionEvent.ACTION_CANCEL -> {
-                // 取消：弹回 1.0
+                Log.d(TAG_SHUTTER, "ACTION_CANCEL → reset scale")
                 view.animate()
                     .scaleX(1f).scaleY(1f)
                     .setDuration(150)
@@ -92,6 +95,7 @@ object ShutterAnimations {
      * @return AnimatorSet（可监听结束）
      */
     fun onCapture(view: View) {
+        Log.d(TAG_SHUTTER, "onCapture called, view=$view, scaleX=${view.scaleX}, attached=${view.isAttachedToWindow}, visibility=${view.visibility}")
         // 取消可能还在播放的弹回动画
         view.animate().cancel()
         // 心跳：用 view.animate() 链式调用，避免 ValueAnimator 和 ViewPropertyAnimator 冲突
@@ -101,19 +105,23 @@ object ShutterAnimations {
             .setDuration(100)
             .setInterpolator(DecelerateInterpolator())
             .withEndAction {
+                Log.d(TAG_SHUTTER, "heartbeat phase1 done, scaleX=${view.scaleX}")
                 view.animate()
                     .scaleX(0.95f).scaleY(0.95f)
                     .setDuration(100)
                     .withEndAction {
+                        Log.d(TAG_SHUTTER, "heartbeat phase2 done, scaleX=${view.scaleX}")
                         view.animate()
                             .scaleX(1f).scaleY(1f)
                             .setDuration(100)
                             .setInterpolator(OvershootInterpolator(2f))
+                            .withEndAction { Log.d(TAG_SHUTTER, "heartbeat phase3 done, scaleX=${view.scaleX}") }
                             .start()
                     }
                     .start()
             }
             .start()
+        Log.d(TAG_SHUTTER, "onCapture animate().start() called")
     }
 
     // ==================== 启用/禁用动画 ====================

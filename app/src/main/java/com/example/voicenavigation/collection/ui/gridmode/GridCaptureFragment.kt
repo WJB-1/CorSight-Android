@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
@@ -44,6 +45,7 @@ class GridCaptureFragment : BaseCaptureFragment() {
 
     private lateinit var directionBar: LinearLayout
     private val directionCells = mutableMapOf<String, Pair<View, TextView>>()
+    private val lastCellStates = mutableMapOf<String, Int>()  // 缓存上一次状态，避免重复启停动画
     private var isAligned = false
 
     override val layoutResId: Int = R.layout.fragment_grid_capture
@@ -129,6 +131,7 @@ class GridCaptureFragment : BaseCaptureFragment() {
     private fun updateDirectionBar() {
         val captured = viewModel.capturedDirections.value
         val target = viewModel.currentTarget.value
+        Log.d("GridDir", "updateDirectionBar: target=$target, isAligned=$isAligned, captured=$captured, cells=${directionCells.size}")
 
         for ((dir, pair) in directionCells) {
             val (cell, tv) = pair
@@ -138,6 +141,12 @@ class GridCaptureFragment : BaseCaptureFragment() {
                 dir == target -> STATE_MISALIGNED
                 else -> STATE_PENDING
             }
+
+            // 只在状态真正变化时才更新视觉和动画（避免罗盘抖动导致动画被反复启停）
+            val prevState = lastCellStates[dir]
+            if (state == prevState) continue
+            Log.d("GridDir", "  $dir: state $prevState → $state")
+            lastCellStates[dir] = state
 
             val bgRes = when (state) {
                 STATE_DONE -> R.drawable.bg_direction_cell_done

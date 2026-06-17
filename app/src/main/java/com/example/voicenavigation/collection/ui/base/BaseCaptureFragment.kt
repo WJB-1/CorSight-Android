@@ -334,6 +334,7 @@ abstract class BaseCaptureFragment : Fragment() {
         val file = File(requireContext().filesDir, "img_${System.currentTimeMillis()}.jpg")
         val options = ImageCapture.OutputFileOptions.Builder(file).build()
 
+        Log.d("ShutterAnim", "takePhoto() → calling onCapture, shutterBtn=$shutterBtn, flashOverlay=$shutterFlashOverlay")
         ShutterAnimations.onCapture(shutterBtn)
         ShutterAnimations.flashOverlay(shutterFlashOverlay)
 

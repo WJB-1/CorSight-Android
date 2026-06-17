@@ -2,8 +2,11 @@ package com.example.voicenavigation.animation
 
 import android.animation.AnimatorSet
 import android.animation.ValueAnimator
+import android.util.Log
 import android.view.View
 import android.view.animation.LinearInterpolator
+
+private const val TAG_DIR = "DirBarAnim"
 
 /**
  * 八方向电池条动画编排器。
@@ -37,6 +40,7 @@ object DirectionBarAnimations {
      * @return AnimatorSet（用于外部持有引用以便停止）
      */
     fun startPulsing(cell: View, duration: Long = 800L): AnimatorSet {
+        Log.d(TAG_DIR, "startPulsing: cell=$cell, attached=${cell.isAttachedToWindow}, scaleX=${cell.scaleX}, alpha=${cell.alpha}, w=${cell.width}, h=${cell.height}")
         // 先停止已有的
         stopPulsing(cell)
 
@@ -71,6 +75,7 @@ object DirectionBarAnimations {
         // 存入 tag 以便后续停止
         cell.setTag(TAG_PULSE_ANIM.hashCode(), set)
         set.start()
+        Log.d(TAG_DIR, "startPulsing: AnimatorSet started, isRunning=${set.isRunning}")
         return set
     }
 
@@ -83,6 +88,7 @@ object DirectionBarAnimations {
         @Suppress("UNCHECKED_CAST")
         val existing = cell.getTag(TAG_PULSE_ANIM.hashCode()) as? AnimatorSet
         existing?.let {
+            Log.d(TAG_DIR, "stopPulsing: cancelling existing animator for $cell")
             it.cancel()
             it.removeAllListeners()
         }

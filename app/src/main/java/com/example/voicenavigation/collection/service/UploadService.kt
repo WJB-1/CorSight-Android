@@ -169,16 +169,19 @@ class UploadService(
             })
         }
 
-        val body = JSONObject().apply {
+        val bodyJson = JSONObject().apply {
             put("point_id", task.pointId)
             put("location", JSONObject().apply {
                 put("lng", task.longitude)
                 put("lat", task.latitude)
             })
-            put("crs", task.crs.name)
-            if (task.sceneDescription.isNotEmpty()) put("scene_description", task.sceneDescription)
+            // crs 字段待后端确认支持后再启用
+            // put("crs", task.crs.name)
+            put("scene_description", task.sceneDescription.ifEmpty { "" })
             put("images", imagesArray)
-        }.toString().toRequestBody(jsonMediaType)
+        }
+        Log.d(TAG, "submitMetadata body: $bodyJson")
+        val body = bodyJson.toString().toRequestBody(jsonMediaType)
 
         val request = Request.Builder()
             .url("$baseUrl/api/upload/metadata")
