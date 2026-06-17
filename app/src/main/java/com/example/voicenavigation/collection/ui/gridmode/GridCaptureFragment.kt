@@ -1,6 +1,7 @@
 package com.example.voicenavigation.collection.ui.gridmode
 
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -94,19 +95,25 @@ class GridCaptureFragment : BaseCaptureFragment() {
 
     // ===== 电池式方向状态栏 =====
 
+    /**
+     * 根据当前 directionBar 的 orientation 自适应构建格子。
+     * 竖屏：水平排列，格子间左右 margin
+     * 横屏：垂直排列，格子间上下 margin
+     */
     private fun buildDirectionBar() {
         directionBar.removeAllViews()
         directionCells.clear()
 
         val dp = resources.displayMetrics.density
-        val cellWidth = (36 * dp).toInt()
-        val cellHeight = (28 * dp).toInt()
+        val isVertical = directionBar.orientation == LinearLayout.VERTICAL
+        val cellWidth = if (isVertical) (32 * dp).toInt() else (36 * dp).toInt()
+        val cellHeight = if (isVertical) (24 * dp).toInt() else (28 * dp).toInt()
         val margin = (2 * dp).toInt()
 
         GridCaptureViewModel.DIRECTIONS.forEach { dir ->
             val tv = TextView(requireContext()).apply {
                 text = dir
-                textSize = 11f
+                textSize = if (isVertical) 10f else 11f
                 gravity = Gravity.CENTER
                 setTextColor(Color.parseColor("#888888"))
             }
@@ -114,7 +121,11 @@ class GridCaptureFragment : BaseCaptureFragment() {
             val cell = FrameLayout(requireContext()).apply {
                 setBackgroundResource(R.drawable.bg_direction_cell_pending)
                 layoutParams = LinearLayout.LayoutParams(cellWidth, cellHeight).apply {
-                    setMargins(margin, 0, margin, 0)
+                    if (isVertical) {
+                        setMargins(0, margin, 0, margin) // 垂直排列：上下间距
+                    } else {
+                        setMargins(margin, 0, margin, 0) // 水平排列：左右间距
+                    }
                 }
                 addView(tv, FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -126,6 +137,15 @@ class GridCaptureFragment : BaseCaptureFragment() {
             directionCells[dir] = Pair(cell, tv)
             directionBar.addView(cell)
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 屏幕旋转时 directionBar 的 orientation 由 layout-land 决定，
+        // 需要重建格子以匹配新的排列方向
+        directionBar = requireView().findViewById(R.id.directionBar)
+        buildDirectionBar()
+        updateDirectionBar()
     }
 
     private fun updateDirectionBar() {
