@@ -133,12 +133,11 @@
                 app:layout_constraintStart_toStartOf="parent"
                 android:layout_marginBottom="8dp" />
 
-            <!-- 声波背景（平时隐藏，录音时显示） -->
-            <View
+            <!-- 声波可视化（平时隐藏，录音时显示） -->
+            <com.example.voicenavigation.animation.VoiceWaveView
                 android:id="@+id/voice_wave_background"
-                android:layout_width="120dp"
-                android:layout_height="4dp"
-                android:background="#4DFFFFFF"
+                android:layout_width="200dp"
+                android:layout_height="40dp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@id/tv_voice_sub_hint"
                 app:layout_constraintEnd_toEndOf="parent"

@@ -78,6 +78,7 @@ import com.example.voicenavigation.animation.AnimatorUtils
 import com.example.voicenavigation.animation.AnimatorUtils.cancelAndClear
 import com.example.voicenavigation.animation.AnimatorUtils.onEnd
 import com.example.voicenavigation.animation.ViewTransition
+import com.example.voicenavigation.animation.VoiceZoneAnimations
 import com.example.voicenavigation.util.FormatUtils
 import com.example.voicenavigation.util.SecurityUtils
 import com.example.voicenavigation.data.VoiceRecord
@@ -122,7 +123,7 @@ class MainActivity : AppCompatActivity(),
     private lateinit var tvVoiceHint: TextView
     private lateinit var tvVoiceSubHint: TextView
     private lateinit var ivCancelIndicator: View
-    private lateinit var voiceWaveBackground: View
+    private lateinit var voiceWaveView: com.example.voicenavigation.animation.VoiceWaveView
 
     private lateinit var btnStartNavigation: Button
     private lateinit var btnPreviewRoute: Button
@@ -173,10 +174,6 @@ class MainActivity : AppCompatActivity(),
     private var ringMenuCoordinator: RingMenuCoordinator? = null
     private var ringMenuView: RingMenuView? = null
     private lateinit var ringMenuContainer: FrameLayout
-
-    // 动画：语音按钮脉冲效果
-    private var voicePulseAnim: android.animation.ValueAnimator? = null
-    private var voiceCommandPulseAnim: android.animation.ValueAnimator? = null
 
     @Inject lateinit var commandRouter: CommandRouter
 
@@ -328,7 +325,7 @@ class MainActivity : AppCompatActivity(),
         tvVoiceHint = findViewById(R.id.tv_voice_hint)
         tvVoiceSubHint = findViewById(R.id.tv_voice_sub_hint)
         ivCancelIndicator = findViewById(R.id.iv_cancel_indicator)
-        voiceWaveBackground = findViewById(R.id.voice_wave_background)
+        voiceWaveView = findViewById(R.id.voice_wave_background)
 
         btnStartNavigation = findViewById(R.id.btn_start_navigation)
         btnPreviewRoute = findViewById(R.id.btn_preview_route)
@@ -405,6 +402,8 @@ class MainActivity : AppCompatActivity(),
      * 底部语音交互区域：按住说话 + 上滑取消。
      * 统一使用 COMMAND 模式（语音助手），不再区分"按住说话"和"语音助手"两个按钮。
      * 该区域消费所有触摸事件，不会触发环形菜单。
+     *
+     * 动画由 animation 层的 VoiceZoneAnimations + VoiceWaveView 统一管理。
      */
     private fun setupVoiceZone() {
         var startY = 0f
@@ -423,14 +422,23 @@ class MainActivity : AppCompatActivity(),
                     isCancelling = false
                     tvVoiceHint.text = getString(R.string.voice_zone_release_to_send)
                     tvVoiceSubHint.text = getString(R.string.voice_zone_swipe_cancel)
-                    voiceWaveBackground.visibility = View.VISIBLE
                     ivCancelIndicator.visibility = View.GONE
+
+                    // 动画层：按下微缩
+                    VoiceZoneAnimations.onPress(voiceZone)
+                    // 声波：开始跳动
+                    voiceWaveView.visibility = View.VISIBLE
+                    voiceWaveView.startWave()
+
                     vibrate(50)
                     voiceInteractionManager.startListening(VoiceInteractionManager.Mode.COMMAND)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val deltaY = startY - event.rawY
+                    // 动画层：卡片跟随手指上移 + 缩放（阻尼）
+                    VoiceZoneAnimations.onDrag(voiceZone, deltaY, cancelThreshold)
+
                     if (deltaY > cancelThreshold && !isCancelling) {
                         isCancelling = true
                         tvVoiceHint.text = getString(R.string.voice_zone_cancel_release)
@@ -449,14 +457,22 @@ class MainActivity : AppCompatActivity(),
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     voiceInteractionManager.stopListening()
+                    // 声波：停止（平滑回落）
+                    voiceWaveView.stopWave()
+
                     if (isCancelling) {
+                        // 动画层：取消后快速恢复
+                        VoiceZoneAnimations.onCancelled(voiceZone)
                         Toast.makeText(this, getString(R.string.voice_zone_cancelled), Toast.LENGTH_SHORT).show()
+                    } else {
+                        // 动画层：弹性回弹
+                        VoiceZoneAnimations.onRelease(voiceZone)
                     }
+
                     tvVoiceHint.text = getString(R.string.voice_zone_press_to_talk)
                     tvVoiceHint.setTextColor(getColor(android.R.color.white))
                     tvVoiceSubHint.text = getString(R.string.voice_zone_sub_hint)
                     tvVoiceSubHint.setTextColor(getColor(android.R.color.darker_gray))
-                    voiceWaveBackground.visibility = View.GONE
                     ivCancelIndicator.visibility = View.GONE
                     isCancelling = false
                     true
@@ -1312,6 +1328,14 @@ class MainActivity : AppCompatActivity(),
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        // 屏蔽底部语音区域：不传给 RingMenuCoordinator，避免误触菜单
+        if (::voiceZone.isInitialized) {
+            val rect = android.graphics.Rect()
+            voiceZone.getGlobalVisibleRect(rect)
+            if (rect.contains(ev.rawX.toInt(), ev.rawY.toInt())) {
+                return super.dispatchTouchEvent(ev)
+            }
+        }
         ringMenuCoordinator?.onTouchEvent(ev)
         return super.dispatchTouchEvent(ev)
     }
@@ -1321,10 +1345,6 @@ class MainActivity : AppCompatActivity(),
         ringMenuCoordinator?.destroy()
         ringMenuCoordinator = null
         voiceInteractionManager.release()
-        voicePulseAnim?.cancel()
-        voicePulseAnim = null
-        voiceCommandPulseAnim?.cancel()
-        voiceCommandPulseAnim = null
         super.onDestroy()
         baiduTts.destroy()
         viewModel.ttsPlayer.destroy()
