@@ -50,7 +50,7 @@
 
         <activity
             android:name=".collection.ui.hub.CaptureHubActivity"
-            android:screenOrientation="portrait"
+            android:screenOrientation="fullSensor"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
             android:theme="@style/AppTheme.NoActionBar"
             android:exported="false" />

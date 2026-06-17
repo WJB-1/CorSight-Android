@@ -154,12 +154,10 @@ abstract class BaseCaptureFragment : Fragment() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 屏幕旋转时：释放旧相机绑定 → 重新绑定（更新 targetRotation）
-        // 解决横屏时 TextureView BufferQueue 溢出（"Can't acquire next buffer"）
-        cameraProvider?.unbindAll()
-        if (hasCameraPermission()) {
-            startCamera()
-        }
+        // 注意：不在这里 unbindAll + startCamera！
+        // ProcessCameraProvider.getInstance() 是异步 Future，回调时 PreviewView
+        // 的 Surface 可能尚未重建完成 → 相机输出绑定到失效 Surface → 黑屏。
+        // COMPATIBLE 模式（TextureView）会自行处理旋转，无需手动重建。
     }
 
     // ===== 传感器 =====

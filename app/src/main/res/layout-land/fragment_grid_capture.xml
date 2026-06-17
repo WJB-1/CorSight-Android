@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 横屏布局：相机预览铺满，电池条+快门在右侧竖排 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- CameraX 预览 -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 左上角参数浮层 -->
+    <TextView
+        android:id="@+id/tvDebugOverlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:background="#80000000"
+        android:fontFamily="monospace"
+        android:padding="6dp"
+        android:textColor="#FF00FF00"
+        android:textSize="11sp" />
+
+    <!-- 右侧控制面板 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end|center_vertical"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- 八方向电池式状态栏（横屏时垂直排列） -->
+        <LinearLayout
+            android:id="@+id/directionBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:background="#40000000"
+            android:padding="4dp" />
+
+        <!-- 快门按钮 -->
+        <FrameLayout
+            android:id="@+id/shutterBtn"
+            android:layout_width="68dp"
+            android:layout_height="68dp"
+            android:layout_marginTop="12dp"
+            android:alpha="0.3"
+            android:background="@drawable/bg_shutter_outer"
+            android:clickable="true"
+            android:elevation="6dp"
+            android:focusable="true">
+
+            <View
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center"
+                android:background="@drawable/bg_shutter_inner" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- 拍照闪光覆盖层 -->
+    <View
+        android:id="@+id/shutterFlashOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#CCFFFFFF"
+        android:visibility="gone" />
+
+</FrameLayout>
