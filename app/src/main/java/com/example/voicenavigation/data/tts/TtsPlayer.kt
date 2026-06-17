@@ -1,6 +1,6 @@
 package com.example.voicenavigation.data.tts
 
-import android.media.AudioManager
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.os.Handler
 import android.os.Looper
@@ -13,17 +13,9 @@ import java.util.Queue
 /**
  * TTS 播放器：优先播放本地缓存音频，未缓存的回退到 BaiduTtsManager 在线合成。
  *
- * 这是 UnifiedTtsManager 的简化替代方案：
- * - 不依赖系统 TTS（小米等设备可能没有）
- * - 不做系统 TTS 初始化（避免 5 秒超时等待）
- * - 直接查缓存 → 播放，或在线合成 → 缓存 → 播放
- *
- * 延迟对比：
- * | 场景 | 延迟 |
- * |------|------|
- * | 缓存命中 | <50ms（纯本地文件播放） |
- * | 缓存未命中（首次） | 200-500ms（百度在线合成） |
- * | 缓存未命中 + token 获取 | 300-800ms（仅首次启动） |
+ * MediaPlayer 全局复用：类初始化时创建一个实例，播放完 reset() 而非 release()，
+ * 避免每次播放的 native 资源分配开销（首次 ~200ms，后续 <5ms）。
+ * 只有 destroy() 时才真正 release。
  */
 class TtsPlayer(
     private val cache: TtsAudioCache,
@@ -36,7 +28,29 @@ class TtsPlayer(
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val lock = Any()
-    private var mediaPlayer: MediaPlayer? = null
+
+    /** 全局复用的 MediaPlayer 实例，播放完 reset() 不 release() */
+    private val mediaPlayer: MediaPlayer = MediaPlayer().apply {
+        setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANT)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        setOnCompletionListener { mp ->
+            synchronized(lock) { mp.reset() }
+            this@TtsPlayer.isPlaying = false
+            if (!stopped) processQueue()
+        }
+        setOnErrorListener { mp, what, extra ->
+            Log.e(TAG, "MediaPlayer error: what=$what extra=$extra")
+            synchronized(lock) { mp.reset() }
+            this@TtsPlayer.isPlaying = false
+            if (!stopped) processQueue()
+            true
+        }
+    }
+
     private val speechQueue: Queue<String> = LinkedList()
     private var isPlaying = false
     @Volatile private var stopped = false
@@ -53,14 +67,14 @@ class TtsPlayer(
 
     fun flushQueue() {
         synchronized(speechQueue) { speechQueue.clear() }
-        releaseMediaPlayer()
+        stopCurrentPlayback()
         isPlaying = false
     }
 
     fun stopPlayback() {
         stopped = true
         synchronized(speechQueue) { speechQueue.clear() }
-        releaseMediaPlayer()
+        stopCurrentPlayback()
         isPlaying = false
     }
 
@@ -68,14 +82,19 @@ class TtsPlayer(
 
     fun destroy() {
         stopPlayback()
+        synchronized(lock) {
+            try { mediaPlayer.release() } catch (_: Exception) {}
+        }
     }
 
-    private fun releaseMediaPlayer() {
+    // ── 内部 ──
+
+    private fun stopCurrentPlayback() {
         synchronized(lock) {
-            mediaPlayer?.let {
-                try { it.stop(); it.release() } catch (_: Exception) {}
-            }
-            mediaPlayer = null
+            try {
+                if (mediaPlayer.isPlaying) mediaPlayer.stop()
+                mediaPlayer.reset()
+            } catch (_: Exception) {}
         }
     }
 
@@ -89,53 +108,31 @@ class TtsPlayer(
 
         val cachedFile = cache.get(next)
         if (cachedFile != null) {
-            // 缓存命中 → 直接播放本地文件
             Log.d(TAG, "Cache hit: playing [$next] from disk")
             playFile(cachedFile)
         } else {
-            // 缓存未命中 → 百度在线合成（合成完成后自动缓存）
             Log.d(TAG, "Cache miss: synthesizing [$next] via Baidu")
             baiduTts.speak(next)
-            // BaiduTtsManager 内部处理播放和队列，
-            // 我们只需要标记状态让 processQueue 能继续
             mainHandler.postDelayed({
                 isPlaying = false
                 if (!stopped) processQueue()
-            }, 100)  // 给 BaiduTtsManager 时间接管
+            }, 100)
         }
     }
 
     private fun playFile(file: File) {
         try {
             synchronized(lock) {
-                releaseMediaPlayer()
-                val mp = MediaPlayer().apply {
-                    setAudioStreamType(AudioManager.STREAM_MUSIC)
-                    setDataSource(file.absolutePath)
-                    setOnCompletionListener {
-                        synchronized(lock) {
-                            it.release()
-                            if (mediaPlayer === it) mediaPlayer = null
-                        }
-                        this@TtsPlayer.isPlaying = false
-                        if (!stopped) processQueue()
-                    }
-                    setOnErrorListener { p, _, _ ->
-                        synchronized(lock) {
-                            p.release()
-                            if (mediaPlayer === p) mediaPlayer = null
-                        }
-                        this@TtsPlayer.isPlaying = false
-                        if (!stopped) processQueue()
-                        true
-                    }
-                    prepare()
-                    start()
-                }
-                mediaPlayer = mp
+                mediaPlayer.reset()
+                mediaPlayer.setDataSource(file.absolutePath)
+                mediaPlayer.prepare()
+                mediaPlayer.start()
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to play cached file", e)
+            synchronized(lock) {
+                try { mediaPlayer.reset() } catch (_: Exception) {}
+            }
             isPlaying = false
             if (!stopped) processQueue()
         }
