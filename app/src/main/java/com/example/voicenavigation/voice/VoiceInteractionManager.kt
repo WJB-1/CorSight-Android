@@ -81,6 +81,8 @@ class VoiceInteractionManager(
     private var voiceEventListener: VoiceEventListener? = null
     private var lastFeedbackText: String? = ""
     private var pendingRawText = ""
+    /** 用户主动取消后，忽略后续的 STT 回调 */
+    @Volatile private var cancelled = false
     private val watchdogHandler = Handler(Looper.getMainLooper())
     private var resultTimeoutRunnable: Runnable? = null
     private var waitingForResult = false
@@ -97,6 +99,7 @@ class VoiceInteractionManager(
 
     fun startListening(mode: Mode) {
         currentMode = mode
+        cancelled = false
         Log.d(TAG, "startListening mode=$mode")
         if (mode == Mode.COMMAND) {
             ttsManager?.flushQueue()
@@ -104,11 +107,12 @@ class VoiceInteractionManager(
         speechManager.startListening()
     }
 
-    fun stopListening() {
-        Log.d(TAG, "stopListening")
+    fun stopListening(cancel: Boolean = false) {
+        Log.d(TAG, "stopListening cancel=$cancel")
+        cancelled = cancel
         speechManager.stopListening()
 
-        if (currentMode == Mode.COMMAND) {
+        if (!cancel && currentMode == Mode.COMMAND) {
             waitingForResult = true
             watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
             watchdogHandler.postDelayed(getResultTimeoutRunnable(), 8000)
@@ -188,6 +192,7 @@ class VoiceInteractionManager(
     // ==================== STT 回调 ====================
 
     override fun onResult(result: String) {
+        if (cancelled) return  // 用户已取消，忽略结果
         waitingForResult = false
         watchdogHandler.removeCallbacks(getResultTimeoutRunnable())
 
@@ -237,6 +242,7 @@ class VoiceInteractionManager(
 
     override fun onStopped() {
         Log.d(TAG, "=== STT STOPPED ===")
+        if (cancelled) return  // 用户已取消，忽略后续回调
         if (currentMode == Mode.COMMAND) emitStage(context.getString(R.string.stage_recognizing))
         voiceEventListener?.onListeningStopped()
     }

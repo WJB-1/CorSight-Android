@@ -456,7 +456,7 @@ class MainActivity : AppCompatActivity(),
                     true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    voiceInteractionManager.stopListening()
+                    voiceInteractionManager.stopListening(cancel = isCancelling)
                     // 声波：停止（平滑回落）
                     voiceWaveView.stopWave()
 
