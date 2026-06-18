@@ -141,11 +141,20 @@ class GridCaptureFragment : BaseCaptureFragment() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        // 屏幕旋转时 directionBar 的 orientation 由 layout-land 决定，
-        // 需要重建格子以匹配新的排列方向
-        directionBar = requireView().findViewById(R.id.directionBar)
-        buildDirectionBar()
-        updateDirectionBar()
+
+        // 1. 先设置方向条的排列方向（不触发布局）
+        directionBar.orientation = if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            LinearLayout.VERTICAL
+        } else {
+            LinearLayout.HORIZONTAL
+        }
+
+        // 2. 延迟到布局完成后再重建格子，避免与系统布局流程冲突
+        //    不这样做会导致 PreviewView 测量异常 → 左半黑屏
+        directionBar.post {
+            buildDirectionBar()
+            updateDirectionBar()
+        }
     }
 
     private fun updateDirectionBar() {
