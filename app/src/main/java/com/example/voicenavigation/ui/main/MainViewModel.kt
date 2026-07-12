@@ -260,6 +260,18 @@ class MainViewModel @Inject constructor(
 
     fun handleCommandEvent(event: CommandEvent) {
         when (event) {
+            is CommandEvent.JinzaoTour -> {
+                // 金造村参观入口，具体逻辑在 MainActivity 中处理状态机
+                _uiEffect.tryEmit(UiEffect.ShowToast("欢迎参观金造村"))
+            }
+            is CommandEvent.JinzaoRouteSelected -> {
+                val jinzaoLatLng = LatLng(23.0480, 113.1169)
+                _selectedDestination.value = Destination(jinzaoLatLng, "金造村·${event.routeName}")
+                val curLoc = _currentLocation.value
+                if (curLoc != null) {
+                    _uiEffect.tryEmit(UiEffect.PlanRoute(curLoc, jinzaoLatLng, "金造村·${event.routeName}"))
+                }
+            }
             is CommandEvent.NavigateTo -> {
                 autoStartNavigationAfterSearch = true
                 pendingVoiceDestination = event.destination

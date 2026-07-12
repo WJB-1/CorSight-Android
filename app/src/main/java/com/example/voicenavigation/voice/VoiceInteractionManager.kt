@@ -59,6 +59,10 @@ class VoiceInteractionManager(
         fun executeQueryStatus()
         fun executeTextSearch(text: String)
         fun executeUnknown(text: String)
+        fun executeJinzaoTour()
+        fun executeJinzaoRouteQiyi()
+        fun executeJinzaoRouteSilingbu()
+        fun isJinzaoRouteSelecting(): Boolean
         fun getLastSpokenText(): String?
         fun isNavigating(): Boolean
         fun isObstacleAvoiding(): Boolean
@@ -125,8 +129,15 @@ class VoiceInteractionManager(
                 if (!waitingForResult) return@Runnable
                 waitingForResult = false
                 Log.w(TAG, "Result timeout — no onResult received after stop")
-                showToast(context.getString(R.string.tts_timeout_no_result))
-                emitStage(context.getString(R.string.stage_voice_assistant))
+                // 兜底：用最后一条 partial 结果，百度 SDK 偶尔不回调 FINISH
+                val fallback = pendingRawText.ifEmpty { "" }
+                if (fallback.isNotEmpty()) {
+                    Log.d(TAG, "Using partial fallback: [$fallback]")
+                    processCommand(fallback)
+                } else {
+                    showToast(context.getString(R.string.tts_timeout_no_result))
+                    emitStage(context.getString(R.string.stage_voice_assistant))
+                }
             }
         }
         return resultTimeoutRunnable!!
@@ -215,6 +226,7 @@ class VoiceInteractionManager(
 
     override fun onPartialResult(result: String) {
         Log.d(TAG, "STT partial: [$result]")
+        pendingRawText = result  // 兜底：记录最后一条 partial，防止百度不回调 FINISH
         if (currentMode == Mode.TEXT_INPUT) {
             textInputListener?.onTextPartial(result)
         } else {
@@ -297,6 +309,9 @@ class VoiceInteractionManager(
         return try {
             val argObj = JSONObject(args)
             when (fnName) {
+                "jinzao_tour" -> VoiceCommand(VoiceCommand.Type.JINZAO_TOUR, "金造村", pendingRawText)
+                "jinzao_route_qiyi" -> VoiceCommand(VoiceCommand.Type.JINZAO_ROUTE_QIYI, "起义广场", pendingRawText)
+                "jinzao_route_silingbu" -> VoiceCommand(VoiceCommand.Type.JINZAO_ROUTE_SILINGBU, "司令部旧址", pendingRawText)
                 "navigate_to" -> {
                     val dest = argObj.optString("destination", pendingRawText)
                     VoiceCommand(VoiceCommand.Type.NAVIGATE_TO, dest, pendingRawText)
@@ -335,6 +350,21 @@ class VoiceInteractionManager(
         }
 
         when (command.type) {
+            VoiceCommand.Type.JINZAO_TOUR -> {
+                speakFeedback("欢迎参观金造村！您想去起义广场还是司令部旧址？")
+                emitStage("🏘️ 金造村·路线选择")
+                executor.executeJinzaoTour()
+            }
+            VoiceCommand.Type.JINZAO_ROUTE_QIYI -> {
+                speakFeedback("好的，为您规划前往起义广场的路线")
+                emitStage("📍 起义广场")
+                executor.executeJinzaoRouteQiyi()
+            }
+            VoiceCommand.Type.JINZAO_ROUTE_SILINGBU -> {
+                speakFeedback("好的，为您规划前往司令部旧址的路线")
+                emitStage("📍 司令部旧址")
+                executor.executeJinzaoRouteSilingbu()
+            }
             VoiceCommand.Type.NAVIGATE_TO -> {
                 speakFeedback(context.getString(R.string.tts_searching, command.destination))
                 emitStage(context.getString(R.string.stage_searching, command.destination))
@@ -392,12 +422,23 @@ class VoiceInteractionManager(
                 executor.executeQueryStatus()
             }
             VoiceCommand.Type.TEXT_SEARCH -> {
-                speakAndToast(context.getString(R.string.tts_searching, command.destination))
-                executor.executeTextSearch(command.destination!!)
+                // 金造村路线选择状态下，任何搜索都视为选择意图，避免走 POI
+                if (executor.isJinzaoRouteSelecting()) {
+                    speakFeedback("抱歉，请说起义广场或司令部旧址")
+                    executor.executeJinzaoTour() // 重新询问
+                } else {
+                    speakAndToast(context.getString(R.string.tts_searching, command.destination))
+                    executor.executeTextSearch(command.destination!!)
+                }
             }
             VoiceCommand.Type.UNKNOWN -> {
-                speakAndToast(context.getString(R.string.tts_not_understood))
-                executor.executeUnknown(command.rawText)
+                if (executor.isJinzaoRouteSelecting()) {
+                    speakFeedback("抱歉，请说起义广场或司令部旧址")
+                    executor.executeJinzaoTour() // 重新询问
+                } else {
+                    speakAndToast(context.getString(R.string.tts_not_understood))
+                    executor.executeUnknown(command.rawText)
+                }
             }
         }
         restoreButtonAfter(5000)

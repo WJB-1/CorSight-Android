@@ -33,7 +33,7 @@ object AppConstants {
     // ── 网络默认 URL ──
     // 由 core/network/ServerConfig.kt 统一管理，此处保留为兼容引用
     @Deprecated("Use core.network.ServerConfig via NetworkUrlResolver", ReplaceWith("ServerConfig.EXTERNAL_URL"))
-    const val PREVIEW_DEFAULT_BASE_URL = "http://114.132.86.138:5000"
+    const val PREVIEW_DEFAULT_BASE_URL = "http://106.55.149.50:5741"
     const val PREVIEW_API_PATH = "/api/navigation/preview"
     const val PREVIEW_FIXED_API_PATH_PREFIX = "/api/navigation/preview/fixed/"
 
@@ -41,6 +41,18 @@ object AppConstants {
     const val BAIDU_TTS_TOKEN_URL = "https://openapi.baidu.com/oauth/2.0/token"
     const val BAIDU_TTS_AUDIO_URL = "https://tsn.baidu.com/text2audio"
     const val BAIDU_TTS_CUID_FALLBACK = "voice_navigation_app"
+
+    // ── 金造村参观模式 ──
+    /** 金造村中心坐标（高德 GCJ-02） */
+    const val JINZAO_VILLAGE_LAT = 23.0480
+    const val JINZAO_VILLAGE_LNG = 113.1169
+    /** 路线 ID（给 path-guide 后端匹配用，可为空让后端自动选） */
+    const val JINZAO_ROUTE_QIYI = "jinzao_qiyi_square"
+    const val JINZAO_ROUTE_SILINGBU = "jinzao_silingbu"
+    /** path-guide 定位上报间隔（毫秒），对应后端 loop 2s 频率 */
+    const val JINZAO_PATH_GUIDE_INTERVAL_MS = 2000L
+    /** vlm-guide 自动触发间隔（毫秒），15 秒一次 */
+    const val JINZAO_VLM_GUIDE_INTERVAL_MS = 15_000L
 
     // ── 广播 Action ──
     const val BROADCAST_ACTION_STOP_OBSTACLE = "com.example.voicenavigation.ACTION_STOP_OBSTACLE"

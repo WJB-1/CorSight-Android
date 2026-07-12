@@ -377,7 +377,10 @@ class VisionTestActivity : AppCompatActivity() {
 
         binding.tvPreviewHint.visibility = View.GONE
         binding.previewView.visibility = if (source is CameraSource) View.VISIBLE else View.GONE
-        binding.ivNetwork.visibility = if (source !is CameraSource) View.VISIBLE else View.GONE
+        binding.ivNetwork.visibility = if (source is NetworkSource) View.VISIBLE else View.GONE
+        if (source !is NetworkSource) {
+            binding.ivNetwork.setImageBitmap(null)
+        }
         smoothedHistory.clear()
         obstacleAlertTracker.reset()
 
@@ -439,6 +442,13 @@ class VisionTestActivity : AppCompatActivity() {
         lastFrameHeight = if (rotationDegrees == 90 || rotationDegrees == 270) bitmap.width else bitmap.height
         runOnUiThread {
             binding.overlayView.setSourceImageSize(lastFrameWidth, lastFrameHeight)
+        }
+
+        // 图传模式：将接收到的网络帧显示在 ivNetwork 上
+        if (currentSource is NetworkSource) {
+            runOnUiThreadSafe {
+                binding.ivNetwork.setImageBitmap(bitmap)
+            }
         }
 
         when (activeMode) {

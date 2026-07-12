@@ -197,6 +197,9 @@ class BaiduSpeechManager(context: Context) {
         params[SpeechConstant.VAD] = SpeechConstant.VAD_TOUCH
         params[SpeechConstant.WP_VAD_ENABLE] = false
 
+        // 金造村语音增强：自定义词槽 + 导航领域模型，防止"起义广场"被误识别为"骑域俱乐部"
+        params["SLOT_DATA"] = buildJinzaoSlotData()
+
         val jsonParam = JSONObject(params as Map<*, *>).toString()
 
         Log.d(TAG, "Starting Baidu ASR with params: $jsonParam")
@@ -330,4 +333,20 @@ class BaiduSpeechManager(context: Context) {
             5002 -> context.getString(R.string.stt_error_speech_too_short)
             else -> context.getString(R.string.stt_error_generic, errorMessage)
         }
+
+    /**
+     * 构建金造村语音增强词槽。
+     *
+     * 百度 ASR 的 SLOT_DATA 参数用于自定义词槽，提高专有名词识别准确率。
+     * JSON 格式：
+     * {
+     *   "name": ["起义广场","起义广场","qiyi"],
+     *   "name": ["司令部旧址","司令部旧址","silingbu"]
+     * }
+     *
+     * 这样百度 ASR 更倾向把语音识别为这些词条，防止"起义广场"→"骑域俱乐部"等误识别。
+     */
+    private fun buildJinzaoSlotData(): String {
+        return """{"name":["起义广场","司令部旧址","金造村","游览金造村","参观金造村","逛金造村"],"app_name":["corsight"]}"""
+    }
 }

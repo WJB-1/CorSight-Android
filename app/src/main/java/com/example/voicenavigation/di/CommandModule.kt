@@ -2,6 +2,7 @@ package com.example.voicenavigation.di
 
 import com.example.voicenavigation.command.MenuCommand
 import com.example.voicenavigation.command.commands.DataCollectionCommand
+import com.example.voicenavigation.command.commands.JinzaoTourCommand
 import com.example.voicenavigation.command.commands.NavigateToCommand
 import com.example.voicenavigation.command.commands.PreviewRouteCommand
 import com.example.voicenavigation.command.commands.QueryStatusCommand
@@ -63,4 +64,7 @@ abstract class CommandModule {
 
     @Binds @IntoMap @StringKey("data_collection")
     abstract fun bindDataCollection(cmd: DataCollectionCommand): MenuCommand
+
+    @Binds @IntoMap @StringKey("jinzao_tour")
+    abstract fun bindJinzaoTour(cmd: JinzaoTourCommand): MenuCommand
 }

@@ -27,6 +27,10 @@ sealed class CommandEvent {
     object ShowSettings : CommandEvent()
     object OpenDataCollection : CommandEvent()
 
+    // ── 金造村游览 ──
+    data class JinzaoTour(val destination: String) : CommandEvent()
+    data class JinzaoRouteSelected(val routeId: String, val routeName: String) : CommandEvent()
+
     // ── 语音 ──
     object StartVoiceAssistant : CommandEvent()
 

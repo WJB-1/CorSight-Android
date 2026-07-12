@@ -45,17 +45,32 @@ class VoiceCommandInterpreter(private val context: Context? = null) {
         val cleaned = cleanText(text)
         Log.d(TAG, "Interpreting: \"$cleaned\"")
 
-        // 1. 精确匹配：停止导航（优先级高）
+        // 0. 金造村路线选择（最高优先级：精确 + 模糊）
+        if (fuzzyMatch(cleaned, getKeywords("jinzao_route_qiyi"))) {
+            Log.d(TAG, "jinzao_route_qiyi matched (fuzzy): \"$cleaned\"")
+            return VoiceCommand(VoiceCommand.Type.JINZAO_ROUTE_QIYI, "起义广场", cleaned)
+        }
+        if (fuzzyMatch(cleaned, getKeywords("jinzao_route_silingbu"))) {
+            Log.d(TAG, "jinzao_route_silingbu matched (fuzzy): \"$cleaned\"")
+            return VoiceCommand(VoiceCommand.Type.JINZAO_ROUTE_SILINGBU, "司令部旧址", cleaned)
+        }
+
+        // 1. 金造村参观游览（触发引导入口）
+        if (containsAny(cleaned, getKeywords("jinzao_tour"))) {
+            return VoiceCommand(VoiceCommand.Type.JINZAO_TOUR, "金造村", cleaned)
+        }
+
+        // 3. 停止导航
         if (containsAny(cleaned, getKeywords("stop_navigation"))) {
             return VoiceCommand(VoiceCommand.Type.STOP_NAVIGATION, null, cleaned)
         }
 
-        // 2. 停止避障
+        // 4. 停止避障
         if (containsAny(cleaned, getKeywords("stop_obstacle"))) {
             return VoiceCommand(VoiceCommand.Type.STOP_OBSTACLE_AVOIDANCE, null, cleaned)
         }
 
-        // 3. 开始避障
+        // 5. 开始避障
         if (containsAny(cleaned, getKeywords("start_obstacle"))) {
             return VoiceCommand(VoiceCommand.Type.START_OBSTACLE_AVOIDANCE, null, cleaned)
         }
@@ -108,6 +123,27 @@ class VoiceCommandInterpreter(private val context: Context? = null) {
 
     private fun containsAny(text: String, keywords: List<String>): Boolean {
         return keywords.any { text.contains(it) }
+    }
+
+    /**
+     * 宽松匹配：精确匹配 + 单字子集兜底。
+     *
+     * 当百度 ASR 识别专有名词不可靠时（如"起义广场"→"起一广"），
+     * 只要用户说的文本是某个关键词的连续子集，就算命中。
+     * 例如 "起一广" ⊆ "起一广场" → true
+     */
+    private fun fuzzyMatch(text: String, keywords: List<String>): Boolean {
+        if (containsAny(text, keywords)) return true
+
+        // 子集兜底：用户说的每个字（忽略虚词）都出现在关键词中
+        val meaningfulText = text.filter { it !in "去到我想的是了在吗呢吧啊" }.toSet()
+        if (meaningfulText.size < 2) return false
+
+        return keywords.any { kw ->
+            val kwSet = kw.filter { it !in "去到我想的是了在吗呢吧啊" }.toSet()
+            // 用户的字全部出现在关键词中 → 命中
+            meaningfulText.all { it in kwSet }
+        }
     }
 
     private fun extractDestination(text: String): String? {

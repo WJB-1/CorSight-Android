@@ -82,6 +82,46 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/voice_zone" />
 
+    <!-- 金造村路线选择开关（参观模式下显示） -->
+    <LinearLayout
+        android:id="@+id/jinzao_route_selector"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="visible"
+        app:layout_constraintBottom_toTopOf="@id/voice_zone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="起义广场"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginEnd="12dp" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_jinzao_route"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:textOn=""
+            android:textOff="" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="司令部旧址"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginStart="12dp" />
+
+    </LinearLayout>
+
     <!-- ═══ 4. 底部语音交互区域（屏幕下 1/4，半透明圆角卡片） ═══ -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/voice_zone"

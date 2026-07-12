@@ -43,6 +43,12 @@ data class VoiceCommand(
         PREVIEW_ROUTE("preview_route", "预览当前路线"),
         /** 查询当前状态（导航中？避障中？） */
         QUERY_STATUS("query_status", "查询当前运行状态"),
+        /** 金造村游览 —— 触发参观模式引导 */
+        JINZAO_TOUR("jinzao_tour", "参观金造村"),
+        /** 金造村路线：起义广场 */
+        JINZAO_ROUTE_QIYI("jinzao_route_qiyi", "去起义广场"),
+        /** 金造村路线：司令部旧址 */
+        JINZAO_ROUTE_SILINGBU("jinzao_route_silingbu", "去司令部旧址"),
         /** 普通搜索（非指令，作为文本搜索） */
         TEXT_SEARCH("text_search", "普通文本搜索"),
         /** 无法识别的指令 */

@@ -13,6 +13,12 @@
       "command": "start_obstacle_avoidance"
     },
     {
+      "id": "jinzao",
+      "label": "逛金造村",
+      "color": "#E91E63",
+      "command": "jinzao_tour"
+    },
+    {
       "id": "preview",
       "label": "预览路线",
       "color": "#2196F3",

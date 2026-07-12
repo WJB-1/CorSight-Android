@@ -8,11 +8,11 @@ package com.example.voicenavigation.core.network
  */
 object ServerConfig {
 
-    /** 外网中转服务器（公网，始终可达） */
-    const val EXTERNAL_URL = "http://114.132.86.138:5000"
+    /** 外网服务器（公网） */
+    const val EXTERNAL_URL = "http://106.55.149.50:5741"
 
     /** 内网服务器（校园网直连，延迟低） */
-    const val INTERNAL_URL = "http://172.23.206.119:5741"
+    const val INTERNAL_URL = "http://106.55.149.50:5741"
 
     /** 连通性探测路径 */
     const val HEALTH_CHECK_PATH = "/health"

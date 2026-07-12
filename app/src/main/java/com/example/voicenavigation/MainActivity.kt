@@ -71,6 +71,7 @@ import com.example.voicenavigation.ui.main.MainViewModel
 import com.example.voicenavigation.ui.main.UiEffect
 import com.example.voicenavigation.ui.main.NavigationState
 import com.example.voicenavigation.config.AppConfigProvider
+import com.example.voicenavigation.config.AppConstants
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
 import com.example.voicenavigation.animation.Animations
@@ -111,6 +112,7 @@ class MainActivity : AppCompatActivity(),
     @Inject lateinit var unifiedTts: UnifiedTtsManager
     // appDatabase removed — operations go through VoiceRecordRepository via ViewModel
     @Inject lateinit var tripPreviewService: TripPreviewService
+    @Inject lateinit var tourNavigateService: com.example.voicenavigation.network.TourNavigateService
     @Inject lateinit var menuConfig: MenuConfig
 
     private var mMap: AMap? = null
@@ -129,6 +131,8 @@ class MainActivity : AppCompatActivity(),
     private lateinit var btnVisionTest: Button
     private lateinit var btnStopTts: Button
     private lateinit var btnMyLocation: ImageButton
+    private lateinit var jinzaoRouteSelector: LinearLayout
+    private lateinit var switchJinzaoRoute: SwitchCompat
     private lateinit var etDestination: EditText
     private lateinit var btnClearSearch: ImageButton
     private lateinit var cardSuggestions: CardView
@@ -168,6 +172,20 @@ class MainActivity : AppCompatActivity(),
     private var pendingVoiceDestination: String? = null
     private var lastAddress: String? = null
     private var isObstacleRunning = false
+
+    // ── 金造村参观模式状态机 ──
+    // IDLE → AWAITING_ROUTE_CHOICE → ROUTE_SELECTED → NAVIGATING → IDLE
+    private var jinzaoTourState = JinzaoTourState.IDLE
+    private var jinzaoTourRouteId: String = ""
+    private var jinzaoTourRouteName: String = ""
+    private var jinzaoLocateTimer: java.util.Timer? = null
+
+    private enum class JinzaoTourState {
+        IDLE,                // 未启动
+        AWAITING_ROUTE_CHOICE, // 等待用户选路线
+        ROUTE_SELECTED,       // 路线已选，正在发预览
+        NAVIGATING            // 导航中，定时上报定位
+    }
 
     // 环形菜单（由 Coordinator 统一管理）
     private var ringMenuCoordinator: RingMenuCoordinator? = null
@@ -330,6 +348,8 @@ class MainActivity : AppCompatActivity(),
         btnVisionTest = findViewById(R.id.btn_vision_test)
         btnStopTts = findViewById(R.id.btn_stop_tts)
         btnMyLocation = findViewById(R.id.btn_my_location)
+        jinzaoRouteSelector = findViewById(R.id.jinzao_route_selector)
+        switchJinzaoRoute = findViewById(R.id.switch_jinzao_route)
         etDestination = findViewById(R.id.et_destination)
         btnClearSearch = findViewById(R.id.btn_clear_search)
         cardSuggestions = findViewById(R.id.card_suggestions)
@@ -464,6 +484,10 @@ class MainActivity : AppCompatActivity(),
                     } else {
                         // 动画层：弹性回弹
                         VoiceZoneAnimations.onRelease(voiceZone)
+                    }
+                    // 金造村参观模式：无论松手还是上滑取消，语音结束后都触发导航
+                    if (jinzaoTourState == JinzaoTourState.AWAITING_ROUTE_CHOICE) {
+                        handler.postDelayed({ onJinzaoRouteSwitched() }, 1200)
                     }
 
                     tvVoiceHint.text = getString(R.string.voice_zone_press_to_talk)
@@ -1007,6 +1031,204 @@ class MainActivity : AppCompatActivity(),
         // TTS 播报已在 VoiceInteractionManager 中完成
     }
 
+    override fun executeJinzaoTour() {
+        // 显示路线选择开关，不再用语音识别
+        jinzaoTourState = JinzaoTourState.AWAITING_ROUTE_CHOICE
+        switchJinzaoRoute.isChecked = true  // 默认起义广场
+        jinzaoRouteSelector.visibility = View.VISIBLE
+        // TTS 在 VoiceInteractionManager 中已播报 "您想去起义广场还是司令部旧址？"
+        // 用户操作开关后触发导航
+    }
+
+    /**
+     * 开关切换时调用：on=true→起义广场，on=false→司令部旧址
+     */
+    private fun onJinzaoRouteSwitched() {
+        if (switchJinzaoRoute.isChecked) {
+            executeJinzaoRouteQiyi()
+        } else {
+            executeJinzaoRouteSilingbu()
+        }
+    }
+
+    override fun executeJinzaoRouteQiyi() {
+        startJinzaoNavigate("jinzao_qiyi_square", "起义广场", LatLng(AppConstants.JINZAO_VILLAGE_LAT, AppConstants.JINZAO_VILLAGE_LNG))
+    }
+
+    override fun executeJinzaoRouteSilingbu() {
+        startJinzaoNavigate("jinzao_silingbu", "司令部旧址", LatLng(AppConstants.JINZAO_VILLAGE_LAT, AppConstants.JINZAO_VILLAGE_LNG))
+    }
+
+    override fun isJinzaoRouteSelecting(): Boolean {
+        return jinzaoTourState == JinzaoTourState.AWAITING_ROUTE_CHOICE
+    }
+
+    /**
+     * 开始金造村导航的完整流程：
+     * 1. 在地图放 Marker + 规划高德路线
+     * 2. 向后端请求路线预览 → TTS 播报
+     * 3. 启动 3 秒定时器开始实时定位上报
+     */
+    /**
+     * 开始金造村导航：
+     * 1. 放地图 Marker + 高德路线规划
+     * 2. 预加载路网 → 立即开始 2 秒定时上报 path-guide
+     *
+     * 不再需要单独的"路线预览"API——path-guide 自己匹配最近路径并返回指引。
+     */
+    private fun startJinzaoNavigate(routeId: String, routeName: String, destLatLng: LatLng) {
+        jinzaoRouteSelector.visibility = View.GONE  // 选完路线后隐藏开关
+        val loc = currentLocation
+        if (loc == null) {
+            speakForce("正在获取当前位置，请稍后再试")
+            locateMe()
+            return
+        }
+        jinzaoTourState = JinzaoTourState.ROUTE_SELECTED
+        jinzaoTourRouteId = routeId
+        jinzaoTourRouteName = routeName
+
+        // 1. 地图 Marker
+        mMap?.let { map ->
+            destinationMarker?.remove()
+            destinationMarker = map.addMarker(MarkerOptions()
+                .position(destLatLng)
+                .title("金造村·$routeName")
+                .snippet("红色革命老区")
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)))
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(destLatLng, 17f))
+        }
+
+        // 2. 高德路线规划
+        if (hasValidAmapKey()) {
+            navigationManager.planRoute(loc, destLatLng, "金造村·$routeName")
+            selectedDestLatLng = destLatLng
+        }
+
+        // 3. 获取 baseUrl
+        val baseUrl = AppConfig.normalizeBaseUrl(
+            AppConfig.prefs(this).getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL) ?: ""
+        )
+        if (baseUrl.isEmpty()) {
+            speakForce("后端地址未配置，无法开始导航")
+            return
+        }
+
+        // 4. 预加载路网（可选，用于缓存），然后直接开始定位上报
+        tourNavigateService.loadPathNetwork(baseUrl, object : com.example.voicenavigation.network.TourNavigateService.PathNetworkCallback {
+            override fun onSuccess(annotations: List<org.json.JSONObject>) {
+                Log.d(TAG, "Jinzao path network loaded: ${annotations.size} paths")
+                handler.post {
+                    speakForce("已为您规划前往${routeName}的路线，开始导航")
+                    startJinzaoPathGuideTimer(baseUrl)
+                }
+            }
+
+            override fun onError(error: String) {
+                Log.w(TAG, "Jinzao path network load failed: $error, proceeding anyway")
+                handler.post {
+                    speakForce("已为您规划前往${routeName}的路线，开始导航")
+                    startJinzaoPathGuideTimer(baseUrl)
+                }
+            }
+        })
+    }
+
+    /**
+     * 启动 2 秒定时器，持续调用 POST /api/navigation/path-guide。
+     *
+     * 核心循环：
+     *   gps = getGPS()
+     *   guide = POST /path-guide { lng, lat }
+     *   if (guide.on_path) TTS.speak(guide.guidance)
+     *   sleep(2000)
+     */
+    private fun startJinzaoPathGuideTimer(baseUrl: String) {
+        jinzaoTourState = JinzaoTourState.NAVIGATING
+        jinzaoLocateTimer?.cancel()
+        jinzaoLocateTimer = java.util.Timer("jinzao-path-guide", true)
+
+        // 第一帧立即发
+        jinzaoLocateTimer?.schedule(object : java.util.TimerTask() {
+            override fun run() {
+                val loc = currentLocation ?: return
+
+                tourNavigateService.sendPathGuide(
+                    baseUrl,
+                    loc.longitude,  // 高德 GCJ-02 经度
+                    loc.latitude,   // 高德 GCJ-02 纬度
+                    object : com.example.voicenavigation.network.TourNavigateService.PathGuideCallback {
+                        override fun onResult(result: com.example.voicenavigation.network.TourNavigateService.PathGuideResult) {
+                            if (!result.onPath) {
+                                // 不在路径上，只报一次提示
+                                val offPathKey = "jinzao_off_path"
+                                if (offPathKey != lastSpokenInstruction) {
+                                    lastSpokenInstruction = offPathKey
+                                    speakForce(result.guidance.ifEmpty { "未检测到路径，请回到已标注的道路上" })
+                                }
+                                return
+                            }
+
+                            // 在路径上，播报指引（去重）
+                            val guidance = result.guidance
+                            if (guidance.isNotEmpty() && guidance != lastSpokenInstruction) {
+                                lastSpokenInstruction = guidance
+                                speakForce(guidance)
+                            }
+
+                            // 到达终点
+                            if (result.nextAction == "arrive") {
+                                handler.post {
+                                    speakForce("您已到达${jinzaoTourRouteName}！")
+                                    stopJinzaoTour()
+                                }
+                            }
+                        }
+
+                        override fun onError(error: String) {
+                            Log.w(TAG, "Path-guide error: $error")
+                        }
+                    }
+                )
+            }
+        }, 0, com.example.voicenavigation.config.AppConstants.JINZAO_PATH_GUIDE_INTERVAL_MS)
+
+        speakForce("开始导航，正在前往${jinzaoTourRouteName}，请沿着路线行走")
+    }
+
+    /**
+     * VLM 拍照校准（用户主动触发）。
+     * 拍照 → base64 → POST /api/navigation/vlm-guide → TTS 播报校准结果。
+     */
+    private fun triggerVlmGuide() {
+        if (jinzaoTourState != JinzaoTourState.NAVIGATING) return
+        val loc = currentLocation ?: return
+        val baseUrl = AppConfig.normalizeBaseUrl(
+            AppConfig.prefs(this).getString(AppConfig.KEY_PREVIEW_SERVER_BASE_URL, TripPreviewService.DEFAULT_BASE_URL) ?: ""
+        )
+        if (baseUrl.isEmpty()) return
+
+        // TODO: 实际拍照获取 image_base64 —— 目前先占位，需要接入 Camera API
+        // val imageBase64 = captureCameraFrame()
+        speakForce("拍照校准功能待接入相机")
+        // tourNavigateService.sendVlmGuide(baseUrl, imageBase64, loc.longitude, loc.latitude, null, ...)
+    }
+
+    private fun stopJinzaoTour() {
+        jinzaoLocateTimer?.cancel()
+        jinzaoLocateTimer = null
+        jinzaoTourState = JinzaoTourState.IDLE
+        jinzaoTourRouteId = ""
+        jinzaoTourRouteName = ""
+        jinzaoRouteSelector.visibility = View.GONE
+        tourNavigateService.clearAnnotationCache()
+        if (navigationManager.isNavigating()) {
+            navigationManager.stopNavigation()
+        }
+        clearRouteDisplay()
+        btnStartNavigation.setText(R.string.start_navigation)
+    }
+
     override fun executePreviewRoute() {
         sendTripPreview()
     }
@@ -1161,6 +1383,15 @@ class MainActivity : AppCompatActivity(),
      */
     private fun handleCommandEvent(event: com.example.voicenavigation.command.CommandEvent) {
         when (event) {
+            is com.example.voicenavigation.command.CommandEvent.JinzaoTour -> {
+                executeJinzaoTour()
+            }
+            is com.example.voicenavigation.command.CommandEvent.JinzaoRouteSelected -> {
+                when (event.routeId) {
+                    "jinzao_qiyi_square" -> executeJinzaoRouteQiyi()
+                    "jinzao_silingbu" -> executeJinzaoRouteSilingbu()
+                }
+            }
             is com.example.voicenavigation.command.CommandEvent.NavigateTo -> {
                 autoStartNavigationAfterSearch = true
                 pendingVoiceDestination = event.destination
@@ -1352,6 +1583,8 @@ class MainActivity : AppCompatActivity(),
         navigationManager.stopNavigation()
         navigationManager.destroyLocationClient()
         tripPreviewService.cancelAll()
+        jinzaoLocateTimer?.cancel()
+        jinzaoLocateTimer = null
         mapView?.onDestroy()
     }
 }
